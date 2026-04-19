@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Persistence/BuildingBlocks.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/Reflekt/">
+    <Project Path="src/Services/Reflekt/Reflekt.API/Reflekt.API.csproj" />
+    <Project Path="src/Services/Reflekt/Reflekt.Domain/Reflekt.Domain.csproj" />
+    <Project Path="src/Services/Reflekt/Reflekt.Persistence/Reflekt.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Reflekt.IntegrationTests/Reflekt.IntegrationTests.csproj" />
+    <Project Path="tests/Reflekt.UnitTests/Reflekt.UnitTests.csproj" />
+  </Folder>
+</Solution>

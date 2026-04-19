@@ -1,0 +1,41 @@
+using BuildingBlocks.Persistence;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+namespace Reflekt.Persistence;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddReflektPersistence(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddSingleton<DomainEventPublishingInterceptor>();
+
+        services.AddDbContext<ReflektDbContext>((sp, options) =>
+        {
+            options.UseSqlite(configuration.GetConnectionString("Reflekt"));
+            options.AddInterceptors(sp.GetRequiredService<DomainEventPublishingInterceptor>());
+        });
+
+        return services;
+    }
+
+    public static WebApplication UseReflektPersistence(this WebApplication app)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ReflektDbContext>();
+            db.Database.Migrate();
+
+            if (app.Configuration.GetValue<bool>("Seed:Enabled"))
+                DbInitializer.SeedAsync(db).GetAwaiter().GetResult();
+        }
+
+        return app;
+    }
+}
