@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup>  <UserSecretsId>2dc41398-f398-486a-8b4f-3c69aab5a4e9</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Reflekt.UnitTests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Reflekt.Domain\Reflekt.Domain.csproj" />
     <ProjectReference Include="..\Reflekt.Persistence\Reflekt.Persistence.csproj" />
   </ItemGroup>

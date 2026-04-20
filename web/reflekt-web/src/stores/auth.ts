@@ -1,6 +1,28 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
-// Populated by feature plans.
+interface User { email: string; displayName: string; }
+
 export const useAuthStore = defineStore('auth', {
-  state: () => ({}),
-})
+  state: () => ({
+    user: null as User | null,
+    loaded: false,
+  }),
+  getters: {
+    isSignedIn: (s) => s.user !== null,
+  },
+  actions: {
+    async fetchMe() {
+      const res = await fetch('/auth/me', { credentials: 'include' });
+      this.user = res.ok ? (await res.json()) as User : null;
+      this.loaded = true;
+    },
+    signIn() {
+      window.location.href = '/auth/google/login';
+    },
+    async signOut() {
+      await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+      this.user = null;
+      window.location.href = '/';
+    },
+  },
+});

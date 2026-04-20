@@ -3,6 +3,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Services\Reflekt\Reflekt.API\Reflekt.API.csproj" />
     <ProjectReference Include="..\..\src\Services\Reflekt\Reflekt.Domain\Reflekt.Domain.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\BuildingBlocks.Domain\BuildingBlocks.Domain.csproj" />
   </ItemGroup>
