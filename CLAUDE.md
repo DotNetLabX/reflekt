@@ -10,7 +10,29 @@ Spec files (architecture.md, business.md, etc.) describe current state, not rule
 
 ## Domain
 
-TBD.
+### Domain events
+
+Domain events carry a reference to the aggregate object, not individual properties. Since the `DomainEventPublishingInterceptor` dispatches after `SaveChangesAsync`, the aggregate's `Id` and all state are fully populated at dispatch time.
+
+```csharp
+// Event definition — holds the aggregate reference:
+public sealed record TeamCreatedEvent(Team Team) : IEvent;
+
+// Raised inside the aggregate factory/method:
+AddDomainEvent(new TeamCreatedEvent(this));
+
+// Handler reads populated state:
+var teamId = ev.Team.Id;       // real auto-incremented value
+var teamName = ev.Team.Name;
+```
+
+### Repositories
+
+Concrete classes (no interfaces — see Guardrails). Each repository wraps `SaveChangesAsync` so endpoints never touch `DbContext` directly:
+
+```csharp
+public Task<int> SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
+```
 
 ## Architecture
 

@@ -424,3 +424,6 @@ data/*.db-*
 # Frontend build artifacts
 web/reflekt-web/node_modules/
 web/reflekt-web/dist/
+
+# Claude Plugins
+/.omc
