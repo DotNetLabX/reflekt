@@ -111,6 +111,16 @@ Note: criteria 4–6 require non-empty `Auth:Google:ClientId/ClientSecret` (set 
 - `FetchResult` record defined inline in `OpenGraphFetcher.cs` (plan described it but didn't mandate a separate file)
 - `HealthEndpoint` added as infrastructure necessity (FastEndpoints throws on startup with zero endpoints); not a feature endpoint
 
+### Foundation Skill-Alignment Refactor
+
+- `src/BuildingBlocks/BuildingBlocks.Persistence/ApplicationDbContext.cs` — NEW: abstract `ApplicationDbContext : DbContext` base; moves DomainEvents-ignore loop out of each service DbContext
+- `src/Services/Reflekt/Reflekt.Persistence/ReflektDbContext.cs` — now extends `ApplicationDbContext`; removed manual DomainEvents-ignore loop; calls `base.OnModelCreating`
+- `src/Services/Reflekt/Reflekt.Domain/GlobalUsings.cs` — NEW: `global using BuildingBlocks.Domain`
+- `src/Services/Reflekt/Reflekt.Persistence/GlobalUsings.cs` — NEW: `global using` for EF Core, BuildingBlocks.Persistence, Reflekt.Domain
+- `src/Services/Reflekt/Reflekt.API/GlobalUsings.cs` — added standard `Microsoft.AspNetCore.*` and `Microsoft.Extensions.*` usings
+- `src/Services/Reflekt/Reflekt.Persistence/EntityConfigurations/TeamConfiguration.cs` — MOVED from `Configurations/`; namespace updated to `Reflekt.Persistence.EntityConfigurations`
+- `src/Services/Reflekt/Reflekt.Persistence/Configurations/` — DELETED (folder renamed to `EntityConfigurations/`)
+
 ## Deviations from Plan
 
 - Solution file is `Reflekt.slnx` not `Reflekt.sln` — .NET 10 tooling defaults to the new XML format. `dotnet build Reflekt.slnx` works identically.

@@ -1,5 +1,6 @@
 using BuildingBlocks.Persistence;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,12 @@ public static class DependencyInjection
 
     public static WebApplication UseReflektPersistence(this WebApplication app)
     {
+        var connectionString = app.Configuration.GetConnectionString("Reflekt")!;
+        var dataSource = new SqliteConnectionStringBuilder(connectionString).DataSource;
+        var directory = Path.GetDirectoryName(dataSource);
+        if (!string.IsNullOrEmpty(directory))
+            Directory.CreateDirectory(directory);
+
         if (app.Environment.IsDevelopment())
         {
             using var scope = app.Services.CreateScope();

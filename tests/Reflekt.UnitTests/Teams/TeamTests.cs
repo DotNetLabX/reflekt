@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Reflekt.Domain.Teams;
+using Reflekt.Domain.Teams.Events;
 
 namespace Reflekt.UnitTests.Teams;
 

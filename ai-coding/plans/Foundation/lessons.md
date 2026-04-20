@@ -27,6 +27,12 @@
 
 - **SQLite connection pooling outlives `WebApplicationFactory.DisposeAsync()`**: After disposing the factory, the SQLite connection pool keeps the `.db` file locked. `Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools()` releases all pooled connections. Call it after `DisposeAsync()` and before `File.Delete()` in integration test cleanup. Requires `Microsoft.Data.Sqlite` as a direct package reference (not just transitive) so the type is accessible in test source code.
 
+- **`ApplicationDbContext` belongs in `BuildingBlocks.Persistence`, not in each service**: The DomainEvents-ignore loop in `OnModelCreating` is identical across all EF Core services. It should live in a shared `ApplicationDbContext` base class in `BuildingBlocks.Persistence`, not be copy-pasted per service. Each service `DbContext` extends it and only calls `ApplyConfigurationsFromAssembly` + `base.OnModelCreating`.
+
+- **`Configurations/` folder should be `EntityConfigurations/`**: The `create-service` skill's folder convention is `EntityConfigurations/` (matching the `EntityConfiguration<T>` base class name). The Foundation scaffold used `Configurations/` — this should be caught at scaffold time. Align immediately before any aggregate work lands on top.
+
+- **GlobalUsings files are required at scaffold time, not optional**: `Reflekt.Domain`, `Reflekt.Persistence`, and `Reflekt.API` each need a `GlobalUsings.cs`. Without them every feature file needs explicit `using` statements for the most common namespaces. The skill explicitly requires them; the original Foundation session skipped them.
+
 ## Architect Lessons
 
 - **Don't over-specify sequences that are semantically equivalent.** The Foundation plan said "publish then clear" for `DomainEventPublishingInterceptor`; the Developer wrote "clear then publish," which is identical under `Mode.WaitForNone` because events are already captured into a local list. Plans should describe invariants (events are captured before any mutation; clear happens once) rather than micro-ordering when the outcome is the same.

@@ -1,5 +1,4 @@
 using BuildingBlocks.Domain;
-using FastEndpoints;
 using FluentAssertions;
 
 namespace Reflekt.UnitTests.BuildingBlocksTests;
@@ -21,8 +20,8 @@ public class AggregateRootTests
     private sealed class TestAggregate : AggregateRoot
     {
         public TestAggregate() => Id = 1;
-        public void RaiseTestEvent(IEvent ev) => AddDomainEvent(ev);
+        public void RaiseTestEvent(IDomainEvent ev) => AddDomainEvent(ev);
     }
 
-    private sealed record TestEvent : IEvent;
+    private sealed record TestEvent : IDomainEvent;
 }
