@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"dotnet build Reflekt.slnx 2>&1 && dotnet test Reflekt.slnx --no-build 2>&1\",\"description\":\"Build and test after review corrections\"}",
-  "error": "Exit code 1\nMSBUILD : error MSB1009: Project file does not exist.\r\nSwitch: Reflekt.slnx",
-  "timestamp": "2026-04-19T22:26:37.853Z",
+  "tool_input_preview": "{\"command\":\"cd /d D:/src/reflekt && dotnet test tests/Reflekt.UnitTests --no-build 2>&1 || dotnet test tests/Reflekt.UnitTests 2>&1\",\"timeout\":120000,\"description\":\"Run unit tests after adding Partici...",
+  "error": "Exit code 1\n/usr/bin/bash: line 1: cd: too many arguments\nMSBUILD : error MSB1009: Project file does not exist.\r\nSwitch: tests/Reflekt.UnitTests",
+  "timestamp": "2026-04-20T14:02:22.811Z",
   "retry_count": 1
 }

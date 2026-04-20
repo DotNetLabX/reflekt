@@ -1,22 +1,24 @@
 namespace BuildingBlocks.Domain;
 
-public abstract class Entity
+public abstract class Entity<TId> where TId : notnull
 {
-    public int Id { get; protected set; }
+    public TId Id { get; protected set; } = default!;
 
     public override bool Equals(object? obj)
     {
-        if (obj is not Entity other) return false;
+        if (obj is not Entity<TId> other) return false;
         if (ReferenceEquals(this, other)) return true;
         if (GetType() != other.GetType()) return false;
-        return Id == other.Id;
+        return EqualityComparer<TId>.Default.Equals(Id, other.Id);
     }
 
-    public override int GetHashCode() => Id.GetHashCode();
+    public override int GetHashCode() => EqualityComparer<TId>.Default.GetHashCode(Id);
 
-    public static bool operator ==(Entity? left, Entity? right)
+    public static bool operator ==(Entity<TId>? left, Entity<TId>? right)
         => left?.Equals(right) ?? right is null;
 
-    public static bool operator !=(Entity? left, Entity? right)
+    public static bool operator !=(Entity<TId>? left, Entity<TId>? right)
         => !(left == right);
 }
+
+public abstract class Entity : Entity<int> { }

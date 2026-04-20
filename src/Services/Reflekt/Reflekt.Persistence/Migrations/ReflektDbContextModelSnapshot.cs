@@ -17,6 +17,37 @@ namespace Reflekt.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
 
+            modelBuilder.Entity("Reflekt.Domain.Participants.Participant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GuestToken")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SprintId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GuestToken")
+                        .IsUnique();
+
+                    b.HasIndex("SprintId");
+
+                    b.ToTable("Participants", (string)null);
+                });
+
             modelBuilder.Entity("Reflekt.Domain.Sprints.Sprint", b =>
                 {
                     b.Property<int>("Id")
@@ -80,6 +111,15 @@ namespace Reflekt.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Teams", (string)null);
+                });
+
+            modelBuilder.Entity("Reflekt.Domain.Participants.Participant", b =>
+                {
+                    b.HasOne("Reflekt.Domain.Sprints.Sprint", null)
+                        .WithMany()
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Reflekt.Domain.Sprints.Sprint", b =>

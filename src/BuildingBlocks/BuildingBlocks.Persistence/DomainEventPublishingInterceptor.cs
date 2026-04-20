@@ -15,8 +15,9 @@ public class DomainEventPublishingInterceptor : SaveChangesInterceptor
         if (context is null) return result;
 
         var aggregates = context.ChangeTracker
-            .Entries<AggregateRoot>()
+            .Entries()
             .Select(e => e.Entity)
+            .OfType<IHasDomainEvents>()
             .Where(a => a.DomainEvents.Count > 0)
             .ToList();
 

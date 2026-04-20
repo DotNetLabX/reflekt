@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BuildingBlocks.Persistence.EntityConfigurations;
 
-public abstract class EntityConfiguration<T> : IEntityTypeConfiguration<T> where T : Entity
+public abstract class EntityConfiguration<T, TId> : IEntityTypeConfiguration<T>
+    where T : Entity<TId>
+    where TId : notnull
 {
     protected virtual bool HasGeneratedId => true;
 
@@ -15,3 +17,5 @@ public abstract class EntityConfiguration<T> : IEntityTypeConfiguration<T> where
             builder.Property(e => e.Id).ValueGeneratedOnAdd();
     }
 }
+
+public abstract class EntityConfiguration<T> : EntityConfiguration<T, int> where T : Entity<int> { }

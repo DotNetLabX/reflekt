@@ -1,6 +1,6 @@
 namespace BuildingBlocks.Domain;
 
-public abstract class AggregateRoot : Entity
+public abstract class AggregateRoot<TId> : Entity<TId>, IHasDomainEvents where TId : notnull
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
@@ -9,3 +9,5 @@ public abstract class AggregateRoot : Entity
     protected void AddDomainEvent(IDomainEvent ev) => _domainEvents.Add(ev);
     public void ClearDomainEvents() => _domainEvents.Clear();
 }
+
+public abstract class AggregateRoot : AggregateRoot<int> { }

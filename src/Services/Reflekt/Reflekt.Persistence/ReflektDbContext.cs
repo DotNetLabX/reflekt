@@ -1,5 +1,6 @@
 using BuildingBlocks.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Reflekt.Domain.Participants;
 using Reflekt.Domain.Sprints;
 using Reflekt.Domain.Teams;
 
@@ -9,6 +10,7 @@ public class ReflektDbContext(DbContextOptions<ReflektDbContext> options) : Appl
 {
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<Sprint> Sprints => Set<Sprint>();
+    public DbSet<Participant> Participants => Set<Participant>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
