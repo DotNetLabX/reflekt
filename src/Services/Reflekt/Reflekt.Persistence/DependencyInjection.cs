@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Reflekt.Persistence.Repositories;
 
 namespace Reflekt.Persistence;
 
@@ -21,6 +22,8 @@ public static class DependencyInjection
             options.AddInterceptors(sp.GetRequiredService<DomainEventPublishingInterceptor>());
         });
 
+        services.AddScoped<TeamRepository>();
+
         return services;
     }
 
@@ -33,7 +36,7 @@ public static class DependencyInjection
             db.Database.Migrate();
 
             if (app.Configuration.GetValue<bool>("Seed:Enabled"))
-                DbInitializer.SeedAsync(db).GetAwaiter().GetResult();
+                DbInitializer.SeedAsync(db, app.Configuration).GetAwaiter().GetResult();
         }
 
         return app;
