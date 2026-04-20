@@ -106,3 +106,11 @@ The Architect uses this when reviewing Developer output. The Developer should be
 - Deviations flagged — either the plan is updated or the code is corrected
 
 Review findings are saved to `ai-coding/plans/{FeatureName}/review.md`. Once saved, the Developer reads it and addresses each item.
+
+## Skill Authority
+
+Skills in `.claude/skills/` are the authoritative source for patterns. They define what the codebase should look like.
+
+- **Skill exists, codebase has what it needs:** Follow the skill.
+- **Skill exists, codebase is missing something it references** (base class, type, dependency): Build it. The skill defines what should exist — if `Repository<T>` doesn't exist yet, create it. Escalate to the Architect only if the scope seems too large, not because the thing is missing.
+- **No matching skill for the task:** The Architect may inline snippets as a one-time guide. Log the missing skill in `lessons.md` (name, what it should cover, reference files) so it can be created later.

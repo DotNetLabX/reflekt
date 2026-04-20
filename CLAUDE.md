@@ -26,6 +26,10 @@ var teamId = ev.Team.Id;       // real auto-incremented value
 var teamName = ev.Team.Name;
 ```
 
+### Aggregate creation
+
+Use a static factory method when creation involves business rules (guards) or raises a domain event. Use `required init` properties with direct construction when creation is plain data assignment with no invariants.
+
 ### Repositories
 
 Concrete classes (no interfaces — see Guardrails). Each repository wraps `SaveChangesAsync` so endpoints never touch `DbContext` directly:
@@ -139,6 +143,7 @@ Example — a service at index `1` with app prefix `44`:
 - **No god folders** (`Services/`, `Helpers/`, `Utils/`).
 - **No bypassing domain rules** via EF configs or endpoints.
 - **Domain events** = within service boundary. **Integration events** = cross-service.
+- **No `.gitkeep` files** — don't track empty directories. Directories are created at runtime or when files are added.
 
 ## EF Core Migrations
 

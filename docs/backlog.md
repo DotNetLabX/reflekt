@@ -3,8 +3,8 @@
 Items deferred from initial alignment. Pick up **after Foundation lands**. Nothing here blocks Foundation — the architecture doc already committed to the technical scaffolding decisions; this file exists so they can be challenged before/after Foundation review without losing context.
 
 **Already agreed:**
-- ✅ Item 1 — Aggregate boundaries: 4 ARs (`Team`, `Sprint`, `Participant`, `Card`). `Vote` becomes `CardVote` value object inside `Card`. `EvidenceLink` stays as child entity of `Card`. See discussion in session log.
-- ✅ Item 2 — Build a Foundation plan before any feature-slice plan.
+- Item 1 — Aggregate boundaries: 4 ARs (`Team`, `Sprint`, `Participant`, `Card`). `Vote` becomes `CardVote` value object inside `Card`. `EvidenceLink` stays as child entity of `Card`. See discussion in session log.
+- Item 2 — Build a Foundation plan before any feature-slice plan.
 
 ---
 
@@ -40,7 +40,7 @@ These are already committed in `docs/architecture/v1.md`. Foundation scaffolds t
 
 ## B. Feature sequence (after Foundation)
 
-Recommended dependency order. Each gets its own plan at `ai-coding/plans/{FeatureName}/plan.md`.
+Recommended dependency order. Each gets its own spec at `docs/features/{FeatureName}.md` and plan at `ai-coding/plans/{FeatureName}/plan.md`.
 
 ### 6. Auth
 - Endpoints: `GET /auth/google/login`, `POST /auth/logout`, `GET /auth/me`.
@@ -123,5 +123,5 @@ Spec says "SM may create-and-start in one action." Could simplify the state mach
 
 1. Start a fresh Claude Code session.
 2. Say `be Architect`.
-3. Point the Architect at this file: "Read `ai-coding/backlog.md` and let's pick up from Section B."
+3. Point the Architect at this file: "Read `docs/backlog.md` and let's pick up from Section B."
 4. If Foundation is not yet built/approved, ask for Foundation first. These items are post-Foundation.
