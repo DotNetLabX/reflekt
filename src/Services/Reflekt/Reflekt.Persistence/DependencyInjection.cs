@@ -24,6 +24,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<TeamRepository>();
+        services.AddScoped<SprintRepository>();
 
         return services;
     }
