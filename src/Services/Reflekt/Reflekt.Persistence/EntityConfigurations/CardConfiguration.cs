@@ -24,5 +24,13 @@ internal sealed class CardConfiguration : EntityConfiguration<Card>
         builder.HasIndex(c => c.SprintId);
         builder.Property(c => c.CreatedAt).IsRequired();
         builder.Property(c => c.UpdatedAt).IsRequired();
+
+        builder.HasMany(c => c.EvidenceLinks)
+            .WithOne()
+            .HasForeignKey(e => e.CardId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(c => c.EvidenceLinks)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

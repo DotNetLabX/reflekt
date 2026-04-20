@@ -14,4 +14,7 @@ public sealed partial class Card : AggregateRoot
     public string? AssigneeName { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+
+    private readonly List<EvidenceLink> _evidenceLinks = [];
+    public IReadOnlyList<EvidenceLink> EvidenceLinks => _evidenceLinks.AsReadOnly();
 }

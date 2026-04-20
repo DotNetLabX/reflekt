@@ -2,6 +2,19 @@ using Reflekt.Domain.Cards;
 
 namespace Reflekt.API.Features.Cards;
 
+public sealed record EvidenceLinkResponse(
+    int Id,
+    int CardId,
+    string Url,
+    string Source,
+    string? Title,
+    string? Description,
+    string? IconUrl,
+    string? ImageUrl,
+    string? ExternalKey,
+    DateTime? FetchedAt,
+    string FetchStatus);
+
 public sealed record CardResponse(
     int Id,
     int SprintId,
@@ -12,7 +25,8 @@ public sealed record CardResponse(
     string? AssigneeName,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    int VoteCount = 0);
+    int VoteCount = 0,
+    List<EvidenceLinkResponse>? EvidenceLinks = null);
 
 public static class CardMappings
 {
@@ -26,5 +40,21 @@ public static class CardMappings
         c.AssigneeName,
         c.CreatedAt,
         c.UpdatedAt,
-        voteCount);
+        voteCount,
+        c.EvidenceLinks.Count > 0
+            ? c.EvidenceLinks.Select(ToResponse).ToList()
+            : []);
+
+    public static EvidenceLinkResponse ToResponse(EvidenceLink e) => new(
+        e.Id,
+        e.CardId,
+        e.Url,
+        e.Source.ToString(),
+        e.Title,
+        e.Description,
+        e.IconUrl,
+        e.ImageUrl,
+        e.ExternalKey,
+        e.FetchedAt,
+        e.FetchStatus.ToString());
 }

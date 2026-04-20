@@ -59,6 +59,54 @@ namespace Reflekt.Persistence.Migrations
                     b.ToTable("Cards", (string)null);
                 });
 
+            modelBuilder.Entity("Reflekt.Domain.Cards.EvidenceLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CardId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalKey")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FetchStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("FetchedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IconUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CardId");
+
+                    b.ToTable("EvidenceLinks", (string)null);
+                });
+
             modelBuilder.Entity("Reflekt.Domain.Participants.Participant", b =>
                 {
                     b.Property<int>("Id")
@@ -194,6 +242,15 @@ namespace Reflekt.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Reflekt.Domain.Cards.EvidenceLink", b =>
+                {
+                    b.HasOne("Reflekt.Domain.Cards.Card", null)
+                        .WithMany("EvidenceLinks")
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Reflekt.Domain.Participants.Participant", b =>
                 {
                     b.HasOne("Reflekt.Domain.Sprints.Sprint", null)
@@ -225,6 +282,11 @@ namespace Reflekt.Persistence.Migrations
                         .HasForeignKey("ParticipantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Reflekt.Domain.Cards.Card", b =>
+                {
+                    b.Navigation("EvidenceLinks");
                 });
 #pragma warning restore 612, 618
         }

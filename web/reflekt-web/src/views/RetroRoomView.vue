@@ -77,6 +77,8 @@
               @delete="confirmDelete"
               @vote="castVote"
               @retract-vote="retractVote"
+              @attach-evidence-link="attachEvidenceLink"
+              @detach-evidence-link="detachEvidenceLink"
             />
           </div>
           <div class="p-3 border-t flex gap-2">
@@ -120,6 +122,8 @@
               @delete="confirmDelete"
               @vote="castVote"
               @retract-vote="retractVote"
+              @attach-evidence-link="attachEvidenceLink"
+              @detach-evidence-link="detachEvidenceLink"
             />
           </div>
           <div class="p-3 border-t flex gap-2">
@@ -157,6 +161,8 @@
               :can-edit="canEditCard(card)"
               @edit="saveEdit"
               @delete="confirmDelete"
+              @attach-evidence-link="attachEvidenceLink"
+              @detach-evidence-link="detachEvidenceLink"
             />
           </div>
           <div class="p-3 border-t flex flex-col gap-2">
@@ -200,7 +206,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useGuestStore } from '../stores/guest'
 import { useParticipantStore } from '../stores/participant'
-import { useCardStore, type Card } from '../stores/card'
+import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
 import { useAuthStore } from '../stores/auth'
 import { useSprintHub } from '../composables/useSprintHub'
 import { useVoteStore } from '../stores/vote'
@@ -255,6 +261,8 @@ async function addNote(column: 'WentWell' | 'DidntGoWell') {
     assigneeName: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    voteCount: 0,
+    evidenceLinks: [],
   }
   cardStore.cards.unshift(optimistic)
   try {
@@ -283,6 +291,8 @@ async function addActionItem() {
     assigneeName,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    voteCount: 0,
+    evidenceLinks: [],
   }
   cardStore.cards.unshift(optimistic)
   try {
@@ -356,6 +366,46 @@ async function retractVote(card: Card) {
     await voteStore.retractVote(sprintId, card.id)
   } catch {
     showToast('Failed to retract vote.')
+  }
+}
+
+async function attachEvidenceLink(cardId: number, url: string) {
+  const card = cardStore.cards.find((c) => c.id === cardId)
+  if (!card) return
+  const optimistic: EvidenceLink = {
+    id: -Date.now(),
+    cardId,
+    url,
+    source: 'Generic',
+    title: null,
+    description: null,
+    iconUrl: null,
+    imageUrl: null,
+    externalKey: null,
+    fetchedAt: null,
+    fetchStatus: 'Pending',
+  }
+  card.evidenceLinks.push(optimistic)
+  try {
+    const real = await cardStore.attachEvidenceLink(sprintId, cardId, url)
+    const idx = card.evidenceLinks.findIndex((e) => e.id === optimistic.id)
+    if (idx !== -1) card.evidenceLinks[idx] = real
+  } catch {
+    card.evidenceLinks = card.evidenceLinks.filter((e) => e.id !== optimistic.id)
+    showToast('Failed to attach link.')
+  }
+}
+
+async function detachEvidenceLink(cardId: number, evidenceLinkId: number) {
+  const card = cardStore.cards.find((c) => c.id === cardId)
+  if (!card) return
+  const snapshot = [...card.evidenceLinks]
+  card.evidenceLinks = card.evidenceLinks.filter((e) => e.id !== evidenceLinkId)
+  try {
+    await cardStore.detachEvidenceLink(sprintId, cardId, evidenceLinkId)
+  } catch {
+    card.evidenceLinks = snapshot
+    showToast('Failed to remove link.')
   }
 }
 

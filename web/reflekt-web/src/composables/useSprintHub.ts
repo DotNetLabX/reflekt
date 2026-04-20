@@ -1,7 +1,7 @@
 import * as signalR from '@microsoft/signalr'
 import { useGuestStore } from '../stores/guest'
 import { useParticipantStore } from '../stores/participant'
-import { useCardStore, type Card } from '../stores/card'
+import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
 import { useVoteStore } from '../stores/vote'
 
 let connection: signalR.HubConnection | null = null
@@ -53,6 +53,15 @@ export function useSprintHub() {
 
     connection.on('CardDeleted', (payload: { id: number }) => {
       cardStore.cards = cardStore.cards.filter((c) => c.id !== payload.id)
+    })
+
+    connection.on('EvidenceLinkFetched', (link: EvidenceLink) => {
+      const card = cardStore.cards.find((c) => c.id === link.cardId)
+      if (card) {
+        const idx = card.evidenceLinks.findIndex((e) => e.id === link.id)
+        if (idx !== -1) card.evidenceLinks[idx] = link
+        else card.evidenceLinks.push(link)
+      }
     })
 
     connection.on('VoteCast', (payload: { cardId: number; newCount: number }) => {

@@ -2,6 +2,20 @@ import { defineStore } from 'pinia'
 import { useGuestStore } from './guest'
 import { useVoteStore } from './vote'
 
+export interface EvidenceLink {
+  id: number
+  cardId: number
+  url: string
+  source: string
+  title: string | null
+  description: string | null
+  iconUrl: string | null
+  imageUrl: string | null
+  externalKey: string | null
+  fetchedAt: string | null
+  fetchStatus: string
+}
+
 export interface Card {
   id: number
   sprintId: number
@@ -13,6 +27,7 @@ export interface Card {
   createdAt: string
   updatedAt: string
   voteCount: number
+  evidenceLinks: EvidenceLink[]
 }
 
 interface CreateCardPayload {
@@ -90,6 +105,31 @@ export const useCardStore = defineStore('card', {
       })
       if (!res.ok) throw { status: res.status }
       this.cards = this.cards.filter((c) => c.id !== cardId)
+    },
+
+    async attachEvidenceLink(sprintId: number, cardId: number, url: string): Promise<EvidenceLink> {
+      const guestStore = useGuestStore()
+      const res = await fetch(`/api/sprints/${sprintId}/cards/${cardId}/evidence-links`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(guestStore.token ? { 'X-Guest-Token': guestStore.token } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ url }),
+      })
+      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
+      return (await res.json()) as EvidenceLink
+    },
+
+    async detachEvidenceLink(sprintId: number, cardId: number, evidenceLinkId: number): Promise<void> {
+      const guestStore = useGuestStore()
+      const res = await fetch(`/api/sprints/${sprintId}/cards/${cardId}/evidence-links/${evidenceLinkId}`, {
+        method: 'DELETE',
+        headers: guestStore.token ? { 'X-Guest-Token': guestStore.token } : {},
+        credentials: 'include',
+      })
+      if (!res.ok) throw { status: res.status }
     },
   },
 })

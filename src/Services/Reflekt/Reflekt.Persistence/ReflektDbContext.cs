@@ -15,6 +15,7 @@ public class ReflektDbContext(DbContextOptions<ReflektDbContext> options) : Appl
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<Card> Cards => Set<Card>();
     public DbSet<Vote> Votes => Set<Vote>();
+    public DbSet<EvidenceLink> EvidenceLinks => Set<EvidenceLink>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

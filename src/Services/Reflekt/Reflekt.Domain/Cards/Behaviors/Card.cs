@@ -65,4 +65,32 @@ public sealed partial class Card
     {
         AddDomainEvent(new CardDeletedEvent(this));
     }
+
+    public EvidenceLink AttachEvidenceLink(string url, EvidenceLinkSource source, string? externalKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+
+        var link = EvidenceLink.Create(Id, url, source, externalKey);
+        _evidenceLinks.Add(link);
+        AddDomainEvent(new EvidenceLinkAttachedEvent(this, link));
+        return link;
+    }
+
+    public void UpdateEvidenceLinkMetadata(int evidenceLinkId, string? title, string? description, string? iconUrl, string? imageUrl, FetchStatus status)
+    {
+        var link = _evidenceLinks.FirstOrDefault(e => e.Id == evidenceLinkId)
+            ?? throw new InvalidOperationException($"EvidenceLink {evidenceLinkId} not found on card {Id}.");
+
+        link.UpdateMetadata(title, description, iconUrl, imageUrl, status);
+        AddDomainEvent(new EvidenceLinkFetchedEvent(this, link));
+    }
+
+    public void DetachEvidenceLink(int evidenceLinkId)
+    {
+        var link = _evidenceLinks.FirstOrDefault(e => e.Id == evidenceLinkId)
+            ?? throw new InvalidOperationException($"EvidenceLink {evidenceLinkId} not found on card {Id}.");
+
+        _evidenceLinks.Remove(link);
+        AddDomainEvent(new EvidenceLinkDetachedEvent(this, evidenceLinkId));
+    }
 }

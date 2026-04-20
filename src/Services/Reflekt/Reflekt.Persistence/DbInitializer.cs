@@ -78,6 +78,18 @@ internal static class DbInitializer
             await db.SaveChangesAsync(ct);
         }
 
+        var firstWentWellCard = await db.Cards
+            .FirstOrDefaultAsync(c => c.SprintId == sprint.Id && c.ColumnType == ColumnType.WentWell, ct);
+
+        if (firstWentWellCard is not null && !await db.EvidenceLinks.AnyAsync(e => e.CardId == firstWentWellCard.Id, ct))
+        {
+            firstWentWellCard.AttachEvidenceLink("https://github.com/dotnet/aspnetcore/pull/12345", EvidenceLinkSource.GitHub, null);
+            firstWentWellCard.ClearDomainEvents();
+            firstWentWellCard.AttachEvidenceLink("https://learn.microsoft.com/en-us/aspnet/core", EvidenceLinkSource.Generic, null);
+            firstWentWellCard.ClearDomainEvents();
+            await db.SaveChangesAsync(ct);
+        }
+
         if (!await db.Votes.AnyAsync(ct))
         {
             var participants = await db.Participants
