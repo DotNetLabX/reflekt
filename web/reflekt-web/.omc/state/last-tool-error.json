@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd /d D:/src/reflekt && dotnet test tests/Reflekt.UnitTests --no-build 2>&1 || dotnet test tests/Reflekt.UnitTests 2>&1\",\"timeout\":120000,\"description\":\"Run unit tests after adding Partici...",
-  "error": "Exit code 1\n/usr/bin/bash: line 1: cd: too many arguments\nMSBUILD : error MSB1009: Project file does not exist.\r\nSwitch: tests/Reflekt.UnitTests",
-  "timestamp": "2026-04-20T14:02:22.811Z",
+  "tool_input_preview": "{\"command\":\"gh pr list\",\"description\":\"List open PRs\"}",
+  "error": "Exit code 1\nGraphQL: Could not resolve to a Repository with the name 'ldumit/reflekt'. (repository)",
+  "timestamp": "2026-04-20T17:46:32.795Z",
   "retry_count": 1
 }

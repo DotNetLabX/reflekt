@@ -26,6 +26,16 @@ In multi-scheme endpoints (`OwnerOrScrumMaster`), distinguish guest token vs SM 
 
 The seed initializer was extended to start the sprint before adding participants. This deviates slightly from the plan (which only said "create participants"), but is justified: business rules state only Active sprints accept participants, so seeding participants for a Draft sprint produces inconsistent data.
 
+### Missing skills encountered during implementation
+
+Three skill gaps found during this feature:
+
+1. **No skill for BuildingBlocks infrastructure refactoring.** Step 1 (generic ID refactor) had no applicable skill. The constraint subtlety (`Entity<int>` vs `Entity` alias) caused a build failure that a skill could have prevented. Candidate skill: `refactor-base-classes` or documented as a section in `domain-patterns`.
+
+2. **No skill for integration test factory multi-scheme auth setup.** The pattern of coexisting TestAuthHandler + real GuestTokenHandler in `WebApplicationFactory` is not covered anywhere. It will recur every time a new auth scheme is added. Candidate skill: `integration-test-auth` or a section in `authorization-patterns`.
+
+3. **`authorization-patterns` skill was wrong scope.** The skill describes a role-gate + resource-gate pattern from a different architecture (not applicable to Reflekt's policy-based setup). Reading it yielded nothing useful — the existing `AuthorizationConfiguration.cs` and the plan were the real guide. The skill should be updated or the Reflekt-specific pattern documented separately.
+
 ## Architect Lessons
 
 ### Non-generic alias constraints: use the parameterized base, not the alias class

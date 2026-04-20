@@ -27,14 +27,20 @@
       </form>
     </div>
 
-    <!-- Retro room shell -->
-    <div v-else class="w-full max-w-2xl p-8 bg-white rounded shadow flex flex-col gap-6">
+    <!-- Retro room -->
+    <div v-else class="w-full max-w-6xl p-6 flex flex-col gap-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-800">Sprint #{{ sprintId }}</h1>
-        <span class="text-sm text-gray-500">Retro Room</span>
+        <div class="flex items-center gap-4">
+          <span class="text-sm font-medium text-gray-700">
+            Votes: {{ voteStore.remainingBudget }}/{{ voteStore.votesPerParticipant }} remaining
+          </span>
+          <span class="text-sm text-gray-500">Retro Room</span>
+        </div>
       </div>
 
-      <div class="flex flex-col gap-2">
+      <!-- Participants -->
+      <div class="bg-white rounded shadow p-4 flex flex-col gap-2">
         <h2 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Participants</h2>
         <div class="flex flex-wrap gap-2">
           <span
@@ -47,9 +53,144 @@
         </div>
       </div>
 
-      <div class="border-t pt-4 text-center text-gray-400 text-sm">
-        Cards and voting coming soon…
+      <!-- Three-column board -->
+      <div class="grid grid-cols-3 gap-4">
+        <!-- Went Well -->
+        <div class="bg-white rounded shadow flex flex-col">
+          <div class="px-4 py-3 border-b bg-green-50 rounded-t">
+            <h2 class="font-semibold text-green-800 text-sm">Went Well</h2>
+          </div>
+          <div class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto max-h-[60vh]">
+            <div v-if="wentWell.length === 0" class="text-gray-400 text-sm text-center py-4">
+              No cards yet
+            </div>
+            <CardItem
+              v-for="card in wentWell"
+              :key="card.id"
+              :card="card"
+              :can-edit="canEditCard(card)"
+              :show-voting="true"
+              :vote-count="voteStore.voteCountForCard(card.id)"
+              :my-vote-count="voteStore.myVotesOnCard(card.id)"
+              :remaining-budget="voteStore.remainingBudget"
+              @edit="saveEdit"
+              @delete="confirmDelete"
+              @vote="castVote"
+              @retract-vote="retractVote"
+            />
+          </div>
+          <div class="p-3 border-t flex gap-2">
+            <input
+              v-model="newCardText.WentWell"
+              type="text"
+              maxlength="2000"
+              placeholder="Add a note…"
+              class="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+              @keydown.enter="addNote('WentWell')"
+            />
+            <button
+              class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+              :disabled="!newCardText.WentWell.trim()"
+              @click="addNote('WentWell')"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        <!-- Didn't Go Well -->
+        <div class="bg-white rounded shadow flex flex-col">
+          <div class="px-4 py-3 border-b bg-red-50 rounded-t">
+            <h2 class="font-semibold text-red-800 text-sm">Didn't Go Well</h2>
+          </div>
+          <div class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto max-h-[60vh]">
+            <div v-if="didntGoWell.length === 0" class="text-gray-400 text-sm text-center py-4">
+              No cards yet
+            </div>
+            <CardItem
+              v-for="card in didntGoWell"
+              :key="card.id"
+              :card="card"
+              :can-edit="canEditCard(card)"
+              :show-voting="true"
+              :vote-count="voteStore.voteCountForCard(card.id)"
+              :my-vote-count="voteStore.myVotesOnCard(card.id)"
+              :remaining-budget="voteStore.remainingBudget"
+              @edit="saveEdit"
+              @delete="confirmDelete"
+              @vote="castVote"
+              @retract-vote="retractVote"
+            />
+          </div>
+          <div class="p-3 border-t flex gap-2">
+            <input
+              v-model="newCardText.DidntGoWell"
+              type="text"
+              maxlength="2000"
+              placeholder="Add a note…"
+              class="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+              @keydown.enter="addNote('DidntGoWell')"
+            />
+            <button
+              class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
+              :disabled="!newCardText.DidntGoWell.trim()"
+              @click="addNote('DidntGoWell')"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Items -->
+        <div class="bg-white rounded shadow flex flex-col">
+          <div class="px-4 py-3 border-b bg-blue-50 rounded-t">
+            <h2 class="font-semibold text-blue-800 text-sm">Action Items</h2>
+          </div>
+          <div class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto max-h-[60vh]">
+            <div v-if="actionItems.length === 0" class="text-gray-400 text-sm text-center py-4">
+              No action items yet
+            </div>
+            <CardItem
+              v-for="card in actionItems"
+              :key="card.id"
+              :card="card"
+              :can-edit="canEditCard(card)"
+              @edit="saveEdit"
+              @delete="confirmDelete"
+            />
+          </div>
+          <div class="p-3 border-t flex flex-col gap-2">
+            <input
+              v-model="newActionText"
+              type="text"
+              maxlength="2000"
+              placeholder="Action item…"
+              class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              @keydown.enter="addActionItem"
+            />
+            <select
+              v-model="newActionAssignee"
+              class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Assign to…</option>
+              <option v-for="p in participants" :key="p.id" :value="p.displayName">
+                {{ p.displayName }}
+              </option>
+            </select>
+            <button
+              class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+              :disabled="!newActionText.trim() || !newActionAssignee"
+              @click="addActionItem"
+            >
+              Add
+            </button>
+          </div>
+        </div>
       </div>
+
+      <p v-if="toastMessage" class="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow text-sm">
+        {{ toastMessage }}
+      </p>
     </div>
   </div>
 </template>
@@ -59,11 +200,18 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useGuestStore } from '../stores/guest'
 import { useParticipantStore } from '../stores/participant'
+import { useCardStore, type Card } from '../stores/card'
+import { useAuthStore } from '../stores/auth'
 import { useSprintHub } from '../composables/useSprintHub'
+import { useVoteStore } from '../stores/vote'
+import CardItem from '../components/CardItem.vue'
 
 const route = useRoute()
 const guestStore = useGuestStore()
 const participantStore = useParticipantStore()
+const cardStore = useCardStore()
+const authStore = useAuthStore()
+const voteStore = useVoteStore()
 const { connect, disconnect } = useSprintHub()
 
 const sprintId = Number(route.params.sprintId)
@@ -71,8 +219,104 @@ const displayName = ref('')
 const busy = ref(false)
 const errorMessage = ref('')
 const joined = ref(false)
+const toastMessage = ref('')
+
+const newCardText = ref({ WentWell: '', DidntGoWell: '' })
+const newActionText = ref('')
+const newActionAssignee = ref('')
 
 const participants = computed(() => participantStore.participants)
+const wentWell = computed(() => cardStore.wentWell)
+const didntGoWell = computed(() => cardStore.didntGoWell)
+const actionItems = computed(() => cardStore.actionItems)
+
+function canEditCard(card: Card): boolean {
+  return card.participantId === participantStore.currentParticipant?.id || authStore.user !== null
+}
+
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+function showToast(msg: string) {
+  toastMessage.value = msg
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => (toastMessage.value = ''), 3000)
+}
+
+async function addNote(column: 'WentWell' | 'DidntGoWell') {
+  const text = newCardText.value[column].trim()
+  if (!text) return
+  newCardText.value[column] = ''
+  const optimistic: Card = {
+    id: -Date.now(),
+    sprintId,
+    participantId: participantStore.currentParticipant?.id ?? 0,
+    columnType: column,
+    cardType: 'Note',
+    text,
+    assigneeName: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  cardStore.cards.unshift(optimistic)
+  try {
+    const created = await cardStore.createCard(sprintId, { text, columnType: column, cardType: 'Note' })
+    const idx = cardStore.cards.findIndex((c) => c.id === optimistic.id)
+    if (idx !== -1) cardStore.cards[idx] = created
+  } catch {
+    cardStore.cards = cardStore.cards.filter((c) => c.id !== optimistic.id)
+    showToast('Failed to add card.')
+  }
+}
+
+async function addActionItem() {
+  const text = newActionText.value.trim()
+  const assigneeName = newActionAssignee.value
+  if (!text || !assigneeName) return
+  newActionText.value = ''
+  newActionAssignee.value = ''
+  const optimistic: Card = {
+    id: -Date.now(),
+    sprintId,
+    participantId: participantStore.currentParticipant?.id ?? 0,
+    columnType: 'ActionItems',
+    cardType: 'ActionItem',
+    text,
+    assigneeName,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  cardStore.cards.unshift(optimistic)
+  try {
+    const created = await cardStore.createCard(sprintId, { text, columnType: 'ActionItems', cardType: 'ActionItem', assigneeName })
+    const idx = cardStore.cards.findIndex((c) => c.id === optimistic.id)
+    if (idx !== -1) cardStore.cards[idx] = created
+  } catch {
+    cardStore.cards = cardStore.cards.filter((c) => c.id !== optimistic.id)
+    showToast('Failed to add action item.')
+  }
+}
+
+async function saveEdit(card: Card, text: string, assigneeName: string | null) {
+  const prev = { ...card }
+  const idx = cardStore.cards.findIndex((c) => c.id === card.id)
+  if (idx !== -1) cardStore.cards[idx] = { ...card, text, assigneeName, updatedAt: new Date().toISOString() }
+  try {
+    await cardStore.editCard(sprintId, card.id, { text, assigneeName })
+  } catch {
+    if (idx !== -1) cardStore.cards[idx] = prev
+    showToast('Failed to update card.')
+  }
+}
+
+async function confirmDelete(card: Card) {
+  const snapshot = [...cardStore.cards]
+  cardStore.cards = cardStore.cards.filter((c) => c.id !== card.id)
+  try {
+    await cardStore.deleteCard(sprintId, card.id)
+  } catch {
+    cardStore.cards = snapshot
+    showToast('Failed to delete card.')
+  }
+}
 
 onMounted(async () => {
   guestStore.loadToken(sprintId)
@@ -82,9 +326,7 @@ onMounted(async () => {
       await enterRoom()
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status
-      if (status === 401) {
-        guestStore.clearToken(sprintId)
-      }
+      if (status === 401) guestStore.clearToken(sprintId)
     }
   }
 })
@@ -92,9 +334,29 @@ onMounted(async () => {
 onUnmounted(() => disconnect())
 
 async function enterRoom() {
-  await participantStore.fetchParticipants(sprintId)
+  await Promise.all([
+    participantStore.fetchParticipants(sprintId),
+    cardStore.fetchCards(sprintId),
+  ])
+  await voteStore.fetchMyVotes(sprintId)
   await connect(sprintId)
   joined.value = true
+}
+
+async function castVote(card: Card) {
+  try {
+    await voteStore.castVote(sprintId, card.id)
+  } catch {
+    showToast('Failed to cast vote.')
+  }
+}
+
+async function retractVote(card: Card) {
+  try {
+    await voteStore.retractVote(sprintId, card.id)
+  } catch {
+    showToast('Failed to retract vote.')
+  }
 }
 
 async function handleJoin() {

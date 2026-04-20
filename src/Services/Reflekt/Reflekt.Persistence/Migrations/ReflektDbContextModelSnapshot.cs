@@ -17,6 +17,48 @@ namespace Reflekt.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
 
+            modelBuilder.Entity("Reflekt.Domain.Cards.Card", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AssigneeName")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CardType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ColumnType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SprintId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParticipantId");
+
+                    b.HasIndex("SprintId");
+
+                    b.ToTable("Cards", (string)null);
+                });
+
             modelBuilder.Entity("Reflekt.Domain.Participants.Participant", b =>
                 {
                     b.Property<int>("Id")
@@ -113,6 +155,45 @@ namespace Reflekt.Persistence.Migrations
                     b.ToTable("Teams", (string)null);
                 });
 
+            modelBuilder.Entity("Reflekt.Domain.Votes.Vote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CardId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CardId");
+
+                    b.HasIndex("ParticipantId");
+
+                    b.ToTable("Votes", (string)null);
+                });
+
+            modelBuilder.Entity("Reflekt.Domain.Cards.Card", b =>
+                {
+                    b.HasOne("Reflekt.Domain.Participants.Participant", null)
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Reflekt.Domain.Sprints.Sprint", null)
+                        .WithMany()
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Reflekt.Domain.Participants.Participant", b =>
                 {
                     b.HasOne("Reflekt.Domain.Sprints.Sprint", null)
@@ -128,6 +209,21 @@ namespace Reflekt.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Reflekt.Domain.Votes.Vote", b =>
+                {
+                    b.HasOne("Reflekt.Domain.Cards.Card", null)
+                        .WithMany()
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Reflekt.Domain.Participants.Participant", null)
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 #pragma warning restore 612, 618
