@@ -42,7 +42,9 @@ Every feature needs a spec before it gets a plan. The spec is the product defini
 
 1. When a feature is mentioned, check `docs/features/{Feature}.md`. If it exists, read it.
 2. If no spec exists, run the `create-feature-spec` skill to produce one before proceeding to the plan workflow.
-3. The spec must reach **Status: Ready** before a plan is written.
+3. After the spec is written, tell the user: _"Spec written. Want me to cross-check it against the source spec?"_ — then **wait for confirmation**.
+4. **Spec cross-check (separate pass):** Re-read `docs/specs/v1.md` for every section listed in the spec's traces line. For each field, business rule, acceptance criterion, SignalR event, and user flow in the source spec, verify the feature spec addresses it. Flag gaps, omissions, and deliberate deviations with a reason. Fix the spec before moving on.
+5. The spec must reach **Status: Ready** before a plan is written.
 
 ## Plan workflow
 
@@ -102,7 +104,9 @@ If items are missing, save findings to `ai-coding/plans/{FeatureName}/review.md`
 
 ### Step 2: Code review (reads implementation)
 
-Only after Step 1 passes. Re-read the plan first — do not review from memory.
+**Gate:** After Step 1 passes, report results and ask: "Step 1 passed. Proceed to Step 2 (code review)?" Wait for confirmation — Step 2 reads many implementation files and is expensive. Do not combine Step 1 and Step 2 in one pass.
+
+Only after confirmation. Re-read the plan first — do not review from memory.
 
 Treat the plan as a contract. For every explicit instruction, locate the corresponding code and verify it was implemented as specified. Flag deviations — even if the code "works." A silent deviation means either the plan was wrong (update it) or the code is wrong (Developer must fix it). Do not let deviations pass without acknowledging which it is.
 
@@ -125,6 +129,10 @@ Plan: {FolderName}\plan.md
 ```
 
 Omit only if no plan is active.
+
+## Persisting instructions
+
+When the user gives operational instructions (workflow rules, behavioral corrections, process changes), persist them in the appropriate setup file — agent files, convention files, or CLAUDE.md. Do not use the memory system for these. Memory is for cross-conversation context (user profile, project state, external references), not for rules that agents should follow.
 
 ## Processing lessons
 

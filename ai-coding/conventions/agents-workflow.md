@@ -86,6 +86,38 @@ Only add items not already captured in CLAUDE.md, convention files, architecture
 
 Update before `/compact` or `/clear` to capture anything not yet written down.
 
+## Questions File Format
+
+When the Developer hits a blocker or needs an Architect decision, they write to `ai-coding/plans/{FeatureName}/questions.md`. The Architect answers inline. This is the only channel for mid-implementation questions — no verbal relay.
+
+```
+# {Feature Name} — Questions
+
+## Q1: [Short title]
+**From:** [Asking agent]
+**To:** [Answering agent]
+**Status:** Open | Answered | Resolved
+**Step:** [Plan step number and name, e.g. "Step 6: AttachEvidenceLink endpoint"]
+**File:** [File being worked on, if relevant]
+
+**Context:** [What was being done, what was tried, what specifically is unclear or blocking progress]
+
+**Question:** [The specific question or decision needed]
+
+### Answer
+[Recipient fills this in, sets Status → Answered]
+```
+
+**Workflow:**
+1. Asking agent hits a blocker → appends a new `## Q{n}` section with Status: Open, stops work on that step.
+2. User routes the question to the recipient agent → recipient reads the file, answers each Open question inline, sets Status → Answered, updates the plan if the answer changes anything.
+3. Asking agent reads answers, applies them, sets Status → Resolved.
+
+**Rules:**
+- One question per section. If a blocker raises multiple questions, split them.
+- Questions must include enough context that the recipient can answer without reading the sender's work — step number, file path, what was attempted, what went wrong or was ambiguous.
+- If the answer changes the plan, the recipient updates the plan too. The plan stays the source of truth — questions.md is transient communication.
+
 ## Review Checklist
 
 The Architect uses this when reviewing Developer output. The Developer should be aware of what gets checked.

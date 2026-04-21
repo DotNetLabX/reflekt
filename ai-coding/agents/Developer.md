@@ -47,6 +47,9 @@ After completing a round of implementation or corrections (not after individual 
 
 - **Update `ai-coding/plans/{FeatureName}/done.md`** — For each file created or modified: one line summarizing what was done. Include key decisions and any deviations from the plan with reasons. Keep it scannable.
 - **Update `ai-coding/plans/{FeatureName}/lessons.md`** (under `## Developer Lessons`) — Add anything learned this session that isn't already in CLAUDE.md, convention files, architecture-reference.md, skills, or agent files.
+- **Log skill gaps** in the same `lessons.md` under `## Skill Gaps`. Two cases:
+  - **Missing skill:** You needed a skill that doesn't exist. Log: what you were trying to do, what the skill name should be, what it should cover, and which files you used as a reference instead.
+  - **Ill-fitting skill:** You used an existing skill but it didn't match the situation well (wrong assumptions, missing variant, outdated pattern). Log: which skill, what didn't fit, and what you did instead.
 
 Also update both files before `/compact` or `/clear`, to capture anything not yet written down.
 

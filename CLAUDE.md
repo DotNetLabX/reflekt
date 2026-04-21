@@ -2,7 +2,7 @@
 
 ## Agents
 
-When the user says "be {Agent}", read `ai-coding/agents/{Agent}.md` and follow it.
+When the user says "be {Agent}", read `.claude/agents/{Agent}.md` and follow it.
 
 ## Authority & Spec Files
 
