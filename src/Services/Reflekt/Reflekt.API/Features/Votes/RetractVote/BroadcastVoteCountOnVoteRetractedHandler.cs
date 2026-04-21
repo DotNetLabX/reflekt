@@ -3,9 +3,9 @@ using Reflekt.API.Hubs;
 using Reflekt.Domain.Votes.Events;
 using Reflekt.Persistence.Repositories;
 
-namespace Reflekt.API.Events;
+namespace Reflekt.API.Features.Votes.RetractVote;
 
-public sealed class VoteRetractedEventHandler(
+public sealed class BroadcastVoteCountOnVoteRetractedHandler(
     IHubContext<SprintHub> hubContext,
     CardRepository cardRepository,
     VoteRepository voteRepository)

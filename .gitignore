@@ -421,6 +421,9 @@ FodyWeavers.xsd
 data/*.db
 data/*.db-*
 
+# Environment-specific settings (may contain secrets)
+appsettings.Development.json
+
 # Frontend build artifacts
 web/reflekt-web/node_modules/
 web/reflekt-web/dist/

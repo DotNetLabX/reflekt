@@ -11,10 +11,16 @@ interface Sprint {
   closedAt: string | null
 }
 
+interface SprintSummary {
+  id: number
+  name: string
+}
+
 export const useSprintStore = defineStore('sprint', {
   state: () => ({
     sprints: [] as Sprint[],
     currentSprint: null as Sprint | null,
+    currentSummary: null as SprintSummary | null,
     loaded: false,
   }),
   actions: {
@@ -27,6 +33,12 @@ export const useSprintStore = defineStore('sprint', {
       const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}`, { credentials: 'include' })
       if (res.ok) {
         this.currentSprint = (await res.json()) as Sprint
+      }
+    },
+    async fetchSprintSummary(sprintId: number) {
+      const res = await fetch(`/api/sprints/${sprintId}/summary`)
+      if (res.ok) {
+        this.currentSummary = (await res.json()) as SprintSummary
       }
     },
     async createSprint(teamId: number, name: string, votesPerParticipant?: number): Promise<Sprint> {

@@ -12,6 +12,8 @@ public sealed record SprintResponse(
     DateTime CreatedAt,
     DateTime? ClosedAt);
 
+public sealed record SprintSummaryResponse(int Id, string Name);
+
 public sealed record SprintRouteRequest(int TeamId, int SprintId);
 
 public static class SprintMappings

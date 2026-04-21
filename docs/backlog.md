@@ -119,6 +119,36 @@ Spec says "SM may create-and-start in one action." Could simplify the state mach
 
 ---
 
+## D. Post-v1 feature additions
+
+Feature changes raised after v1 shipped. Each gets its own plan under `ai-coding/plans/{FeatureName}/plan.md` when picked up.
+
+### 17. Action Items column only appears in the Discussing phase
+**Source:** User feedback, 2026-04-21.
+Action Items don't belong in Writing or Voting — they're the output of the discussion that happens after the team has reviewed and voted on notes. Today the column is always visible with its add-form and "Assign to…" dropdown.
+- **Writing phase:** hide the Action Items column entirely.
+- **Voting phase:** hide the Action Items column entirely.
+- **Discussing phase:** show Action Items column with add-form and "Assign to…".
+- Affects `RetroRoomView.vue` layout (three-column grid → two-column during Writing/Voting) and `ReportView.vue` unchanged (report always shows all columns).
+
+### 18. Kick participant from Sprint management page
+**Source:** User feedback, 2026-04-21.
+Sprint creator (Scrum Master) needs to be able to remove a participant who shouldn't be in the retro. Keep v1 simple: only from the Sprint management page (`SprintView.vue`), not from inside the retro room.
+- **Backend:** new endpoint `DELETE /api/teams/{teamId}/sprints/{sprintId}/participants/{participantId}`, authorized to `ScrumMaster` role. Removes the `Participant` row, revokes the guest token (kicked participant's next SignalR message should return 401), and broadcasts `ParticipantLeft` so other clients drop them from the roster.
+- **Frontend:** on `SprintView.vue`, add a "Participants" section showing joined participants for the sprint (display name + kick button) when viewer is the Scrum Master. Confirm dialog before kick ("Kick {name}? They'll need a new invite to rejoin.").
+- **Edge:** if the kicked participant is currently in the retro room, their SignalR connection should close server-side on the next heartbeat so their browser redirects back to name-picker or a "You were removed" screen.
+
+### 19. Sprint creator auto-joins with Google given_name
+**Source:** User feedback, 2026-04-21.
+The user who created the sprint (signed in via Google) shouldn't have to pick a display name when opening the retro room — they're the first participant and known to the system. Also improve the name-picker UX for later joiners so collisions fail fast and they can see who's already in.
+- **Creator auto-join:** when the Scrum Master opens `/sprint/{id}` and there is no guest token yet, `JoinSprint` is invoked automatically with `DisplayName = GoogleGivenName` (from the Google profile). No name-picker shown to the creator.
+- **Later joiners, name-picker enhancements:**
+  - Show the list of already-joined participants above the form so a joiner knows what names are taken.
+  - If a joiner submits a name that already exists in `Participant WHERE SprintId = X`, return a 409 from `JoinSprint` with a clear message — UI shows "Name already taken. Choose another." inline under the input.
+- **Open question:** what if the creator's Google given_name collides with an already-joined participant (creator left the retro and is re-entering after someone joined with that name)? v1 can treat creator as a normal joiner in that case — show the name-picker with an error — but document the decision in the plan.
+
+---
+
 ## How to resume in a new session
 
 1. Start a fresh Claude Code session.

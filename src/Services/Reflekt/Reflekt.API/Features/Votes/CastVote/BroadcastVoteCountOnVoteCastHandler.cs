@@ -3,9 +3,9 @@ using Reflekt.API.Hubs;
 using Reflekt.Domain.Votes.Events;
 using Reflekt.Persistence.Repositories;
 
-namespace Reflekt.API.Events;
+namespace Reflekt.API.Features.Votes.CastVote;
 
-public sealed class VoteCastEventHandler(
+public sealed class BroadcastVoteCountOnVoteCastHandler(
     IHubContext<SprintHub> hubContext,
     CardRepository cardRepository,
     VoteRepository voteRepository)

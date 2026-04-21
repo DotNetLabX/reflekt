@@ -6,9 +6,9 @@ using Reflekt.API.OpenGraph;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Cards.Events;
 
-namespace Reflekt.API.Events;
+namespace Reflekt.API.Features.EvidenceLinks.AttachEvidenceLink;
 
-public sealed class EvidenceLinkAttachedEventHandler(
+public sealed class BroadcastAndFetchOnEvidenceLinkAttachedHandler(
     ChannelWriter<FetchJob> channel,
     IHubContext<SprintHub> hubContext)
     : IEventHandler<EvidenceLinkAttachedEvent>

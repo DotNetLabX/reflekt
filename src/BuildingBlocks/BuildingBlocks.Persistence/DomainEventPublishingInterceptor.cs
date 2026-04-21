@@ -1,3 +1,4 @@
+using System.Reflection;
 using BuildingBlocks.Domain;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -6,6 +7,13 @@ namespace BuildingBlocks.Persistence;
 
 public class DomainEventPublishingInterceptor : SaveChangesInterceptor
 {
+    // FastEndpoints' PublishAsync<TEvent> extension dispatches by compile-time T.
+    // When events are typed as IDomainEvent, T resolves to IDomainEvent and no concrete
+    // handler (IEventHandler<CardCreatedEvent>, ...) is ever invoked. We invoke the
+    // generic helper reflectively with the runtime type instead. MethodInfo is cached.
+    private static readonly MethodInfo PublishEventMethod = typeof(DomainEventPublishingInterceptor)
+        .GetMethod(nameof(PublishEvent), BindingFlags.NonPublic | BindingFlags.Static)!;
+
     public override async ValueTask<int> SavedChangesAsync(
         SaveChangesCompletedEventData eventData,
         int result,
@@ -28,8 +36,18 @@ public class DomainEventPublishingInterceptor : SaveChangesInterceptor
         foreach (var aggregate in aggregates)
             aggregate.ClearDomainEvents();
 
-        await Task.WhenAll(events.Select(ev => ev.PublishAsync(Mode.WaitForNone, cancellationToken)));
+        var tasks = events.Select(ev =>
+        {
+            var typed = PublishEventMethod.MakeGenericMethod(ev.GetType());
+            return (Task)typed.Invoke(null, [ev, cancellationToken])!;
+        });
+
+        await Task.WhenAll(tasks);
 
         return result;
     }
+
+    private static Task PublishEvent<TEvent>(TEvent ev, CancellationToken ct)
+        where TEvent : class, IEvent
+        => ev.PublishAsync(Mode.WaitForNone, ct);
 }

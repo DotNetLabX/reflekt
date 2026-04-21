@@ -122,6 +122,25 @@
       ]
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": "src\\views\\RetroRoomView.vue",
+      "accessCount": 5,
+      "lastAccessed": 1776776613168,
+      "type": "file"
+    },
+    {
+      "path": "src\\composables\\useSprintHub.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776777352022,
+      "type": "file"
+    },
+    {
+      "path": "src\\stores\\sprint.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776776581865,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }

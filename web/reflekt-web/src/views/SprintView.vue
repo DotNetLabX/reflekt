@@ -3,6 +3,13 @@
     <div v-if="!sprint" class="text-gray-500">Loading sprint…</div>
 
     <div v-else class="w-full max-w-lg p-8 bg-white rounded shadow flex flex-col gap-4">
+      <router-link
+        :to="{ name: 'welcome' }"
+        class="text-sm text-gray-500 hover:text-gray-700 self-start"
+      >
+        ← Back to sprints
+      </router-link>
+
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-800">{{ sprint.name }}</h1>
         <span :class="stateBadgeClass">{{ sprint.state }}</span>
@@ -31,6 +38,22 @@
           Start Sprint
         </button>
 
+        <router-link
+          v-if="sprint.state === 'Active'"
+          :to="{ name: 'retro-room', params: { sprintId: sprint.id } }"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm text-center"
+        >
+          Open Retro Room
+        </router-link>
+
+        <button
+          v-if="sprint.state === 'Active'"
+          class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm"
+          @click="copyInviteLink"
+        >
+          {{ copied ? 'Invite link copied!' : 'Copy invite link' }}
+        </button>
+
         <button
           v-if="sprint.state === 'Active' && sprint.currentPhase !== 'Closed'"
           class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm disabled:opacity-50"
@@ -48,6 +71,14 @@
         >
           Close Sprint
         </button>
+
+        <router-link
+          v-if="sprint.state === 'Closed'"
+          :to="{ name: 'report', params: { teamId, sprintId: sprint.id } }"
+          class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm text-center"
+        >
+          View Report
+        </router-link>
       </div>
 
       <p v-if="errorMessage" class="text-red-600 text-sm">{{ errorMessage }}</p>
@@ -68,6 +99,8 @@ const sprintId = Number(route.params.sprintId)
 
 const busy = ref(false)
 const errorMessage = ref('')
+const copied = ref(false)
+let copiedTimer: ReturnType<typeof setTimeout> | null = null
 
 const sprint = computed(() => sprintStore.currentSprint)
 
@@ -112,5 +145,18 @@ async function handleClose() {
   try { await sprintStore.closeSprint(teamId, sprintId) }
   catch { errorMessage.value = 'Failed to close sprint.' }
   finally { busy.value = false }
+}
+
+async function copyInviteLink() {
+  const url = `${window.location.origin}/sprint/${sprintId}`
+  try {
+    await navigator.clipboard.writeText(url)
+  } catch {
+    errorMessage.value = 'Failed to copy link. Copy manually: ' + url
+    return
+  }
+  copied.value = true
+  if (copiedTimer) clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => (copied.value = false), 2000)
 }
 </script>

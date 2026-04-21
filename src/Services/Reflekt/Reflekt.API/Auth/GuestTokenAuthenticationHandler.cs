@@ -16,7 +16,8 @@ public class GuestTokenAuthenticationHandler(
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var token = Request.Headers["X-Guest-Token"].FirstOrDefault()
-            ?? Request.Query["access_token"].FirstOrDefault();
+            ?? Request.Query["access_token"].FirstOrDefault()
+            ?? ExtractBearerToken(Request.Headers.Authorization.FirstOrDefault());
 
         if (token is null)
             return AuthenticateResult.NoResult();
@@ -34,5 +35,14 @@ public class GuestTokenAuthenticationHandler(
         var identity = new ClaimsIdentity(claims, GuestTokenDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
         return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name));
+    }
+
+    private static string? ExtractBearerToken(string? authorizationHeader)
+    {
+        if (string.IsNullOrEmpty(authorizationHeader)) return null;
+        const string prefix = "Bearer ";
+        return authorizationHeader.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? authorizationHeader[prefix.Length..]
+            : null;
     }
 }

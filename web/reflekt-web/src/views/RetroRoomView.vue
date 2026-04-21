@@ -3,7 +3,7 @@
     <!-- Name picker -->
     <div v-if="!joined" class="w-full max-w-sm p-8 bg-white rounded shadow flex flex-col gap-4">
       <h1 class="text-2xl font-bold text-gray-800">Join Retro</h1>
-      <p class="text-sm text-gray-500">Sprint #{{ sprintId }}</p>
+      <p class="text-sm text-gray-500">{{ sprintName || `Sprint #${sprintId}` }}</p>
 
       <p v-if="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</p>
 
@@ -30,7 +30,7 @@
     <!-- Retro room -->
     <div v-else class="w-full max-w-6xl p-6 flex flex-col gap-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-800">Sprint #{{ sprintId }}</h1>
+        <h1 class="text-2xl font-bold text-gray-800">{{ sprintName || `Sprint #${sprintId}` }}</h1>
         <div class="flex items-center gap-4">
           <span class="text-sm font-medium text-gray-700">
             Votes: {{ voteStore.remainingBudget }}/{{ voteStore.votesPerParticipant }} remaining
@@ -210,6 +210,7 @@ import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
 import { useAuthStore } from '../stores/auth'
 import { useSprintHub } from '../composables/useSprintHub'
 import { useVoteStore } from '../stores/vote'
+import { useSprintStore } from '../stores/sprint'
 import CardItem from '../components/CardItem.vue'
 
 const route = useRoute()
@@ -218,6 +219,7 @@ const participantStore = useParticipantStore()
 const cardStore = useCardStore()
 const authStore = useAuthStore()
 const voteStore = useVoteStore()
+const sprintStore = useSprintStore()
 const { connect, disconnect } = useSprintHub()
 
 const sprintId = Number(route.params.sprintId)
@@ -235,6 +237,7 @@ const participants = computed(() => participantStore.participants)
 const wentWell = computed(() => cardStore.wentWell)
 const didntGoWell = computed(() => cardStore.didntGoWell)
 const actionItems = computed(() => cardStore.actionItems)
+const sprintName = computed(() => sprintStore.currentSummary?.name ?? '')
 
 function canEditCard(card: Card): boolean {
   return card.participantId === participantStore.currentParticipant?.id || authStore.user !== null
@@ -329,6 +332,7 @@ async function confirmDelete(card: Card) {
 }
 
 onMounted(async () => {
+  sprintStore.fetchSprintSummary(sprintId)
   guestStore.loadToken(sprintId)
   if (guestStore.token) {
     try {

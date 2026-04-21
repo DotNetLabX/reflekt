@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.SignalR;
-using Reflekt.API.Features.Cards;
 using Reflekt.API.Hubs;
 using Reflekt.Domain.Cards.Events;
 
-namespace Reflekt.API.Events;
+namespace Reflekt.API.Features.Cards.EditCard;
 
-public sealed class CardUpdatedEventHandler(IHubContext<SprintHub> hubContext)
+public sealed class BroadcastCardUpdatedHandler(IHubContext<SprintHub> hubContext)
     : IEventHandler<CardUpdatedEvent>
 {
     public Task HandleAsync(CardUpdatedEvent ev, CancellationToken ct)
