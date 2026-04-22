@@ -52,4 +52,28 @@ public sealed partial class Sprint
         ClosedAt = DateTime.UtcNow;
         AddDomainEvent(new Events.SprintClosedEvent(this));
     }
+
+    public void SetFocus(int groupId)
+    {
+        if (State != SprintState.Active)
+            throw new InvalidOperationException("Sprint must be Active to set focus.");
+        if (CurrentPhase != SprintPhase.Discussing)
+            throw new InvalidOperationException("Sprint must be in Discussing phase to set focus.");
+
+        var previousGroupId = FocusedGroupId;
+        FocusedGroupId = groupId;
+        AddDomainEvent(new Events.GroupFocusedEvent(this, groupId, previousGroupId));
+    }
+
+    public void ClearFocus()
+    {
+        if (State != SprintState.Active)
+            throw new InvalidOperationException("Sprint must be Active to clear focus.");
+        if (CurrentPhase != SprintPhase.Discussing)
+            throw new InvalidOperationException("Sprint must be in Discussing phase to clear focus.");
+
+        var previousGroupId = FocusedGroupId;
+        FocusedGroupId = null;
+        AddDomainEvent(new Events.GroupFocusClearedEvent(this, previousGroupId));
+    }
 }

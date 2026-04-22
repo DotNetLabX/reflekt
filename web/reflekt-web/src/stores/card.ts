@@ -70,6 +70,7 @@ export const useCardStore = defineStore('card', {
           'Content-Type': 'application/json',
           ...(guestStore.token ? { 'X-Guest-Token': guestStore.token } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }

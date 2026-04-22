@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Cards;
@@ -49,6 +51,17 @@ public sealed class CreateCardEndpoint(SprintRepository sprintRepository, CardRe
         var action = cardType == CardType.ActionItem ? SprintAction.CreateActionItem : SprintAction.CreateNote;
         if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, action))
             ThrowError($"{action} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
+
+        if (sprint.CurrentPhase == SprintPhase.Discussing && cardType == CardType.ActionItem)
+        {
+            var cookieResult = await HttpContext.AuthenticateAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
+            if (cookieResult.Principal?.FindFirstValue(ClaimTypes.Email) is null)
+            {
+                await SendForbiddenAsync(ct);
+                return;
+            }
+        }
 
         Card card;
         try

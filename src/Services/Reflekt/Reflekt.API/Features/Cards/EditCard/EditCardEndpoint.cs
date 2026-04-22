@@ -53,6 +53,15 @@ public sealed class EditCardEndpoint(
         if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, action))
             ThrowError($"{action} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
+        if (sprint.CurrentPhase == SprintPhase.Discussing && card.CardType == CardType.ActionItem)
+        {
+            if (User.FindFirstValue(ClaimTypes.Email) is null)
+            {
+                await SendForbiddenAsync(ct);
+                return;
+            }
+        }
+
         try
         {
             card.Update(command.Text, command.AssigneeName);

@@ -6,11 +6,11 @@ namespace Reflekt.API.Features.CardGroups;
 
 public sealed record CardGroupCardEntry(int Id, string Text, DateTime CreatedAt, List<EvidenceLinkResponse> EvidenceLinks);
 
-public sealed record CardGroupResponse(int Id, int SprintId, string ColumnType, string? Title, List<CardGroupCardEntry> Cards, int VoteCount);
+public sealed record CardGroupResponse(int Id, int SprintId, string ColumnType, string? Title, List<CardGroupCardEntry> Cards, int VoteCount, bool IsDiscussed, bool IsFocused);
 
 public static class CardGroupMappings
 {
-    public static CardGroupResponse ToResponse(CardGroup group, List<Card> cards, int voteCount = 0) => new(
+    public static CardGroupResponse ToResponse(CardGroup group, List<Card> cards, int voteCount = 0, bool isFocused = false) => new(
         group.Id,
         group.SprintId,
         group.ColumnType.ToString(),
@@ -20,5 +20,7 @@ public static class CardGroupMappings
             c.Text,
             c.CreatedAt,
             c.EvidenceLinks.Select(CardMappings.ToResponse).ToList())).ToList(),
-        voteCount);
+        voteCount,
+        group.DiscussedAt.HasValue,
+        isFocused);
 }

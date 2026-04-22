@@ -14,27 +14,41 @@ public class DomainEventPublishingInterceptor : SaveChangesInterceptor
     private static readonly MethodInfo PublishEventMethod = typeof(DomainEventPublishingInterceptor)
         .GetMethod(nameof(PublishEvent), BindingFlags.NonPublic | BindingFlags.Static)!;
 
+    private List<IDomainEvent> _pendingEvents = [];
+
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        var context = eventData.Context;
+        if (context is not null)
+        {
+            var aggregates = context.ChangeTracker
+                .Entries()
+                .Select(e => e.Entity)
+                .OfType<IHasDomainEvents>()
+                .Where(a => a.DomainEvents.Count > 0)
+                .ToList();
+
+            _pendingEvents = aggregates
+                .SelectMany(a => a.DomainEvents)
+                .ToList();
+
+            foreach (var aggregate in aggregates)
+                aggregate.ClearDomainEvents();
+        }
+
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
     public override async ValueTask<int> SavedChangesAsync(
         SaveChangesCompletedEventData eventData,
         int result,
         CancellationToken cancellationToken = default)
     {
-        var context = eventData.Context;
-        if (context is null) return result;
-
-        var aggregates = context.ChangeTracker
-            .Entries()
-            .Select(e => e.Entity)
-            .OfType<IHasDomainEvents>()
-            .Where(a => a.DomainEvents.Count > 0)
-            .ToList();
-
-        var events = aggregates
-            .SelectMany(a => a.DomainEvents)
-            .ToList();
-
-        foreach (var aggregate in aggregates)
-            aggregate.ClearDomainEvents();
+        var events = _pendingEvents;
+        _pendingEvents = [];
 
         var tasks = events.Select(ev =>
         {

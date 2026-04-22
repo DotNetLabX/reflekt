@@ -160,10 +160,15 @@ The user who created the sprint (signed in via Google) shouldn't have to pick a 
 **Source:** User testing, 2026-04-22.
 Backend and store fully implemented (`createGroup`, `addCardToGroup`, `removeCardFromGroup`, `dissolveGroup`), but the Grouping phase UI has no interaction to actually merge cards. No drag-and-drop, no multi-select, no merge button. The spec describes drag-and-drop as the intended mechanism — needs to be wired up.
 
-### 21. Representative Cards — highlight key takeaways
-**Status: Open**
-**Source:** User feedback, 2026-04-22.
-After voting, the SM (or participants) should be able to mark the most-voted cards/groups as "representative" — the key takeaways of this retro. These cards would be highlighted in the report and could carry forward across sprints as reference points. Needs PO discussion to define the interaction model (auto-select top N? manual pick? both?), where they surface (report only? dashboard? next sprint's context?), and whether this is a Discussing-phase or Reporting-phase action.
+### 21. Discussion Flow & Reporting Redesign
+**Status: In PO — spec being written**
+**Source:** User feedback + PO discussion, 2026-04-22.
+Originally "Representative Cards." PO discussion revealed the real need is a structured discussion flow and a reporting phase that works for everyone, not just the SM. Scope:
+- **Discussion focus:** SM clicks "Discuss" on a group → highlighted for all via SignalR. Next click moves focus, auto-marks previous as "discussed." SM can toggle.
+- **SM-only action items:** Only SM creates/edits/deletes action items in Discussing. Participants see read-only list.
+- **Advance gate:** Minimum 2 discussed groups + confirmation dialog with count.
+- **Reporting phase redesign:** Report view rendered in retro room for all participants (not just SM). Toggle to read-only board. Report content: groups where (discussed OR voteCount > 1), sorted by votes descending, "Discussed" badge on discussed items.
+- **Markdown export:** The report serialized as markdown, including discussed/undiscussed distinction.
 
 ### 22. Phase revert — undo accidental phase advance
 **Status: Open**

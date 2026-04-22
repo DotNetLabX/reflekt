@@ -47,6 +47,29 @@ public sealed class AdvancePhaseEndpoint(
             ThrowError($"{SprintAction.AdvancePhase} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
         var previousPhase = sprint.CurrentPhase;
+
+        if (previousPhase == SprintPhase.Discussing)
+        {
+            var groups = await cardGroupRepository.GetBySprintIdAsync(request.SprintId, ct);
+
+            if (sprint.FocusedGroupId.HasValue)
+            {
+                var focusedGroup = groups.FirstOrDefault(g => g.Id == sprint.FocusedGroupId.Value);
+                if (focusedGroup is not null && !focusedGroup.DiscussedAt.HasValue)
+                    focusedGroup.MarkDiscussed();
+
+                sprint.ClearFocus();
+            }
+
+            var discussedCount = groups.Count(g => g.DiscussedAt.HasValue);
+            if (discussedCount < 2)
+            {
+                AddError("At least 2 groups must be discussed before advancing to Reporting.");
+                await SendErrorsAsync(409, ct);
+                return;
+            }
+        }
+
         sprint.AdvancePhase();
 
         if (previousPhase == SprintPhase.Writing)

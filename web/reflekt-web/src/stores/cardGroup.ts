@@ -16,6 +16,8 @@ export interface CardGroup {
   title: string | null
   cards: CardGroupCard[]
   voteCount: number
+  isDiscussed: boolean
+  isFocused: boolean
 }
 
 export const useCardGroupStore = defineStore('cardGroup', {
@@ -27,6 +29,8 @@ export const useCardGroupStore = defineStore('cardGroup', {
       state.groups.filter((g) => g.columnType === 'WentWell'),
     didntGoWellGroups: (state): CardGroup[] =>
       state.groups.filter((g) => g.columnType === 'DidntGoWell'),
+    focusedGroup: (state): CardGroup | undefined =>
+      state.groups.find((g) => g.isFocused),
   },
   actions: {
     async fetchGroups(sprintId: number): Promise<void> {
@@ -97,6 +101,45 @@ export const useCardGroupStore = defineStore('cardGroup', {
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
       await this.fetchGroups(sprintId)
+    },
+
+    async focusGroup(sprintId: number, groupId: number): Promise<void> {
+      const guestStore = useGuestStore()
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
+      const res = await fetch(`/api/sprints/${sprintId}/card-groups/${groupId}/focus`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: '{}',
+      })
+      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
+    },
+
+    async clearFocus(sprintId: number): Promise<void> {
+      const guestStore = useGuestStore()
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
+      const res = await fetch(`/api/sprints/${sprintId}/focus`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include',
+        body: '{}',
+      })
+      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
+    },
+
+    async toggleDiscussed(sprintId: number, groupId: number): Promise<void> {
+      const guestStore = useGuestStore()
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
+      const res = await fetch(`/api/sprints/${sprintId}/card-groups/${groupId}/toggle-discussed`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: '{}',
+      })
+      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
     },
 
     async updateGroupTitle(sprintId: number, groupId: number, title: string | null): Promise<void> {

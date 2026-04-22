@@ -73,6 +73,6 @@ public sealed class AddCardToGroupEndpoint(
             .OrderBy(c => c.CreatedAt)
             .ToList();
 
-        await SendOkAsync(CardGroupMappings.ToResponse(group, groupCards), ct);
+        await SendOkAsync(CardGroupMappings.ToResponse(group, groupCards, isFocused: sprint.FocusedGroupId == group.Id), ct);
     }
 }

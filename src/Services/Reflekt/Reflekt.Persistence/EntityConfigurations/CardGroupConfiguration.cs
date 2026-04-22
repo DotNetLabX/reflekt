@@ -17,6 +17,7 @@ internal sealed class CardGroupConfiguration : EntityConfiguration<CardGroup>
         builder.Property(g => g.ColumnType).IsRequired();
         builder.Property(g => g.Title).HasMaxLength(100);
         builder.Property(g => g.CreatedAt).IsRequired();
+        builder.Property(g => g.DiscussedAt);
         builder.HasIndex(g => g.SprintId);
     }
 }

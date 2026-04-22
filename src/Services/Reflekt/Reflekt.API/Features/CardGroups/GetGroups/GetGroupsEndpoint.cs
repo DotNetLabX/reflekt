@@ -58,7 +58,8 @@ public sealed class GetGroupsEndpoint(
             groups.Select(g => CardGroupMappings.ToResponse(
                 g,
                 cardsByGroup.GetValueOrDefault(g.Id, []),
-                voteCounts.GetValueOrDefault(g.Id, 0))).ToList(),
+                voteCounts.GetValueOrDefault(g.Id, 0),
+                sprint.FocusedGroupId == g.Id)).ToList(),
             ct);
     }
 }

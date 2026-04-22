@@ -51,6 +51,27 @@
     </div>
     <span v-else-if="voteCount > 0" class="text-xs font-medium text-gray-500">{{ voteCount }} votes</span>
 
+    <!-- Discussion controls -->
+    <div v-if="isDiscussing" class="flex items-center gap-2 mt-1">
+      <CheckCircle v-if="group.isDiscussed" :size="14" class="text-green-600" />
+      <span v-if="group.isDiscussed" class="text-xs text-green-600 font-medium">Discussed</span>
+      <button
+        v-if="isScrumMaster && !group.isFocused"
+        class="text-xs text-primary-600 hover:text-primary-800 cursor-pointer flex items-center gap-1"
+        @click="$emit('focus', group)"
+      >
+        <MessageCircle :size="12" />
+        Discuss
+      </button>
+      <button
+        v-if="isScrumMaster"
+        class="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+        @click="$emit('toggle-discussed', group)"
+      >
+        {{ group.isDiscussed ? 'Unmark' : 'Mark discussed' }}
+      </button>
+    </div>
+
     <!-- Rename button for SM during Grouping -->
     <div v-if="isScrumMaster && canGroup" class="flex items-center gap-2 mt-1 justify-end">
       <button
@@ -156,6 +177,27 @@
       </template>
     </div>
 
+    <!-- Discussion controls -->
+    <div v-if="isDiscussing" class="flex items-center gap-2">
+      <CheckCircle v-if="group.isDiscussed" :size="14" class="text-green-600" />
+      <span v-if="group.isDiscussed" class="text-xs text-green-600 font-medium">Discussed</span>
+      <button
+        v-if="isScrumMaster && !group.isFocused"
+        class="text-xs text-primary-600 hover:text-primary-800 cursor-pointer flex items-center gap-1"
+        @click="$emit('focus', group)"
+      >
+        <MessageCircle :size="12" />
+        Discuss
+      </button>
+      <button
+        v-if="isScrumMaster"
+        class="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+        @click="$emit('toggle-discussed', group)"
+      >
+        {{ group.isDiscussed ? 'Unmark' : 'Mark discussed' }}
+      </button>
+    </div>
+
     <div v-if="editingTitle" class="flex gap-1">
       <input
         v-model="titleInput"
@@ -177,7 +219,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ChevronUp, Check, GripVertical } from 'lucide-vue-next'
+import { ChevronUp, Check, GripVertical, CheckCircle, MessageCircle } from 'lucide-vue-next'
 import BaseBadge from './ui/BaseBadge.vue'
 import type { CardGroup, CardGroupCard } from '../stores/cardGroup'
 
@@ -200,6 +242,7 @@ const props = defineProps<{
   isScrumMaster: boolean
   canGroup: boolean
   canUngroup: boolean
+  isDiscussing?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -209,6 +252,8 @@ const emit = defineEmits<{
   'update-title': [group: CardGroup, title: string | null]
   merge: [source: CardGroup, target: CardGroup]
   'remove-card': [groupId: number, cardId: number]
+  focus: [group: CardGroup]
+  'toggle-discussed': [group: CardGroup]
 }>()
 
 const expanded = ref(props.group.cards.length === 1)
@@ -220,11 +265,15 @@ const dragOver = ref(false)
 const isSolo = computed(() => props.group.cards.length === 1)
 const soloCard = computed(() => props.group.cards[0])
 
-const groupBgClass = `bg-${props.columnColor}-light/30`
+const groupBgClass = computed(() => {
+  if (props.group.isFocused) return 'bg-primary-50 ring-2 ring-primary-500'
+  if (props.group.isDiscussed) return `bg-${props.columnColor}-light/30 opacity-75`
+  return `bg-${props.columnColor}-light/30`
+})
 
 const dragClasses = computed(() => ({
   'opacity-50': dragging.value,
-  'ring-2 ring-primary-400': dragOver.value,
+  'ring-2 ring-primary-400': dragOver.value && !props.group.isFocused,
   'cursor-grab': props.canGroup && !dragging.value,
   'cursor-grabbing': dragging.value,
 }))

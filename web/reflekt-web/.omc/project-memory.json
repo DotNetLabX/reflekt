@@ -125,8 +125,8 @@
   "hotPaths": [
     {
       "path": "src\\views\\RetroRoomView.vue",
-      "accessCount": 12,
-      "lastAccessed": 1776871072075,
+      "accessCount": 13,
+      "lastAccessed": 1776887694162,
       "type": "file"
     },
     {
@@ -136,16 +136,22 @@
       "type": "file"
     },
     {
+      "path": "src\\stores\\card.ts",
+      "accessCount": 4,
+      "lastAccessed": 1776887774375,
+      "type": "directory"
+    },
+    {
+      "path": "src",
+      "accessCount": 3,
+      "lastAccessed": 1776887687864,
+      "type": "directory"
+    },
+    {
       "path": "src\\stores\\cardGroup.ts",
       "accessCount": 2,
       "lastAccessed": 1776870942713,
       "type": "file"
-    },
-    {
-      "path": "src",
-      "accessCount": 2,
-      "lastAccessed": 1776870957523,
-      "type": "directory"
     },
     {
       "path": "src\\stores\\sprint.ts",

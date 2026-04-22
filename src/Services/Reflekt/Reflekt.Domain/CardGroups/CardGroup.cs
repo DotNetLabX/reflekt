@@ -10,4 +10,5 @@ public sealed partial class CardGroup : AggregateRoot
     public ColumnType ColumnType { get; private set; }
     public string? Title { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime? DiscussedAt { get; private set; }
 }

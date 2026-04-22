@@ -16,6 +16,7 @@ export interface ReportCardEntry {
 export interface ReportGroupEntry {
   groupTitle: string
   voteCount: number
+  isDiscussed: boolean
   cards: ReportCardEntry[]
 }
 
@@ -90,6 +91,35 @@ export const useReportStore = defineStore('report', {
       }
     },
 
+    async fetchParticipantReport(sprintId: number): Promise<void> {
+      this.loading = true
+      this.error = null
+      try {
+        const guestStore = useGuestStore()
+        const headers: Record<string, string> = {}
+        if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
+        const res = await fetch(`/api/sprints/${sprintId}/report`, {
+          headers,
+          credentials: 'include',
+        })
+        if (res.status === 404) {
+          this.error = 'Sprint not found'
+          return
+        }
+        if (res.status === 401 || res.status === 403) {
+          this.error = 'Not authorized'
+          return
+        }
+        if (!res.ok) {
+          this.error = 'Failed to load report'
+          return
+        }
+        this.report = (await res.json()) as ReportResponse
+      } finally {
+        this.loading = false
+      }
+    },
+
     async copyAsMarkdown(): Promise<boolean> {
       if (!this.report) return false
       const r = this.report
@@ -106,7 +136,8 @@ export const useReportStore = defineStore('report', {
       lines.push('## Went Well')
       lines.push('')
       for (const group of r.notes.wentWell) {
-        lines.push(`### ${group.groupTitle} (${group.voteCount} votes)`)
+        const discussed = group.isDiscussed ? ' [discussed]' : ''
+        lines.push(`### ${group.groupTitle} (${group.voteCount} votes)${discussed}`)
         for (const card of group.cards) {
           lines.push(`- ${card.text}`)
           for (const link of card.evidenceLinks) {
@@ -119,7 +150,8 @@ export const useReportStore = defineStore('report', {
       lines.push("## Didn't Go Well")
       lines.push('')
       for (const group of r.notes.didntGoWell) {
-        lines.push(`### ${group.groupTitle} (${group.voteCount} votes)`)
+        const discussed = group.isDiscussed ? ' [discussed]' : ''
+        lines.push(`### ${group.groupTitle} (${group.voteCount} votes)${discussed}`)
         for (const card of group.cards) {
           lines.push(`- ${card.text}`)
           for (const link of card.evidenceLinks) {

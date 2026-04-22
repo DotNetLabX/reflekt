@@ -13,4 +13,5 @@ public sealed partial class Sprint : AggregateRoot
     public required int VotesPerParticipant { get; init; }
     public required DateTime CreatedAt { get; init; }
     public DateTime? ClosedAt { get; private set; }
+    public int? FocusedGroupId { get; private set; }
 }

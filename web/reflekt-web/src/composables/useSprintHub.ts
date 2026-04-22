@@ -113,6 +113,22 @@ export function useSprintHub(onKicked?: () => void) {
       const group = cardGroupStore.groups.find((g) => g.id === payload.groupId)
       if (group) group.title = payload.title
     })
+
+    connection.on('GroupFocused', (payload: { groupId: number; previousGroupId: number | null }) => {
+      cardGroupStore.groups.forEach((g) => (g.isFocused = g.id === payload.groupId))
+    })
+
+    connection.on('GroupFocusCleared', (_payload: { previousGroupId: number | null }) => {
+      cardGroupStore.groups.forEach((g) => (g.isFocused = false))
+    })
+
+    connection.on(
+      'GroupDiscussedChanged',
+      (payload: { groupId: number; isDiscussed: boolean; discussedAt: string | null }) => {
+        const group = cardGroupStore.groups.find((g) => g.id === payload.groupId)
+        if (group) group.isDiscussed = payload.isDiscussed
+      },
+    )
   }
 
   async function connect(sprintId: number) {

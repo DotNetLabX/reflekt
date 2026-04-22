@@ -62,20 +62,21 @@ public sealed class GetSprintReportEndpoint(
                 var votes = voteCounts.GetValueOrDefault(g.Id, 0);
                 var groupCards = cardsByGroup.GetValueOrDefault(g.Id, []);
                 var title = g.Title ?? groupCards.FirstOrDefault()?.Text ?? "";
-                return (Group: g, Title: title, Votes: votes, Cards: groupCards);
+                var isDiscussed = g.DiscussedAt.HasValue;
+                return (Group: g, Title: title, Votes: votes, Cards: groupCards, IsDiscussed: isDiscussed);
             })
-            .Where(x => x.Votes > 0)
+            .Where(x => x.IsDiscussed || x.Votes > 1)
             .OrderByDescending(x => x.Votes)
             .ToList();
 
         var wentWell = groupEntries
             .Where(x => x.Group.ColumnType == ColumnType.WentWell)
-            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.Cards.Select(ReportMappings.ToCardEntry).ToList()))
+            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(ReportMappings.ToCardEntry).ToList()))
             .ToList();
 
         var didntGoWell = groupEntries
             .Where(x => x.Group.ColumnType == ColumnType.DidntGoWell)
-            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.Cards.Select(ReportMappings.ToCardEntry).ToList()))
+            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(ReportMappings.ToCardEntry).ToList()))
             .ToList();
 
         var actionItems = cards

@@ -21,12 +21,16 @@
         maxlength="2000"
         class="border border-gray-300 rounded-[--radius-sm] px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
       />
-      <BaseInput
+      <select
         v-if="card.cardType === 'ActionItem'"
         v-model="editAssignee"
-        :maxlength="50"
-        placeholder="Assignee"
-      />
+        class="border border-gray-300 rounded-[--radius-sm] px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+      >
+        <option value="">Assign to...</option>
+        <option v-for="p in participants" :key="p.displayName" :value="p.displayName">
+          {{ p.displayName }}
+        </option>
+      </select>
       <div class="flex gap-2">
         <BaseButton
           size="sm"
@@ -182,6 +186,7 @@ const props = defineProps<{
   myVoteCount?: number
   remainingBudget?: number
   columnColor?: 'went-well' | 'didnt-go-well' | 'action-items'
+  participants?: { displayName: string }[]
 }>()
 
 const emit = defineEmits<{

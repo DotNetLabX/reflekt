@@ -39,4 +39,16 @@ public sealed partial class CardGroup
     {
         AddDomainEvent(new CardUngroupedEvent(this, cardId, newGroupId));
     }
+
+    public void MarkDiscussed()
+    {
+        DiscussedAt = DateTime.UtcNow;
+        AddDomainEvent(new GroupDiscussedChangedEvent(this));
+    }
+
+    public void UnmarkDiscussed()
+    {
+        DiscussedAt = null;
+        AddDomainEvent(new GroupDiscussedChangedEvent(this));
+    }
 }

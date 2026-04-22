@@ -29,6 +29,9 @@ namespace Reflekt.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DiscussedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("SprintId")
                         .HasColumnType("INTEGER");
 
@@ -259,6 +262,16 @@ namespace Reflekt.Persistence.Migrations
                         },
                         new
                         {
+                            Phase = 3,
+                            Action = 14
+                        },
+                        new
+                        {
+                            Phase = 3,
+                            Action = 15
+                        },
+                        new
+                        {
                             Phase = 1,
                             Action = 11
                         },
@@ -292,6 +305,9 @@ namespace Reflekt.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("CurrentPhase")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("FocusedGroupId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

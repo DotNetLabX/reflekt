@@ -30,6 +30,8 @@ internal sealed class PhaseActionConfiguration : IEntityTypeConfiguration<PhaseA
             new PhaseAction(SprintPhase.Discussing, SprintAction.AttachEvidenceLink),
             new PhaseAction(SprintPhase.Discussing, SprintAction.DetachEvidenceLink),
             new PhaseAction(SprintPhase.Discussing, SprintAction.AdvancePhase),
+            new PhaseAction(SprintPhase.Discussing, SprintAction.FocusGroup),
+            new PhaseAction(SprintPhase.Discussing, SprintAction.ToggleDiscussed),
             // Grouping phase
             new PhaseAction(SprintPhase.Grouping, SprintAction.GroupCards),
             new PhaseAction(SprintPhase.Grouping, SprintAction.UngroupCards),

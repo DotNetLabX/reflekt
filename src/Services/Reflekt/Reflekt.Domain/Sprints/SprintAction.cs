@@ -16,4 +16,6 @@ public enum SprintAction
     GroupCards,
     UngroupCards,
     RenameGroup,
+    FocusGroup,
+    ToggleDiscussed,
 }

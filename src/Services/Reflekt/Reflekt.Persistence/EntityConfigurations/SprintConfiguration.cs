@@ -17,6 +17,7 @@ internal sealed class SprintConfiguration : EntityConfiguration<Sprint>
         builder.Property(s => s.CurrentPhase).IsRequired();
         builder.Property(s => s.VotesPerParticipant).IsRequired().HasDefaultValue(3);
         builder.Property(s => s.CreatedAt).IsRequired();
+        builder.Property(s => s.FocusedGroupId);
         builder.HasIndex(s => s.TeamId);
     }
 }
