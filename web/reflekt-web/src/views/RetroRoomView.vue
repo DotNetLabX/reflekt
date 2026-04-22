@@ -1,209 +1,311 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-50">
-    <!-- Name picker -->
-    <div v-if="!joined" class="w-full max-w-sm p-8 bg-white rounded shadow flex flex-col gap-4">
-      <h1 class="text-2xl font-bold text-gray-800">Join Retro</h1>
-      <p class="text-sm text-gray-500">{{ sprintName || `Sprint #${sprintId}` }}</p>
+  <div :class="['bg-background flex', joined && !kicked && !loading ? 'h-[calc(100vh-3.5rem)] overflow-hidden flex-col' : 'min-h-screen items-center justify-center']">
+    <!-- Kicked screen -->
+    <div v-if="kicked" class="w-full max-w-sm p-8 bg-surface rounded-[--radius-md] shadow-card flex flex-col gap-4 items-center">
+      <h1 class="text-2xl font-bold text-danger">You were removed</h1>
+      <p class="text-sm text-gray-600 text-center">The Scrum Master removed you from this retro. You'll need a new invite to rejoin.</p>
+    </div>
 
-      <p v-if="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</p>
+    <!-- Loading state -->
+    <div v-else-if="loading" class="flex flex-col items-center gap-4">
+      <LoadingSpinner size="lg">Joining retro...</LoadingSpinner>
+    </div>
 
-      <form class="flex flex-col gap-3" @submit.prevent="handleJoin">
-        <input
-          v-model="displayName"
-          type="text"
-          maxlength="50"
-          placeholder="Your display name"
-          class="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          :disabled="busy"
-          required
-        />
-        <button
-          type="submit"
-          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50"
-          :disabled="busy || !displayName.trim()"
-        >
-          Join
-        </button>
-      </form>
+    <!-- Join form -->
+    <div v-else-if="!joined" class="w-full max-w-sm">
+      <BaseCard padding="lg">
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-center gap-2 text-primary-600">
+            <RefreshCw :size="24" />
+            <span class="text-xl font-semibold">Reflekt</span>
+          </div>
+
+          <h1 class="text-lg font-semibold text-gray-800 text-center">{{ sprintName || `Sprint #${sprintId}` }}</h1>
+
+          <div v-if="summaryParticipants.length > 0" class="flex flex-col gap-2">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Already in this retro:</p>
+            <div class="flex flex-wrap gap-2">
+              <div
+                v-for="p in summaryParticipants"
+                :key="p.displayName"
+                class="w-8 h-8 rounded-full bg-primary-100 text-primary-700 font-semibold text-sm flex items-center justify-center"
+                :title="p.displayName"
+              >
+                {{ p.displayName.charAt(0).toUpperCase() }}
+              </div>
+            </div>
+          </div>
+
+          <p v-if="errorMessage" class="text-sm text-danger">{{ errorMessage }}</p>
+
+          <form class="flex flex-col gap-3" @submit.prevent="handleJoin">
+            <BaseInput
+              v-model="displayName"
+              :maxlength="50"
+              placeholder="Your display name"
+              :disabled="busy"
+            />
+            <BaseButton
+              type="submit"
+              variant="primary"
+              size="lg"
+              class="w-full"
+              :disabled="busy || !displayName.trim()"
+              :loading="busy"
+            >
+              Join
+            </BaseButton>
+          </form>
+        </div>
+      </BaseCard>
     </div>
 
     <!-- Retro room -->
-    <div v-else class="w-full max-w-6xl p-6 flex flex-col gap-6">
-      <div class="flex items-center justify-between">
+    <div v-else class="w-full flex-1 min-h-0 px-4 sm:px-8 lg:px-12 py-6 flex flex-col gap-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 class="text-2xl font-bold text-gray-800">{{ sprintName || `Sprint #${sprintId}` }}</h1>
-        <div class="flex items-center gap-4">
-          <span class="text-sm font-medium text-gray-700">
-            Votes: {{ voteStore.remainingBudget }}/{{ voteStore.votesPerParticipant }} remaining
-          </span>
-          <span class="text-sm text-gray-500">Retro Room</span>
+        <div class="flex items-center gap-3">
+          <BaseBadge variant="info">
+            Votes: {{ voteStore.remainingBudget }}/{{ voteStore.votesPerParticipant }}
+          </BaseBadge>
         </div>
       </div>
+
+      <!-- Phase indicator -->
+      <PhaseIndicator :current-phase="currentPhase" />
 
       <!-- Participants -->
-      <div class="bg-white rounded shadow p-4 flex flex-col gap-2">
-        <h2 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Participants</h2>
-        <div class="flex flex-wrap gap-2">
-          <span
-            v-for="p in participants"
-            :key="p.id"
-            class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-          >
-            {{ p.displayName }}
-          </span>
+      <BaseCard padding="sm">
+        <div class="flex flex-col gap-2">
+          <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Participants</h2>
+          <div class="flex flex-wrap gap-2">
+            <BaseBadge
+              v-for="p in participants"
+              :key="p.id"
+              variant="primary"
+            >
+              {{ p.displayName }}
+            </BaseBadge>
+          </div>
         </div>
+      </BaseCard>
+
+      <!-- Mobile tab bar -->
+      <div class="flex sm:hidden gap-1">
+        <button
+          class="flex-1 px-3 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer"
+          :class="activeTab === 'WentWell' ? 'bg-went-well text-white' : 'bg-went-well-light text-went-well'"
+          @click="activeTab = 'WentWell'"
+        >
+          Went Well
+        </button>
+        <button
+          class="flex-1 px-3 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer"
+          :class="activeTab === 'DidntGoWell' ? 'bg-didnt-go-well text-white' : 'bg-didnt-go-well-light text-didnt-go-well'"
+          @click="activeTab = 'DidntGoWell'"
+        >
+          Didn't Go Well
+        </button>
+        <button
+          v-if="showActionItems"
+          class="flex-1 px-3 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer"
+          :class="activeTab === 'ActionItems' ? 'bg-action-items text-white' : 'bg-action-items-light text-action-items'"
+          @click="activeTab = 'ActionItems'"
+        >
+          Actions
+        </button>
       </div>
 
-      <!-- Three-column board -->
-      <div class="grid grid-cols-3 gap-4">
+      <!-- Board columns -->
+      <div :class="boardGridClasses">
         <!-- Went Well -->
-        <div class="bg-white rounded shadow flex flex-col">
-          <div class="px-4 py-3 border-b bg-green-50 rounded-t">
-            <h2 class="font-semibold text-green-800 text-sm">Went Well</h2>
+        <div v-show="isColumnVisible('WentWell')" class="bg-surface border border-gray-200 rounded-[--radius-md] shadow-card flex flex-col min-h-0">
+          <div class="px-4 py-3 border-b bg-went-well-light rounded-t-[--radius-md] flex items-center gap-2">
+            <SmilePlus :size="18" class="text-went-well" />
+            <h2 class="font-semibold text-went-well text-base flex-1">Went Well</h2>
+            <BaseBadge variant="success">{{ wentWell.length }}</BaseBadge>
           </div>
-          <div class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto max-h-[60vh]">
-            <div v-if="wentWell.length === 0" class="text-gray-400 text-sm text-center py-4">
+          <TransitionGroup
+            name="card-list"
+            tag="div"
+            class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto min-h-0 relative"
+          >
+            <div v-if="wentWell.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
               No cards yet
             </div>
             <CardItem
               v-for="card in wentWell"
               :key="card.id"
               :card="card"
-              :can-edit="canEditCard(card)"
-              :show-voting="true"
+              :can-edit="canMutateCard(card)"
+              :blurred="isWritingPhase && card.participantId !== currentParticipantId"
+              :can-attach-link="policyStore.isAllowed(currentPhase, 'AttachEvidenceLink')"
+              :show-voting="policyStore.isAllowed(currentPhase, 'CastVote')"
               :vote-count="voteStore.voteCountForCard(card.id)"
               :my-vote-count="voteStore.myVotesOnCard(card.id)"
               :remaining-budget="voteStore.remainingBudget"
+              column-color="went-well"
               @edit="saveEdit"
-              @delete="confirmDelete"
+              @delete="requestDelete"
               @vote="castVote"
               @retract-vote="retractVote"
               @attach-evidence-link="attachEvidenceLink"
               @detach-evidence-link="detachEvidenceLink"
             />
-          </div>
-          <div class="p-3 border-t flex gap-2">
-            <input
+          </TransitionGroup>
+          <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="p-3 border-t flex gap-2">
+            <BaseInput
               v-model="newCardText.WentWell"
-              type="text"
-              maxlength="2000"
-              placeholder="Add a note…"
-              class="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+              :maxlength="2000"
+              placeholder="Add a note..."
+              class="flex-1"
               @keydown.enter="addNote('WentWell')"
             />
-            <button
-              class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+            <BaseButton
+              size="sm"
+              variant="primary"
               :disabled="!newCardText.WentWell.trim()"
               @click="addNote('WentWell')"
             >
               Add
-            </button>
+            </BaseButton>
           </div>
         </div>
 
         <!-- Didn't Go Well -->
-        <div class="bg-white rounded shadow flex flex-col">
-          <div class="px-4 py-3 border-b bg-red-50 rounded-t">
-            <h2 class="font-semibold text-red-800 text-sm">Didn't Go Well</h2>
+        <div v-show="isColumnVisible('DidntGoWell')" class="bg-surface border border-gray-200 rounded-[--radius-md] shadow-card flex flex-col min-h-0">
+          <div class="px-4 py-3 border-b bg-didnt-go-well-light rounded-t-[--radius-md] flex items-center gap-2">
+            <Frown :size="18" class="text-didnt-go-well" />
+            <h2 class="font-semibold text-didnt-go-well text-base flex-1">Didn't Go Well</h2>
+            <BaseBadge variant="danger">{{ didntGoWell.length }}</BaseBadge>
           </div>
-          <div class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto max-h-[60vh]">
-            <div v-if="didntGoWell.length === 0" class="text-gray-400 text-sm text-center py-4">
+          <TransitionGroup
+            name="card-list"
+            tag="div"
+            class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto min-h-0 relative"
+          >
+            <div v-if="didntGoWell.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
               No cards yet
             </div>
             <CardItem
               v-for="card in didntGoWell"
               :key="card.id"
               :card="card"
-              :can-edit="canEditCard(card)"
-              :show-voting="true"
+              :can-edit="canMutateCard(card)"
+              :blurred="isWritingPhase && card.participantId !== currentParticipantId"
+              :can-attach-link="policyStore.isAllowed(currentPhase, 'AttachEvidenceLink')"
+              :show-voting="policyStore.isAllowed(currentPhase, 'CastVote')"
               :vote-count="voteStore.voteCountForCard(card.id)"
               :my-vote-count="voteStore.myVotesOnCard(card.id)"
               :remaining-budget="voteStore.remainingBudget"
+              column-color="didnt-go-well"
               @edit="saveEdit"
-              @delete="confirmDelete"
+              @delete="requestDelete"
               @vote="castVote"
               @retract-vote="retractVote"
               @attach-evidence-link="attachEvidenceLink"
               @detach-evidence-link="detachEvidenceLink"
             />
-          </div>
-          <div class="p-3 border-t flex gap-2">
-            <input
+          </TransitionGroup>
+          <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="p-3 border-t flex gap-2">
+            <BaseInput
               v-model="newCardText.DidntGoWell"
-              type="text"
-              maxlength="2000"
-              placeholder="Add a note…"
-              class="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+              :maxlength="2000"
+              placeholder="Add a note..."
+              class="flex-1"
               @keydown.enter="addNote('DidntGoWell')"
             />
-            <button
-              class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
+            <BaseButton
+              size="sm"
+              variant="primary"
               :disabled="!newCardText.DidntGoWell.trim()"
               @click="addNote('DidntGoWell')"
             >
               Add
-            </button>
+            </BaseButton>
           </div>
         </div>
 
         <!-- Action Items -->
-        <div class="bg-white rounded shadow flex flex-col">
-          <div class="px-4 py-3 border-b bg-blue-50 rounded-t">
-            <h2 class="font-semibold text-blue-800 text-sm">Action Items</h2>
+        <div
+          v-if="showActionItems"
+          v-show="isColumnVisible('ActionItems')"
+          :class="actionItemsColumnClasses"
+          class="bg-surface border border-gray-200 rounded-[--radius-md] shadow-card flex flex-col min-h-0"
+        >
+          <div class="px-4 py-3 border-b bg-action-items-light rounded-t-[--radius-md] flex items-center gap-2">
+            <ListChecks :size="18" class="text-action-items" />
+            <h2 class="font-semibold text-action-items text-base flex-1">Action Items</h2>
+            <BaseBadge variant="info">{{ actionItems.length }}</BaseBadge>
           </div>
-          <div class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto max-h-[60vh]">
-            <div v-if="actionItems.length === 0" class="text-gray-400 text-sm text-center py-4">
+          <TransitionGroup
+            name="card-list"
+            tag="div"
+            class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto min-h-0 relative"
+          >
+            <div v-if="actionItems.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
               No action items yet
             </div>
             <CardItem
               v-for="card in actionItems"
               :key="card.id"
               :card="card"
-              :can-edit="canEditCard(card)"
+              :can-edit="canMutateCard(card)"
+              :blurred="isWritingPhase && card.participantId !== currentParticipantId"
+              :can-attach-link="policyStore.isAllowed(currentPhase, 'AttachEvidenceLink')"
+              column-color="action-items"
               @edit="saveEdit"
-              @delete="confirmDelete"
+              @delete="requestDelete"
               @attach-evidence-link="attachEvidenceLink"
               @detach-evidence-link="detachEvidenceLink"
             />
-          </div>
+          </TransitionGroup>
           <div class="p-3 border-t flex flex-col gap-2">
-            <input
+            <BaseInput
               v-model="newActionText"
-              type="text"
-              maxlength="2000"
-              placeholder="Action item…"
-              class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              :maxlength="2000"
+              placeholder="Action item..."
               @keydown.enter="addActionItem"
             />
             <select
               v-model="newActionAssignee"
-              class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              class="border border-gray-300 rounded-[--radius-md] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
-              <option value="">Assign to…</option>
+              <option value="">Assign to...</option>
               <option v-for="p in participants" :key="p.id" :value="p.displayName">
                 {{ p.displayName }}
               </option>
             </select>
-            <button
-              class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+            <BaseButton
+              size="sm"
+              variant="primary"
               :disabled="!newActionText.trim() || !newActionAssignee"
               @click="addActionItem"
             >
               Add
-            </button>
+            </BaseButton>
           </div>
         </div>
       </div>
-
-      <p v-if="toastMessage" class="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow text-sm">
-        {{ toastMessage }}
-      </p>
     </div>
+
+    <!-- Delete confirmation modal -->
+    <BaseModal :open="!!deleteTarget" title="Delete Card" @close="deleteTarget = null">
+      <p class="text-sm text-gray-600">Are you sure you want to delete this card? This action cannot be undone.</p>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="deleteTarget = null">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="executeDelete">Delete</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { SmilePlus, Frown, ListChecks, RefreshCw } from 'lucide-vue-next'
 import { useGuestStore } from '../stores/guest'
 import { useParticipantStore } from '../stores/participant'
 import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
@@ -211,7 +313,16 @@ import { useAuthStore } from '../stores/auth'
 import { useSprintHub } from '../composables/useSprintHub'
 import { useVoteStore } from '../stores/vote'
 import { useSprintStore } from '../stores/sprint'
+import { usePolicyStore } from '../stores/policy'
+import { useToast } from '../composables/useToast'
 import CardItem from '../components/CardItem.vue'
+import PhaseIndicator from '../components/PhaseIndicator.vue'
+import BaseButton from '../components/ui/BaseButton.vue'
+import BaseInput from '../components/ui/BaseInput.vue'
+import BaseBadge from '../components/ui/BaseBadge.vue'
+import BaseCard from '../components/ui/BaseCard.vue'
+import BaseModal from '../components/ui/BaseModal.vue'
+import LoadingSpinner from '../components/ui/LoadingSpinner.vue'
 
 const route = useRoute()
 const guestStore = useGuestStore()
@@ -220,34 +331,76 @@ const cardStore = useCardStore()
 const authStore = useAuthStore()
 const voteStore = useVoteStore()
 const sprintStore = useSprintStore()
-const { connect, disconnect } = useSprintHub()
+const policyStore = usePolicyStore()
+const { addToast } = useToast()
+const kicked = ref(false)
+const { connect, disconnect } = useSprintHub(() => {
+  kicked.value = true
+  guestStore.clearToken(sprintId)
+  disconnect()
+})
 
 const sprintId = Number(route.params.sprintId)
 const displayName = ref('')
 const busy = ref(false)
 const errorMessage = ref('')
 const joined = ref(false)
-const toastMessage = ref('')
+const loading = ref(true)
 
 const newCardText = ref({ WentWell: '', DidntGoWell: '' })
 const newActionText = ref('')
 const newActionAssignee = ref('')
+const deleteTarget = ref<Card | null>(null)
+const activeTab = ref<'WentWell' | 'DidntGoWell' | 'ActionItems'>('WentWell')
+const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth < 640 : false)
+
+function onResize() {
+  isMobile.value = window.innerWidth < 640
+}
 
 const participants = computed(() => participantStore.participants)
 const wentWell = computed(() => cardStore.wentWell)
 const didntGoWell = computed(() => cardStore.didntGoWell)
 const actionItems = computed(() => cardStore.actionItems)
 const sprintName = computed(() => sprintStore.currentSummary?.name ?? '')
+const currentPhase = computed(() => sprintStore.currentSummary?.currentPhase ?? '')
+const summaryParticipants = computed(() => sprintStore.currentSummary?.participants ?? [])
+const currentParticipantId = computed(() => participantStore.currentParticipant?.id ?? 0)
+const isWritingPhase = computed(() => currentPhase.value === 'Writing')
+const showActionItems = computed(() => policyStore.isAllowed(currentPhase.value, 'CreateActionItem'))
 
-function canEditCard(card: Card): boolean {
-  return card.participantId === participantStore.currentParticipant?.id || authStore.user !== null
+const boardGridClasses = computed(() => {
+  if (showActionItems.value) {
+    return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-h-0 grid-rows-[1fr]'
+  }
+  return 'grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 min-h-0 grid-rows-[1fr]'
+})
+
+const actionItemsColumnClasses = computed(() => {
+  return 'sm:col-span-2 lg:col-span-1'
+})
+
+watch(showActionItems, (visible) => {
+  if (!visible && activeTab.value === 'ActionItems') {
+    activeTab.value = 'WentWell'
+  }
+})
+
+function isColumnVisible(column: string): boolean {
+  if (!isMobile.value) return true
+  return activeTab.value === column
 }
 
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-function showToast(msg: string) {
-  toastMessage.value = msg
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => (toastMessage.value = ''), 3000)
+function canMutateCard(card: Card): boolean {
+  const ownsCard = card.participantId === participantStore.currentParticipant?.id || authStore.user !== null
+  if (!ownsCard) return false
+  const phase = currentPhase.value
+  const editAction = card.cardType === 'ActionItem' ? 'EditActionItem' : 'EditNote'
+  return policyStore.isAllowed(phase, editAction)
+}
+
+function showToast(msg: string, variant: 'success' | 'error' | 'info' = 'error') {
+  addToast(msg, variant)
 }
 
 async function addNote(column: 'WentWell' | 'DidntGoWell') {
@@ -320,7 +473,14 @@ async function saveEdit(card: Card, text: string, assigneeName: string | null) {
   }
 }
 
-async function confirmDelete(card: Card) {
+function requestDelete(card: Card) {
+  deleteTarget.value = card
+}
+
+async function executeDelete() {
+  const card = deleteTarget.value
+  if (!card) return
+  deleteTarget.value = null
   const snapshot = [...cardStore.cards]
   cardStore.cards = cardStore.cards.filter((c) => c.id !== card.id)
   try {
@@ -332,20 +492,43 @@ async function confirmDelete(card: Card) {
 }
 
 onMounted(async () => {
-  sprintStore.fetchSprintSummary(sprintId)
+  window.addEventListener('resize', onResize)
+  await policyStore.fetch()
+  await sprintStore.fetchSprintSummary(sprintId)
   guestStore.loadToken(sprintId)
   if (guestStore.token) {
     try {
       await participantStore.fetchMe(sprintId)
       await enterRoom()
+      return
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status
       if (status === 401) guestStore.clearToken(sprintId)
     }
   }
+  if (!authStore.loaded) await authStore.fetchMe()
+  if (authStore.isSignedIn && authStore.user?.givenName) {
+    try {
+      const response = await participantStore.join(sprintId, authStore.user.givenName)
+      guestStore.saveToken(sprintId, response.guestToken, response.displayName)
+      await enterRoom()
+      return
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status
+      if (status === 409) {
+        errorMessage.value = `${authStore.user!.givenName} is already taken. Choose another.`
+      } else {
+        errorMessage.value = 'Failed to join. Please try again.'
+      }
+    }
+  }
+  loading.value = false
 })
 
-onUnmounted(() => disconnect())
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize)
+  disconnect()
+})
 
 async function enterRoom() {
   await Promise.all([
@@ -355,6 +538,7 @@ async function enterRoom() {
   await voteStore.fetchMyVotes(sprintId)
   await connect(sprintId)
   joined.value = true
+  loading.value = false
 }
 
 async function castVote(card: Card) {
@@ -423,7 +607,7 @@ async function handleJoin() {
     await enterRoom()
   } catch (err: unknown) {
     const status = (err as { status?: number })?.status
-    if (status === 409) errorMessage.value = 'Sprint is not accepting participants.'
+    if (status === 409) errorMessage.value = 'Name already taken. Choose another.'
     else if (status === 404) errorMessage.value = 'Sprint not found.'
     else errorMessage.value = 'Failed to join. Please try again.'
   } finally {

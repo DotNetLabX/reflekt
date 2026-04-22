@@ -2,7 +2,7 @@
 
 **Traces to:** `docs/specs/v1.md` §3.3 (ownership semantics), §4 (Card entity), §5.1 (columns), §5.4 (editing & deletion), §5.5 (ordering), §7.1 (SignalR events), §8 (action items)
 **Dependencies:** Auth, Teams, Sprints, Participants
-**Status:** Ready
+**Status:** Complete
 
 ---
 
@@ -135,7 +135,7 @@ Error responses:
 7. Delete permission: card author OR Scrum Master. No other participant can delete another's card.
 8. Concurrent edit conflict resolution: last write wins. No locking, no merge UI.
 9. If a card is deleted while someone is editing it, their save fails with 404 (card not found).
-10. Phases are soft — participants can create and edit cards in any phase. The current phase is informational context, not enforcement.
+10. Phase-gating restricts which card mutations are permitted in each phase. See `docs/features/PhaseActionGating.md`.
 11. Card text is required, max 2000 characters.
 12. A card's column and type cannot be changed after creation. Editing only updates text and (for action items) assignee.
 13. The API returns cards ordered by creation time (newest first). Vote-based re-ordering is a display concern owned by the Voting feature.

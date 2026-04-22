@@ -430,3 +430,7 @@ web/reflekt-web/dist/
 
 # Claude Plugins
 /.omc
+
+# Graphify
+graphify-out/cache/
+graphify-out/graph.html

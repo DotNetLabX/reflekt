@@ -2,7 +2,7 @@
 
 **Traces to:** `docs/specs/v1.md` §4 (EvidenceLink entity), §6 (evidence links), §7.1 (SignalR: EvidenceLinkFetched), §8 (action items can have evidence links)
 **Dependencies:** Auth, Teams, Sprints, Participants, Cards
-**Status:** Ready
+**Status:** Complete
 
 ---
 

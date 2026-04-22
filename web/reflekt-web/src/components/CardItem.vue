@@ -1,13 +1,17 @@
 <template>
-  <div class="bg-white border rounded p-3 flex flex-col gap-1 shadow-sm">
-    <div v-if="!editing">
+  <div
+    class="relative rounded-[--radius-md] shadow-card p-3 flex flex-col gap-1 transition-shadow hover:shadow-card-hover"
+    :class="cardBgClass"
+  >
+    <div v-if="blurred" class="relative select-none">
+      <p class="text-sm text-gray-800 whitespace-pre-wrap blur-md" aria-hidden="true">Someone's note</p>
+      <div class="absolute inset-0" />
+    </div>
+    <div v-else-if="!editing">
       <p class="text-sm text-gray-800 whitespace-pre-wrap">{{ card.text }}</p>
-      <span
-        v-if="card.assigneeName"
-        class="inline-block mt-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full"
-      >
+      <BaseBadge v-if="card.assigneeName" variant="info" class="mt-1">
         {{ card.assigneeName }}
-      </span>
+      </BaseBadge>
     </div>
 
     <div v-else class="flex flex-col gap-1">
@@ -15,32 +19,31 @@
         v-model="editText"
         rows="2"
         maxlength="2000"
-        class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+        class="border border-gray-300 rounded-[--radius-sm] px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
       />
-      <input
+      <BaseInput
         v-if="card.cardType === 'ActionItem'"
         v-model="editAssignee"
-        type="text"
-        maxlength="50"
+        :maxlength="50"
         placeholder="Assignee"
-        class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
       <div class="flex gap-2">
-        <button
-          class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+        <BaseButton
+          size="sm"
+          variant="primary"
           :disabled="!editText.trim() || (card.cardType === 'ActionItem' && !editAssignee.trim())"
           @click="commitEdit"
         >
           Save
-        </button>
-        <button class="px-2 py-1 border rounded text-xs hover:bg-gray-50" @click="cancelEdit">
+        </BaseButton>
+        <BaseButton size="sm" variant="secondary" @click="cancelEdit">
           Cancel
-        </button>
+        </BaseButton>
       </div>
     </div>
 
     <!-- Evidence links -->
-    <div v-if="card.evidenceLinks && card.evidenceLinks.length > 0" class="flex flex-col gap-1 mt-1">
+    <div v-if="!blurred && card.evidenceLinks && card.evidenceLinks.length > 0" class="flex flex-col gap-1 mt-1">
       <a
         v-for="link in card.evidenceLinks"
         :key="link.id"
@@ -52,7 +55,7 @@
         <!-- Pending -->
         <template v-if="link.fetchStatus === 'Pending'">
           <span class="text-xs text-gray-400 italic truncate max-w-[200px]">{{ link.url }}</span>
-          <span class="text-xs text-gray-400 animate-pulse">…</span>
+          <span class="text-xs text-gray-400 animate-pulse">...</span>
         </template>
 
         <!-- Failed -->
@@ -87,90 +90,98 @@
         </template>
 
         <button
-          v-if="canEdit"
-          class="ml-auto text-gray-300 hover:text-red-500 text-xs flex-shrink-0 leading-none"
+          v-if="canAttachLink ?? canEdit"
+          class="ml-auto text-gray-300 hover:text-red-500 flex-shrink-0 leading-none cursor-pointer"
           title="Remove link"
           @click.prevent="$emit('detach-evidence-link', card.id, link.id)"
         >
-          ×
+          <XIcon :size="14" />
         </button>
       </a>
     </div>
 
     <!-- Attach evidence link UI -->
-    <div v-if="canEdit && !editing" class="mt-1">
+    <div v-if="!blurred && (canAttachLink ?? canEdit) && !editing" class="mt-1">
       <button
         v-if="!addingLink"
-        class="text-gray-300 hover:text-blue-500 text-xs"
+        class="text-gray-300 hover:text-blue-500 cursor-pointer"
         title="Add evidence link"
         @click="addingLink = true"
       >
-        🔗
+        <LinkIcon :size="14" />
       </button>
       <div v-else class="flex gap-1 items-center">
         <input
           v-model="linkUrl"
           type="text"
-          placeholder="Paste URL…"
-          class="flex-1 border rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+          placeholder="Paste URL..."
+          class="flex-1 border border-gray-300 rounded-[--radius-sm] px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
           @keydown.enter="submitLink"
           @keydown.escape="cancelLink"
         />
-        <button
-          class="px-2 py-0.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
-          :disabled="!linkUrl.trim()"
-          @click="submitLink"
-        >
+        <BaseButton size="sm" variant="primary" :disabled="!linkUrl.trim()" @click="submitLink">
           Add
+        </BaseButton>
+        <button class="text-gray-400 hover:text-gray-600 cursor-pointer" @click="cancelLink">
+          <XIcon :size="14" />
         </button>
-        <button class="text-gray-400 hover:text-gray-600 text-xs" @click="cancelLink">✕</button>
       </div>
     </div>
 
     <!-- Vote row — Note cards only -->
-    <div v-if="showVoting && !editing" class="flex items-center gap-2 mt-1">
+    <div v-if="!blurred && showVoting && !editing" class="flex items-center gap-2 mt-1">
       <button
-        class="flex items-center gap-1 px-2 py-1 rounded text-xs border transition-colors"
+        class="flex items-center gap-1 px-2 py-1 rounded-[--radius-sm] text-xs border transition-colors cursor-pointer"
         :class="
           (myVoteCount ?? 0) > 0
-            ? 'bg-blue-50 border-blue-300 text-blue-700'
-            : 'border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600'
+            ? 'bg-primary-50 border-primary-300 text-primary-700'
+            : remainingBudget === 0 && (myVoteCount ?? 0) === 0
+              ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+              : 'border-gray-200 text-gray-500 hover:border-primary-300 hover:text-primary-600'
         "
         :disabled="remainingBudget === 0 && (myVoteCount ?? 0) === 0"
         :title="remainingBudget === 0 && (myVoteCount ?? 0) === 0 ? 'No votes remaining' : 'Vote'"
         @click="$emit('vote', card)"
       >
-        ▲ {{ voteCount }}
+        <ChevronUp :size="16" />
+        <span class="transition-transform duration-150" :key="voteCount">{{ voteCount }}</span>
       </button>
       <button
         v-if="(myVoteCount ?? 0) > 0"
-        class="text-xs text-gray-400 hover:text-red-500 px-1"
+        class="text-gray-400 hover:text-red-500 px-1 cursor-pointer"
         title="Remove one vote"
         @click="$emit('retractVote', card)"
       >
-        −
+        <Minus :size="14" />
       </button>
-      <span v-if="(myVoteCount ?? 0) > 0" class="text-xs text-blue-500">{{ myVoteCount }} mine</span>
+      <span v-if="(myVoteCount ?? 0) > 0" class="text-xs text-primary-600 font-medium">{{ myVoteCount }} mine</span>
     </div>
 
-    <div v-if="canEdit && !editing" class="flex gap-2 mt-1 justify-end">
-      <button class="text-gray-400 hover:text-blue-600 text-xs" @click="startEdit">Edit</button>
-      <button class="text-gray-400 hover:text-red-600 text-xs" @click="$emit('delete', card)">Delete</button>
+    <div v-if="!blurred && canEdit && !editing" class="flex gap-2 mt-1 justify-end">
+      <BaseButton size="sm" variant="ghost" @click="startEdit">Edit</BaseButton>
+      <BaseButton size="sm" variant="ghost" @click="$emit('delete', card)">Delete</BaseButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { Link as LinkIcon, X as XIcon, ChevronUp, Minus } from 'lucide-vue-next'
 import type { Card, EvidenceLink } from '../stores/card'
+import BaseButton from './ui/BaseButton.vue'
+import BaseInput from './ui/BaseInput.vue'
+import BaseBadge from './ui/BaseBadge.vue'
 
 const props = defineProps<{
   card: Card
   canEdit: boolean
+  blurred?: boolean
+  canAttachLink?: boolean
   showVoting?: boolean
   voteCount?: number
   myVoteCount?: number
   remainingBudget?: number
+  columnColor?: 'went-well' | 'didnt-go-well' | 'action-items'
 }>()
 
 const emit = defineEmits<{
@@ -187,6 +198,15 @@ const editText = ref('')
 const editAssignee = ref('')
 const addingLink = ref(false)
 const linkUrl = ref('')
+
+const cardBgClasses: Record<string, string> = {
+  'went-well': 'bg-went-well-light/30',
+  'didnt-go-well': 'bg-didnt-go-well-light/30',
+  'action-items': 'bg-action-items-light/30',
+}
+const cardBgClass = computed(() =>
+  props.columnColor ? cardBgClasses[props.columnColor] ?? 'bg-white' : 'bg-white'
+)
 
 function startEdit() {
   editText.value = props.card.text

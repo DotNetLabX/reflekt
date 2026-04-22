@@ -138,6 +138,96 @@ namespace Reflekt.Persistence.Migrations
                     b.ToTable("Participants", (string)null);
                 });
 
+            modelBuilder.Entity("Reflekt.Domain.Sprints.PhaseAction", b =>
+                {
+                    b.Property<int>("Phase")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Phase", "Action");
+
+                    b.ToTable("PhaseActions", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Phase = 0,
+                            Action = 0
+                        },
+                        new
+                        {
+                            Phase = 0,
+                            Action = 1
+                        },
+                        new
+                        {
+                            Phase = 0,
+                            Action = 2
+                        },
+                        new
+                        {
+                            Phase = 0,
+                            Action = 8
+                        },
+                        new
+                        {
+                            Phase = 0,
+                            Action = 9
+                        },
+                        new
+                        {
+                            Phase = 0,
+                            Action = 10
+                        },
+                        new
+                        {
+                            Phase = 1,
+                            Action = 6
+                        },
+                        new
+                        {
+                            Phase = 1,
+                            Action = 7
+                        },
+                        new
+                        {
+                            Phase = 1,
+                            Action = 10
+                        },
+                        new
+                        {
+                            Phase = 2,
+                            Action = 3
+                        },
+                        new
+                        {
+                            Phase = 2,
+                            Action = 4
+                        },
+                        new
+                        {
+                            Phase = 2,
+                            Action = 5
+                        },
+                        new
+                        {
+                            Phase = 2,
+                            Action = 8
+                        },
+                        new
+                        {
+                            Phase = 2,
+                            Action = 9
+                        },
+                        new
+                        {
+                            Phase = 2,
+                            Action = 10
+                        });
+                });
+
             modelBuilder.Entity("Reflekt.Domain.Sprints.Sprint", b =>
                 {
                     b.Property<int>("Id")

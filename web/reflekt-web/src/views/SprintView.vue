@@ -55,7 +55,7 @@
         </button>
 
         <button
-          v-if="sprint.state === 'Active' && sprint.currentPhase !== 'Closed'"
+          v-if="sprint.state === 'Active' && sprint.currentPhase !== 'Reporting'"
           class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm disabled:opacity-50"
           :disabled="busy"
           @click="handleAdvancePhase"
@@ -81,6 +81,27 @@
         </router-link>
       </div>
 
+      <!-- Participants (Active sprints only) -->
+      <div v-if="sprint.state === 'Active' && participants.length > 0" class="flex flex-col gap-2 pt-2 border-t">
+        <h2 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Participants</h2>
+        <div class="flex flex-col gap-1">
+          <div
+            v-for="p in participants"
+            :key="p.id"
+            class="flex items-center justify-between px-3 py-2 bg-gray-50 rounded text-sm"
+          >
+            <span class="text-gray-800">{{ p.displayName }}</span>
+            <button
+              class="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50"
+              :disabled="busy"
+              @click="confirmKick(p)"
+            >
+              Kick
+            </button>
+          </div>
+        </div>
+      </div>
+
       <p v-if="errorMessage" class="text-red-600 text-sm">{{ errorMessage }}</p>
     </div>
   </div>
@@ -90,9 +111,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSprintStore } from '../stores/sprint'
+import { useParticipantStore } from '../stores/participant'
 
 const route = useRoute()
 const sprintStore = useSprintStore()
+const participantStore = useParticipantStore()
 
 const teamId = Number(route.params.teamId)
 const sprintId = Number(route.params.sprintId)
@@ -103,8 +126,9 @@ const copied = ref(false)
 let copiedTimer: ReturnType<typeof setTimeout> | null = null
 
 const sprint = computed(() => sprintStore.currentSprint)
+const participants = computed(() => participantStore.participants)
 
-const phaseOrder = ['Writing', 'Voting', 'Discussing', 'Closed']
+const phaseOrder = ['Writing', 'Voting', 'Discussing', 'Reporting']
 const nextPhaseLabel = computed(() => {
   if (!sprint.value) return ''
   const idx = phaseOrder.indexOf(sprint.value.currentPhase)
@@ -121,7 +145,12 @@ const stateBadgeClass = computed(() => {
   }
 })
 
-onMounted(() => sprintStore.fetchSprint(teamId, sprintId))
+onMounted(async () => {
+  await sprintStore.fetchSprint(teamId, sprintId)
+  if (sprintStore.currentSprint?.state === 'Active') {
+    await participantStore.fetchParticipants(sprintId)
+  }
+})
 
 async function handleStart() {
   errorMessage.value = ''
@@ -144,6 +173,15 @@ async function handleClose() {
   busy.value = true
   try { await sprintStore.closeSprint(teamId, sprintId) }
   catch { errorMessage.value = 'Failed to close sprint.' }
+  finally { busy.value = false }
+}
+
+async function confirmKick(p: { id: number; displayName: string }) {
+  if (!confirm(`Kick ${p.displayName}? They'll need a new invite to rejoin.`)) return
+  errorMessage.value = ''
+  busy.value = true
+  try { await participantStore.kickParticipant(sprintId, p.id) }
+  catch { errorMessage.value = 'Failed to kick participant.' }
   finally { busy.value = false }
 }
 

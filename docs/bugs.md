@@ -14,10 +14,17 @@ Severity guide:
 
 ## Open
 
+_(nothing)_
+
+---
+
+## Resolved
+
 ### BUG-001 — Closed sprint page is a navigation dead-end
 **Severity:** High
 **Source:** User report, 2026-04-21
 **File:** `web/reflekt-web/src/views/SprintView.vue`
+**Fix commit:** `4f38656` ("[Fixes] Round 1")
 
 After closing a sprint, the Sprint detail page shows the closed-state card but renders no action buttons — every button in the template (`Start Sprint`, `Open Retro Room`, `Copy invite link`, `Advance to…`, `Close Sprint`) is gated on `state === 'Draft'` or `state === 'Active'`. There is no link back to the sprint list (which lives on `/` / `WelcomeView`) and no link forward to the sprint report, so the organizer is stranded on the page with only the browser back button as an escape hatch.
 
@@ -37,6 +44,7 @@ After closing a sprint, the Sprint detail page shows the closed-state card but r
 **Severity:** High
 **Source:** User report, 2026-04-21
 **File:** `web/reflekt-web/src/views/RetroRoomView.vue` (consumer), `src/Services/Reflekt/Reflekt.API/Features/Cards/**` (broadcasters)
+**Fix commit:** `4f38656` ("[Fixes] Round 1")
 
 Two participants open the same retro room side-by-side. Participant A adds a note; Participant B's screen does not update. B must refresh the page to see A's card. Same behavior expected to affect edits, deletes, votes, and evidence-link events unless verified otherwise.
 
@@ -55,19 +63,15 @@ Two participants open the same retro room side-by-side. Participant A adds a not
 ### BUG-003 — Other participants' card text is visible during Writing phase
 **Severity:** High
 **Source:** User report, 2026-04-21
-**File:** `web/reflekt-web/src/views/RetroRoomView.vue`, `web/reflekt-web/src/components/CardItem.vue` (likely)
+**File:** `web/reflekt-web/src/views/RetroRoomView.vue`, `web/reflekt-web/src/components/CardItem.vue`, `src/Services/Reflekt/Reflekt.API/Features/Cards/ListCards/ListCardsEndpoint.cs`
+**Fix commit:** pending (WritingPhaseBlur implementation)
+**Note:** Originally marked fixed in `4f38656` but that commit did not implement the blur. Actually fixed via WritingPhaseBlur solo fix (2026-04-22).
 
-During the Writing phase, each participant should see that other people's cards exist (so they know progress is being made) but the card text must be blurred/hidden. Revealing other people's notes during Writing biases the group — people copy or anchor on what they see. Today the text is fully visible as soon as the page is refreshed.
-
-**Desired behavior:**
-- **Writing phase:** the card is visible as a tile; text of **other participants' cards** is blurred/obscured. The participant always sees their own cards in full and can still edit/delete them.
-- **Voting phase:** text of all cards is revealed — voters need to read them to vote.
-- **Discussing phase:** text remains visible.
-
-**Suggested fix:** In `RetroRoomView.vue` / `CardItem.vue`, compare `card.authorParticipantId` against the current participant. When `sprint.currentPhase === 'Writing'` and the card is not authored by the current participant, render a blur overlay over the text (e.g. `filter: blur(6px)` with a non-selectable overlay). Lift the blur when phase is `Voting` or later. Ensure the blur is applied via CSS on the rendered text so the real content still isn't shipped in a form the user can trivially un-blur in devtools — ideally the API omits other-participant card text during Writing phase altogether and returns a placeholder; however, that is a deeper backend change, so the frontend blur may be the pragmatic v1 fix. Flag for discussion.
+Defense-in-depth approach: backend redacts text/assignee/evidence-links for other participants' cards during Writing phase on the list endpoint; frontend applies CSS blur + placeholder on `CardItem.vue` for real-time SignalR pushes; phase transition triggers a card re-fetch to reveal content.
 
 ---
 
-## Resolved
-
-_(nothing yet)_
+### BUG-004 — Participants can perform actions outside their permitted phase
+**Severity:** High
+**Status:** Resolved via PhaseActionGating feature (`ai-coding/plans/PhaseActionGating/summary.md`).
+Phases were informational only — participants could write notes during Voting, vote during Discussing, etc. The PhaseActionGating feature enforces the action matrix on both backend (409 on forbidden actions) and frontend (hidden/disabled controls).

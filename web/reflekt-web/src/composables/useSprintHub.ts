@@ -3,14 +3,16 @@ import { useGuestStore } from '../stores/guest'
 import { useParticipantStore } from '../stores/participant'
 import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
 import { useVoteStore } from '../stores/vote'
+import { useSprintStore } from '../stores/sprint'
 
 let connection: signalR.HubConnection | null = null
 
-export function useSprintHub() {
+export function useSprintHub(onKicked?: () => void) {
   const guestStore = useGuestStore()
   const participantStore = useParticipantStore()
   const cardStore = useCardStore()
   const voteStore = useVoteStore()
+  const sprintStore = useSprintStore()
 
   function build(sprintId: number) {
     connection = new signalR.HubConnectionBuilder()
@@ -36,8 +38,23 @@ export function useSprintHub() {
       // No UI indicator in v1 — participant stays in list
     })
 
+    connection.on('ParticipantKicked', (payload: { participantId: number }) => {
+      participantStore.participants = participantStore.participants.filter(
+        (p) => p.id !== payload.participantId,
+      )
+      if (onKicked && participantStore.currentParticipant?.id === payload.participantId) {
+        onKicked()
+      }
+    })
+
     connection.on('PhaseChanged', (phase: string) => {
-      console.log('Phase changed:', phase)
+      const wasWriting = sprintStore.currentSummary?.currentPhase === 'Writing'
+      if (sprintStore.currentSummary) {
+        sprintStore.currentSummary.currentPhase = phase
+      }
+      if (wasWriting && phase !== 'Writing') {
+        cardStore.fetchCards(sprintId)
+      }
     })
 
     connection.on('CardCreated', (card: Card) => {

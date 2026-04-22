@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Domain.Votes;
@@ -16,7 +17,8 @@ public sealed record CastVoteRequest(int SprintId, int CardId);
 public sealed class CastVoteEndpoint(
     SprintRepository sprintRepository,
     CardRepository cardRepository,
-    VoteRepository voteRepository)
+    VoteRepository voteRepository,
+    PhaseActionCache phaseActionCache)
     : Endpoint<CastVoteRequest, VoteResponse>
 {
     public override async Task HandleAsync(CastVoteRequest req, CancellationToken ct)
@@ -44,6 +46,9 @@ public sealed class CastVoteEndpoint(
 
         if (sprint.State == SprintState.Closed)
             ThrowError("Sprint is closed.", StatusCodes.Status409Conflict);
+
+        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.CastVote))
+            ThrowError($"{SprintAction.CastVote} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
         var usedVotes = await voteRepository.CountByParticipantAsync(participantId, ct);
         if (usedVotes >= sprint.VotesPerParticipant)

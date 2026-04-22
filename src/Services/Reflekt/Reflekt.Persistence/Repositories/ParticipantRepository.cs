@@ -14,4 +14,10 @@ public sealed class ParticipantRepository(ReflektDbContext db) : Repository<Part
             .Where(p => p.SprintId == sprintId)
             .OrderBy(p => p.JoinedAt)
             .ToListAsync(ct);
+
+    public Task<bool> ExistsByDisplayNameAsync(int sprintId, string displayName, CancellationToken ct)
+        => Db.Participants
+            .AnyAsync(p => p.SprintId == sprintId && p.DisplayName.ToLower() == displayName.ToLower(), ct);
+
+    public void Remove(Participant participant) => Db.Participants.Remove(participant);
 }

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -13,7 +14,8 @@ public sealed record RetractVoteRequest(int SprintId, int CardId);
 [Tags("Votes")]
 public sealed class RetractVoteEndpoint(
     SprintRepository sprintRepository,
-    VoteRepository voteRepository)
+    VoteRepository voteRepository,
+    PhaseActionCache phaseActionCache)
     : Endpoint<RetractVoteRequest, VoteResponse>
 {
     public override async Task HandleAsync(RetractVoteRequest req, CancellationToken ct)
@@ -35,6 +37,9 @@ public sealed class RetractVoteEndpoint(
 
         if (sprint.State == SprintState.Closed)
             ThrowError("Sprint is closed.", StatusCodes.Status409Conflict);
+
+        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.RetractVote))
+            ThrowError($"{SprintAction.RetractVote} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
         var vote = await voteRepository.GetOneByParticipantAndCardAsync(participantId, req.CardId, ct);
         if (vote is null)

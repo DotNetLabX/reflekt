@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Features.PhaseActions;
+using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -14,7 +16,8 @@ public sealed record DeleteCardRequest(int SprintId, int CardId);
 public sealed class DeleteCardEndpoint(
     SprintRepository sprintRepository,
     TeamRepository teamRepository,
-    CardRepository cardRepository)
+    CardRepository cardRepository,
+    PhaseActionCache phaseActionCache)
     : Endpoint<DeleteCardRequest, EmptyResponse>
 {
     public override async Task HandleAsync(DeleteCardRequest req, CancellationToken ct)
@@ -47,6 +50,10 @@ public sealed class DeleteCardEndpoint(
                 return;
             }
         }
+
+        var action = card.CardType == CardType.ActionItem ? SprintAction.DeleteActionItem : SprintAction.DeleteNote;
+        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, action))
+            ThrowError($"{action} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
         card.MarkDeleted();
         cardRepository.Remove(card);

@@ -19,6 +19,9 @@ public sealed class JoinSprintEndpoint(SprintRepository sprintRepository, Partic
         if (sprint.State != SprintState.Active)
             ThrowError("Sprint is not accepting participants.", StatusCodes.Status409Conflict);
 
+        if (await participantRepository.ExistsByDisplayNameAsync(command.SprintId, command.DisplayName, ct))
+            ThrowError("Name already taken.", StatusCodes.Status409Conflict);
+
         var participant = Participant.Join(command.DisplayName, command.SprintId);
         await participantRepository.AddAsync(participant, ct);
         await participantRepository.SaveChangesAsync(ct);

@@ -2,7 +2,7 @@
 
 **Traces to:** `docs/specs/v1.md` §10 (report endpoint, content, storage policy, export)
 **Dependencies:** Auth, Teams, Sprints, Participants, Cards, Voting, EvidenceLinks
-**Status:** Ready
+**Status:** Complete
 
 ---
 

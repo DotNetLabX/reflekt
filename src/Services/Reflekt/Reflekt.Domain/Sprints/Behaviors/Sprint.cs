@@ -36,8 +36,8 @@ public sealed partial class Sprint
         {
             SprintPhase.Writing => SprintPhase.Voting,
             SprintPhase.Voting => SprintPhase.Discussing,
-            SprintPhase.Discussing => SprintPhase.Closed,
-            SprintPhase.Closed => throw new InvalidOperationException("Sprint phase is already Closed."),
+            SprintPhase.Discussing => SprintPhase.Reporting,
+            SprintPhase.Reporting => throw new InvalidOperationException("Sprint phase is already Reporting."),
             _ => throw new InvalidOperationException($"Unknown phase: {CurrentPhase}."),
         };
         AddDomainEvent(new Events.PhaseAdvancedEvent(this));

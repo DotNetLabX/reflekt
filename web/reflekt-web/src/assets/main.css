@@ -1,1 +1,57 @@
 @import "tailwindcss";
+
+@theme {
+  /* Brand primary — indigo/violet */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  /* Semantic — retro column colors */
+  --color-went-well: #10b981;
+  --color-went-well-light: #d1fae5;
+  --color-didnt-go-well: #f43f5e;
+  --color-didnt-go-well-light: #ffe4e6;
+  --color-action-items: #3b82f6;
+  --color-action-items-light: #dbeafe;
+
+  /* Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-raised: #f9fafb;
+  --color-background: #f8f9fb;
+
+  /* Semantic status */
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--color-background);
+}
+
+.card-list-enter-active { transition: all 0.3s ease; }
+.card-list-leave-active { transition: all 0.2s ease; position: absolute; }
+.card-list-enter-from { opacity: 0; transform: translateY(-10px); }
+.card-list-leave-to { opacity: 0; transform: translateX(20px); }
+.card-list-move { transition: transform 0.3s ease; }

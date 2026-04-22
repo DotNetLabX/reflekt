@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -9,7 +10,7 @@ namespace Reflekt.API.Features.Sprints.AdvancePhase;
 [Authorize(Policy = AuthPolicies.ScrumMaster)]
 [HttpPost("/api/teams/{teamId}/sprints/{sprintId}/advance-phase")]
 [Tags("Sprints")]
-public sealed class AdvancePhaseEndpoint(TeamRepository teamRepository, SprintRepository sprintRepository)
+public sealed class AdvancePhaseEndpoint(TeamRepository teamRepository, SprintRepository sprintRepository, PhaseActionCache phaseActionCache)
     : Endpoint<SprintRouteRequest, SprintResponse>
 {
     public override async Task HandleAsync(SprintRouteRequest request, CancellationToken ct)
@@ -35,12 +36,8 @@ public sealed class AdvancePhaseEndpoint(TeamRepository teamRepository, SprintRe
             return;
         }
 
-        if (sprint.CurrentPhase == SprintPhase.Closed)
-        {
-            AddError("Sprint phase is already Closed.");
-            await SendErrorsAsync(409, ct);
-            return;
-        }
+        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.AdvancePhase))
+            ThrowError($"{SprintAction.AdvancePhase} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
         sprint.AdvancePhase();
         await sprintRepository.SaveChangesAsync(ct);

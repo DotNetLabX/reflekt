@@ -2,7 +2,7 @@
 
 **Traces to:** `docs/specs/v1.md` §3.2 (sprint participants), §3.3 (ownership semantics), §4 (Participant entity), §7.1 (SignalR events)
 **Dependencies:** Auth, Teams, Sprints
-**Status:** Ready
+**Status:** Complete
 
 ---
 

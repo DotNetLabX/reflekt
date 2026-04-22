@@ -14,6 +14,8 @@ interface Sprint {
 interface SprintSummary {
   id: number
   name: string
+  currentPhase: string
+  participants: { displayName: string }[]
 }
 
 export const useSprintStore = defineStore('sprint', {

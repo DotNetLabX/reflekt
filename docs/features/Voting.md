@@ -2,7 +2,7 @@
 
 **Traces to:** `docs/specs/v1.md` §5.3 (voting), §4 (Vote entity), §7.1 (SignalR events: VoteCast, VoteRetracted), §3.3 (ownership semantics)
 **Dependencies:** Auth, Teams, Sprints, Participants, Cards
-**Status:** Ready
+**Status:** Complete
 
 ---
 

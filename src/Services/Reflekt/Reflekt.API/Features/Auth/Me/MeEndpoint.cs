@@ -4,7 +4,7 @@ using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Auth.Me;
 
-public sealed record MeResponse(string Email, string DisplayName);
+public sealed record MeResponse(string Email, string DisplayName, string GivenName);
 
 [Authorize(Policy = AuthPolicies.ScrumMaster)]
 [HttpGet("/auth/me")]
@@ -22,6 +22,8 @@ public sealed class MeEndpoint : EndpointWithoutRequest<MeResponse>
             return;
         }
 
-        await SendOkAsync(new MeResponse(email, displayName), ct);
+        var givenName = User.FindFirstValue(ClaimTypes.GivenName) ?? displayName;
+
+        await SendOkAsync(new MeResponse(email, displayName, givenName), ct);
     }
 }

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
@@ -10,7 +11,7 @@ namespace Reflekt.API.Features.Cards.CreateCard;
 [Authorize(Policy = AuthPolicies.Participant)]
 [HttpPost("/api/sprints/{sprintId}/cards")]
 [Tags("Cards")]
-public sealed class CreateCardEndpoint(SprintRepository sprintRepository, CardRepository cardRepository)
+public sealed class CreateCardEndpoint(SprintRepository sprintRepository, CardRepository cardRepository, PhaseActionCache phaseActionCache)
     : Endpoint<CreateCardCommand, CardResponse>
 {
     public override async Task HandleAsync(CreateCardCommand command, CancellationToken ct)
@@ -44,6 +45,10 @@ public sealed class CreateCardEndpoint(SprintRepository sprintRepository, CardRe
 
         if (sprint.State == SprintState.Closed)
             ThrowError("Sprint is closed.", StatusCodes.Status409Conflict);
+
+        var action = cardType == CardType.ActionItem ? SprintAction.CreateActionItem : SprintAction.CreateNote;
+        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, action))
+            ThrowError($"{action} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
         Card card;
         try

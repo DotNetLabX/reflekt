@@ -45,5 +45,13 @@ export const useParticipantStore = defineStore('participant', {
       if (!res.ok) return
       this.participants = (await res.json()) as Participant[]
     },
+    async kickParticipant(sprintId: number, participantId: number): Promise<void> {
+      const res = await fetch(`/api/sprints/${sprintId}/participants/${participantId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
+      this.participants = this.participants.filter((p) => p.id !== participantId)
+    },
   },
 })

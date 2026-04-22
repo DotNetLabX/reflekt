@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Features.PhaseActions;
+using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -12,7 +14,8 @@ namespace Reflekt.API.Features.Cards.EditCard;
 public sealed class EditCardEndpoint(
     SprintRepository sprintRepository,
     TeamRepository teamRepository,
-    CardRepository cardRepository)
+    CardRepository cardRepository,
+    PhaseActionCache phaseActionCache)
     : Endpoint<EditCardCommand, CardResponse>
 {
     public override async Task HandleAsync(EditCardCommand command, CancellationToken ct)
@@ -45,6 +48,10 @@ public sealed class EditCardEndpoint(
                 return;
             }
         }
+
+        var action = card.CardType == CardType.ActionItem ? SprintAction.EditActionItem : SprintAction.EditNote;
+        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, action))
+            ThrowError($"{action} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
         try
         {

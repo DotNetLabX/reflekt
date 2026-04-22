@@ -1,5 +1,6 @@
 using FastEndpoints;
 using Reflekt.API.Auth;
+using Reflekt.API.Features.PhaseActions;
 using Reflekt.API.Hubs;
 using Reflekt.API.OpenGraph;
 using Scalar.AspNetCore;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddReflektAuthentication(configuration);
         services.AddReflektAuthorization();
         services.AddReflektOpenGraph();
+        services.AddSingleton<PhaseActionCache>();
 
         return services;
     }

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Features.Cards;
+using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -14,7 +15,8 @@ public sealed class AttachEvidenceLinkEndpoint(
     SprintRepository sprintRepository,
     TeamRepository teamRepository,
     CardRepository cardRepository,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    PhaseActionCache phaseActionCache)
     : Endpoint<AttachEvidenceLinkCommand, EvidenceLinkResponse>
 {
     public override async Task HandleAsync(AttachEvidenceLinkCommand command, CancellationToken ct)
@@ -27,6 +29,9 @@ public sealed class AttachEvidenceLinkEndpoint(
 
         if (sprint.State == SprintState.Closed)
             ThrowError("Sprint is closed.", StatusCodes.Status409Conflict);
+
+        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.AttachEvidenceLink))
+            ThrowError($"{SprintAction.AttachEvidenceLink} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
         var participantIdClaim = User.FindFirstValue("participantId");
         if (participantIdClaim is not null)

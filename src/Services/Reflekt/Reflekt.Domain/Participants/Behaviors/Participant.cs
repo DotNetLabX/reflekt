@@ -16,4 +16,9 @@ public sealed partial class Participant
         participant.AddDomainEvent(new Events.ParticipantJoinedEvent(participant));
         return participant;
     }
+
+    public void Kick()
+    {
+        AddDomainEvent(new Events.ParticipantKickedEvent(this));
+    }
 }
