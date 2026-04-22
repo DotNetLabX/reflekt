@@ -19,6 +19,6 @@ public sealed class GetSprintSummaryEndpoint(SprintRepository sprintRepository, 
         var participants = await participantRepository.GetBySprintIdAsync(request.SprintId, ct);
         var participantDtos = participants.Select(p => new SprintSummaryParticipant(p.DisplayName)).ToList();
 
-        await SendOkAsync(new SprintSummaryResponse(sprint.Id, sprint.Name, sprint.CurrentPhase.ToString(), participantDtos), ct);
+        await SendOkAsync(new SprintSummaryResponse(sprint.Id, sprint.Name, sprint.CurrentPhase.ToString(), sprint.VotesPerParticipant, participantDtos), ct);
     }
 }

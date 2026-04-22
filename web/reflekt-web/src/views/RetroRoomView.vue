@@ -605,11 +605,11 @@ watch(showActionItems, (visible) => {
 })
 
 watch(isReportingPhase, (reporting) => {
-  if (reporting) {
+  if (reporting && joined.value) {
     reportingView.value = 'report'
     reportStore.fetchParticipantReport(sprintId)
   }
-}, { immediate: true })
+})
 
 function isColumnVisible(column: string): boolean {
   if (!isMobile.value) return true
@@ -726,11 +726,19 @@ async function enterRoom() {
     participantStore.fetchParticipants(sprintId),
     cardStore.fetchCards(sprintId),
     cardGroupStore.fetchGroups(sprintId),
+    sprintStore.fetchSprintSummary(sprintId),
   ])
+  if (sprintStore.currentSummary) {
+    voteStore.votesPerParticipant = sprintStore.currentSummary.votesPerParticipant
+  }
   await voteStore.fetchMyVotes(sprintId)
   await connect(sprintId)
   joined.value = true
   loading.value = false
+  if (isReportingPhase.value) {
+    reportingView.value = 'report'
+    reportStore.fetchParticipantReport(sprintId)
+  }
 }
 
 async function castVote(card: Card) {

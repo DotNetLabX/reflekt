@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import WelcomeView from '../views/WelcomeView.vue'
-import NotInvitedView from '../views/NotInvitedView.vue'
 import SprintView from '../views/SprintView.vue'
 import RetroRoomView from '../views/RetroRoomView.vue'
 import ReportView from '../views/ReportView.vue'
@@ -19,12 +18,6 @@ const router = createRouter({
       name: 'welcome',
       component: WelcomeView,
       meta: { title: 'Reflekt' },
-    },
-    {
-      path: '/not-invited',
-      name: 'not-invited',
-      component: NotInvitedView,
-      meta: { title: 'Access Denied — Reflekt' },
     },
     {
       path: '/teams/:teamId/sprints/:sprintId',

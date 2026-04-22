@@ -11,9 +11,28 @@
     @dragleave="onDragLeave"
     @drop="onDrop"
   >
-    <div class="flex gap-1">
+    <div class="flex items-start gap-1">
       <GripVertical v-if="canGroup" :size="14" class="text-gray-300 flex-shrink-0 mt-0.5" />
-      <p class="text-sm text-gray-800 whitespace-pre-wrap">{{ group.cards[0]?.text }}</p>
+      <p class="text-sm text-gray-800 whitespace-pre-wrap flex-1">{{ group.cards[0]?.text }}</p>
+      <div v-if="showVoting" class="flex items-center gap-1 flex-shrink-0">
+        <button
+          class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all"
+          :class="
+            myVoteCount > 0
+              ? 'bg-primary-600 text-white border-primary-600 hover:bg-primary-700 cursor-pointer'
+              : remainingBudget <= 0
+                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                : 'border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 cursor-pointer'
+          "
+          :disabled="remainingBudget <= 0 && myVoteCount === 0"
+          @click="myVoteCount > 0 ? $emit('retract-vote', group) : $emit('vote', group)"
+        >
+          <Check v-if="myVoteCount > 0" :size="14" />
+          <ChevronUp v-else :size="14" />
+          <span>{{ voteCount }}</span>
+        </button>
+      </div>
+      <span v-else-if="voteCount > 0" class="text-xs font-medium text-gray-500 flex-shrink-0">{{ voteCount }} votes</span>
     </div>
 
     <!-- Evidence links for the solo card -->
@@ -29,27 +48,6 @@
         {{ link.title || link.url }}
       </a>
     </div>
-
-    <!-- Voting controls -->
-    <div v-if="showVoting" class="flex items-center gap-2 mt-1">
-      <button
-        class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all"
-        :class="
-          myVoteCount > 0
-            ? 'bg-primary-600 text-white border-primary-600 hover:bg-primary-700 cursor-pointer'
-            : remainingBudget <= 0
-              ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-              : 'border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 cursor-pointer'
-        "
-        :disabled="remainingBudget <= 0 && myVoteCount === 0"
-        @click="myVoteCount > 0 ? $emit('retract-vote', group) : $emit('vote', group)"
-      >
-        <Check v-if="myVoteCount > 0" :size="14" />
-        <ChevronUp v-else :size="14" />
-        <span>{{ voteCount }}</span>
-      </button>
-    </div>
-    <span v-else-if="voteCount > 0" class="text-xs font-medium text-gray-500">{{ voteCount }} votes</span>
 
     <!-- Discussion controls -->
     <div v-if="isDiscussing" class="flex items-center gap-2 mt-1">
@@ -117,7 +115,6 @@
       <span class="text-sm font-medium text-gray-800 flex-1 truncate">
         {{ group.title || group.cards[0]?.text || 'Untitled group' }}
       </span>
-      <BaseBadge variant="info">{{ group.cards.length }}</BaseBadge>
       <div v-if="showVoting" class="flex items-center gap-1">
         <button
           class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all"
@@ -220,7 +217,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ChevronUp, Check, GripVertical, CheckCircle, MessageCircle } from 'lucide-vue-next'
-import BaseBadge from './ui/BaseBadge.vue'
 import type { CardGroup, CardGroupCard } from '../stores/cardGroup'
 
 export interface DragPayload {

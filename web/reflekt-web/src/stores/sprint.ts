@@ -15,6 +15,7 @@ interface SprintSummary {
   id: number
   name: string
   currentPhase: string
+  votesPerParticipant: number
   participants: { displayName: string }[]
 }
 

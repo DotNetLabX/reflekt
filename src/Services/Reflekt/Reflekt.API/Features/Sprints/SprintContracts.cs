@@ -14,7 +14,7 @@ public sealed record SprintResponse(
 
 public sealed record SprintSummaryParticipant(string DisplayName);
 
-public sealed record SprintSummaryResponse(int Id, string Name, string CurrentPhase, List<SprintSummaryParticipant> Participants);
+public sealed record SprintSummaryResponse(int Id, string Name, string CurrentPhase, int VotesPerParticipant, List<SprintSummaryParticipant> Participants);
 
 public sealed record SprintRouteRequest(int TeamId, int SprintId);
 

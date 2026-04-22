@@ -20,7 +20,6 @@ public static class DependencyInjection
         services.AddOpenApi();
         services.AddProblemDetails();
 
-        services.Configure<AuthOptions>(configuration.GetSection("Auth"));
         services.Configure<SeedOptions>(configuration.GetSection("Seed"));
 
         services.AddReflektAuthentication(configuration);

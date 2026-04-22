@@ -1,8 +1,6 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.Extensions.Options;
 
 namespace Reflekt.API.Auth;
 
@@ -49,16 +47,6 @@ public static class AuthenticationConfiguration
 
     private static Task OnGoogleTicketReceived(TicketReceivedContext ctx)
     {
-        var authOptions = ctx.HttpContext.RequestServices
-            .GetRequiredService<IOptions<AuthOptions>>().Value;
-        var email = ctx.Principal?.FindFirstValue(ClaimTypes.Email);
-
-        if (!AllowlistChecker.IsAllowed(email, authOptions.AllowedEmails))
-        {
-            ctx.HandleResponse();
-            ctx.Response.Redirect("/not-invited");
-        }
-
         return Task.CompletedTask;
     }
 }

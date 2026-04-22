@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1776713128298,
+  "lastScanned": 1776892842725,
   "projectRoot": "D:\\src\\reflekt\\web\\reflekt-web",
   "techStack": {
     "languages": [
@@ -73,7 +73,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 1,
-      "lastAccessed": 1776713128271,
+      "lastAccessed": 1776892842658,
       "keyFiles": [
         "favicon.ico"
       ]
@@ -82,7 +82,7 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 2,
-      "lastAccessed": 1776713128271,
+      "lastAccessed": 1776892842659,
       "keyFiles": [
         "App.vue",
         "main.ts"
@@ -91,42 +91,46 @@
     "src\\assets": {
       "path": "src\\assets",
       "purpose": "Static assets",
-      "fileCount": 3,
-      "lastAccessed": 1776713128279,
+      "fileCount": 1,
+      "lastAccessed": 1776892842672,
       "keyFiles": [
-        "base.css",
-        "logo.svg",
         "main.css"
       ]
     },
     "src\\components": {
       "path": "src\\components",
       "purpose": "UI components",
-      "fileCount": 5,
-      "lastAccessed": 1776713128280,
+      "fileCount": 4,
+      "lastAccessed": 1776892842673,
       "keyFiles": [
         "AppHeader.vue",
-        "CardItem.vue",
-        "HelloWorld.vue"
+        "CardGroupItem.vue",
+        "CardItem.vue"
       ]
     },
     "src\\views": {
       "path": "src\\views",
       "purpose": "View templates",
-      "fileCount": 6,
-      "lastAccessed": 1776713128280,
+      "fileCount": 4,
+      "lastAccessed": 1776892842673,
       "keyFiles": [
-        "AboutView.vue",
-        "HomeView.vue",
-        "NotInvitedView.vue"
+        "ReportView.vue",
+        "RetroRoomView.vue",
+        "SprintView.vue"
       ]
     }
   },
   "hotPaths": [
     {
       "path": "src\\views\\RetroRoomView.vue",
-      "accessCount": 13,
-      "lastAccessed": 1776887694162,
+      "accessCount": 15,
+      "lastAccessed": 1776892963168,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\CardGroupItem.vue",
+      "accessCount": 6,
+      "lastAccessed": 1776893305349,
       "type": "file"
     },
     {
@@ -136,21 +140,33 @@
       "type": "file"
     },
     {
+      "path": "src",
+      "accessCount": 5,
+      "lastAccessed": 1776892952991,
+      "type": "directory"
+    },
+    {
       "path": "src\\stores\\card.ts",
       "accessCount": 4,
       "lastAccessed": 1776887774375,
       "type": "directory"
     },
     {
-      "path": "src",
-      "accessCount": 3,
-      "lastAccessed": 1776887687864,
-      "type": "directory"
-    },
-    {
       "path": "src\\stores\\cardGroup.ts",
       "accessCount": 2,
       "lastAccessed": 1776870942713,
+      "type": "file"
+    },
+    {
+      "path": "src\\stores\\report.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776890766926,
+      "type": "file"
+    },
+    {
+      "path": "src\\views\\ReportView.vue",
+      "accessCount": 2,
+      "lastAccessed": 1776892964519,
       "type": "file"
     },
     {
@@ -164,24 +180,6 @@
       "accessCount": 1,
       "lastAccessed": 1776804349067,
       "type": "directory"
-    },
-    {
-      "path": "src\\components\\CardGroupItem.vue",
-      "accessCount": 1,
-      "lastAccessed": 1776863328656,
-      "type": "file"
-    },
-    {
-      "path": "src\\views\\ReportView.vue",
-      "accessCount": 1,
-      "lastAccessed": 1776870940896,
-      "type": "file"
-    },
-    {
-      "path": "src\\stores\\report.ts",
-      "accessCount": 1,
-      "lastAccessed": 1776870944220,
-      "type": "file"
     },
     {
       "path": "src\\router\\index.ts",
@@ -199,6 +197,30 @@
       "path": "src\\stores\\policy.ts",
       "accessCount": 1,
       "lastAccessed": 1776870961862,
+      "type": "file"
+    },
+    {
+      "path": "src\\views",
+      "accessCount": 1,
+      "lastAccessed": 1776890786209,
+      "type": "directory"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1776892950501,
+      "type": "directory"
+    },
+    {
+      "path": "src\\components\\CardItem.vue",
+      "accessCount": 1,
+      "lastAccessed": 1776892956265,
+      "type": "file"
+    },
+    {
+      "path": "src\\components\\ui\\BaseBadge.vue",
+      "accessCount": 1,
+      "lastAccessed": 1776892957855,
       "type": "file"
     }
   ],
