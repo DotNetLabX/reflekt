@@ -4,11 +4,11 @@ namespace Reflekt.Domain.Votes;
 
 public sealed partial class Vote
 {
-    public static Vote Create(int cardId, int participantId)
+    public static Vote Create(int groupId, int participantId)
     {
         var vote = new Vote
         {
-            CardId = cardId,
+            GroupId = groupId,
             ParticipantId = participantId,
             CreatedAt = DateTime.UtcNow,
         };

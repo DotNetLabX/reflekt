@@ -17,6 +17,32 @@ namespace Reflekt.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
 
+            modelBuilder.Entity("Reflekt.Domain.CardGroups.CardGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ColumnType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SprintId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SprintId");
+
+                    b.ToTable("CardGroups", (string)null);
+                });
+
             modelBuilder.Entity("Reflekt.Domain.Cards.Card", b =>
                 {
                     b.Property<int>("Id")
@@ -36,6 +62,9 @@ namespace Reflekt.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ParticipantId")
                         .HasColumnType("INTEGER");
 
@@ -51,6 +80,8 @@ namespace Reflekt.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
 
                     b.HasIndex("ParticipantId");
 
@@ -183,47 +214,67 @@ namespace Reflekt.Persistence.Migrations
                         },
                         new
                         {
-                            Phase = 1,
+                            Phase = 2,
                             Action = 6
                         },
                         new
                         {
-                            Phase = 1,
+                            Phase = 2,
                             Action = 7
                         },
                         new
                         {
-                            Phase = 1,
+                            Phase = 2,
                             Action = 10
                         },
                         new
                         {
-                            Phase = 2,
+                            Phase = 3,
                             Action = 3
                         },
                         new
                         {
-                            Phase = 2,
+                            Phase = 3,
                             Action = 4
                         },
                         new
                         {
-                            Phase = 2,
+                            Phase = 3,
                             Action = 5
                         },
                         new
                         {
-                            Phase = 2,
+                            Phase = 3,
                             Action = 8
                         },
                         new
                         {
-                            Phase = 2,
+                            Phase = 3,
                             Action = 9
                         },
                         new
                         {
-                            Phase = 2,
+                            Phase = 3,
+                            Action = 10
+                        },
+                        new
+                        {
+                            Phase = 1,
+                            Action = 11
+                        },
+                        new
+                        {
+                            Phase = 1,
+                            Action = 12
+                        },
+                        new
+                        {
+                            Phase = 1,
+                            Action = 13
+                        },
+                        new
+                        {
+                            Phase = 1,
                             Action = 10
                         });
                 });
@@ -299,26 +350,40 @@ namespace Reflekt.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CardId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("ParticipantId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CardId");
+                    b.HasIndex("GroupId");
 
                     b.HasIndex("ParticipantId");
 
                     b.ToTable("Votes", (string)null);
                 });
 
+            modelBuilder.Entity("Reflekt.Domain.CardGroups.CardGroup", b =>
+                {
+                    b.HasOne("Reflekt.Domain.Sprints.Sprint", null)
+                        .WithMany()
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Reflekt.Domain.Cards.Card", b =>
                 {
+                    b.HasOne("Reflekt.Domain.CardGroups.CardGroup", null)
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Reflekt.Domain.Participants.Participant", null)
                         .WithMany()
                         .HasForeignKey("ParticipantId")
@@ -361,9 +426,9 @@ namespace Reflekt.Persistence.Migrations
 
             modelBuilder.Entity("Reflekt.Domain.Votes.Vote", b =>
                 {
-                    b.HasOne("Reflekt.Domain.Cards.Card", null)
+                    b.HasOne("Reflekt.Domain.CardGroups.CardGroup", null)
                         .WithMany()
-                        .HasForeignKey("CardId")
+                        .HasForeignKey("GroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

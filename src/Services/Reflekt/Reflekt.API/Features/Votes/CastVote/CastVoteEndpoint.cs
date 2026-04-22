@@ -1,7 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Reflekt.API.Features.PhaseActions;
-using Reflekt.Domain.Cards;
+using Reflekt.API.Hubs;
 using Reflekt.Domain.Sprints;
 using Reflekt.Domain.Votes;
 using Reflekt.Persistence.Repositories;
@@ -9,16 +10,17 @@ using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Votes.CastVote;
 
-public sealed record CastVoteRequest(int SprintId, int CardId);
+public sealed record CastVoteRequest(int SprintId, int GroupId);
 
 [Authorize(Policy = AuthPolicies.Participant)]
-[HttpPost("/api/sprints/{sprintId}/cards/{cardId}/votes")]
+[HttpPost("/api/sprints/{sprintId}/card-groups/{groupId}/votes")]
 [Tags("Votes")]
 public sealed class CastVoteEndpoint(
     SprintRepository sprintRepository,
-    CardRepository cardRepository,
+    CardGroupRepository cardGroupRepository,
     VoteRepository voteRepository,
-    PhaseActionCache phaseActionCache)
+    PhaseActionCache phaseActionCache,
+    IHubContext<SprintHub> hubContext)
     : Endpoint<CastVoteRequest, VoteResponse>
 {
     public override async Task HandleAsync(CastVoteRequest req, CancellationToken ct)
@@ -35,11 +37,8 @@ public sealed class CastVoteEndpoint(
             return;
         }
 
-        var card = await cardRepository.GetByIdAsync(req.CardId, ct);
-        if (card is null || card.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
-
-        if (card.CardType == CardType.ActionItem)
-            ThrowError("Cannot vote on action items.", StatusCodes.Status400BadRequest);
+        var group = await cardGroupRepository.GetByIdAsync(req.GroupId, ct);
+        if (group is null || group.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
 
         var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
         if (sprint is null) { await SendNotFoundAsync(ct); return; }
@@ -50,17 +49,29 @@ public sealed class CastVoteEndpoint(
         if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.CastVote))
             ThrowError($"{SprintAction.CastVote} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
+        await using var tx = await voteRepository.BeginSerializableAsync(ct);
+
         var usedVotes = await voteRepository.CountByParticipantAsync(participantId, ct);
         if (usedVotes >= sprint.VotesPerParticipant)
             ThrowError("Vote budget exhausted.", StatusCodes.Status409Conflict);
 
-        var vote = Vote.Create(req.CardId, participantId);
+        var existingVote = await voteRepository.GetOneByParticipantAndGroupAsync(participantId, req.GroupId, ct);
+        if (existingVote is not null)
+            ThrowError("Already voted on this group.", StatusCodes.Status409Conflict);
+
+        var vote = Vote.Create(req.GroupId, participantId);
+        vote.ClearDomainEvents();
         await voteRepository.AddAsync(vote, ct);
         await voteRepository.SaveChangesAsync(ct);
 
-        var voteCount = await voteRepository.CountByCardAsync(req.CardId, ct);
-        var myVoteCount = await voteRepository.CountByParticipantAndCardAsync(participantId, req.CardId, ct);
+        var voteCount = await voteRepository.CountByGroupAsync(req.GroupId, ct);
+        var myVoteCount = await voteRepository.CountByParticipantAndGroupAsync(participantId, req.GroupId, ct);
 
-        await SendAsync(new VoteResponse(req.CardId, voteCount, myVoteCount), 201, ct);
+        await tx.CommitAsync(ct);
+
+        await hubContext.Clients.Group($"sprint:{req.SprintId}")
+            .SendAsync("VoteCast", new { groupId = req.GroupId, newCount = voteCount }, ct);
+
+        await SendAsync(new VoteResponse(req.GroupId, voteCount, myVoteCount), 201, ct);
     }
 }

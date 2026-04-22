@@ -1,5 +1,6 @@
 using BuildingBlocks.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Reflekt.Domain.CardGroups;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Participants;
 using Reflekt.Domain.Sprints;
@@ -14,6 +15,7 @@ public class ReflektDbContext(DbContextOptions<ReflektDbContext> options) : Appl
     public DbSet<Sprint> Sprints => Set<Sprint>();
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<Card> Cards => Set<Card>();
+    public DbSet<CardGroup> CardGroups => Set<CardGroup>();
     public DbSet<Vote> Votes => Set<Vote>();
     public DbSet<EvidenceLink> EvidenceLinks => Set<EvidenceLink>();
     public DbSet<PhaseAction> PhaseActions => Set<PhaseAction>();

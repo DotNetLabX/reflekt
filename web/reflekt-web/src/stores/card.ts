@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { useGuestStore } from './guest'
-import { useVoteStore } from './vote'
 
 export interface EvidenceLink {
   id: number
@@ -24,6 +23,7 @@ export interface Card {
   cardType: string
   text: string
   assigneeName: string | null
+  groupId: number | null
   createdAt: string
   updatedAt: string
   voteCount: number
@@ -60,8 +60,6 @@ export const useCardStore = defineStore('card', {
       if (!res.ok) return
       const cards = (await res.json()) as Card[]
       this.cards = cards
-      const voteStore = useVoteStore()
-      voteStore.initVoteCounts(cards.map((c) => ({ cardId: c.id, voteCount: c.voteCount })))
     },
 
     async createCard(sprintId: number, payload: CreateCardPayload): Promise<Card> {

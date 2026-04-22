@@ -94,12 +94,12 @@ public class SprintTests
     }
 
     [Fact]
-    public void AdvancePhase_WritingToVoting()
+    public void AdvancePhase_WritingToGrouping()
     {
         var sprint = Sprint.Create("Sprint 1", teamId: 1);
         sprint.Start();
         sprint.AdvancePhase();
-        sprint.CurrentPhase.Should().Be(SprintPhase.Voting);
+        sprint.CurrentPhase.Should().Be(SprintPhase.Grouping);
     }
 
     [Fact]
@@ -109,23 +109,27 @@ public class SprintTests
         sprint.Start();
 
         sprint.AdvancePhase();
+        sprint.CurrentPhase.Should().Be(SprintPhase.Grouping);
+
+        sprint.AdvancePhase();
         sprint.CurrentPhase.Should().Be(SprintPhase.Voting);
 
         sprint.AdvancePhase();
         sprint.CurrentPhase.Should().Be(SprintPhase.Discussing);
 
         sprint.AdvancePhase();
-        sprint.CurrentPhase.Should().Be(SprintPhase.Closed);
+        sprint.CurrentPhase.Should().Be(SprintPhase.Reporting);
     }
 
     [Fact]
-    public void AdvancePhase_FromClosed_Throws()
+    public void AdvancePhase_FromReporting_Throws()
     {
         var sprint = Sprint.Create("Sprint 1", teamId: 1);
         sprint.Start();
-        sprint.AdvancePhase(); // Writing → Voting
+        sprint.AdvancePhase(); // Writing → Grouping
+        sprint.AdvancePhase(); // Grouping → Voting
         sprint.AdvancePhase(); // Voting → Discussing
-        sprint.AdvancePhase(); // Discussing → Closed
+        sprint.AdvancePhase(); // Discussing → Reporting
         var act = sprint.AdvancePhase;
         act.Should().Throw<InvalidOperationException>();
     }

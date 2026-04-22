@@ -106,7 +106,7 @@ Error responses:
 3. A guest token is scoped to one sprint. A participant joining multiple sprints gets a separate token and Participant record per sprint.
 4. Silent rejoin: if a valid token exists in localStorage on page load, the frontend calls the lookup endpoint and resumes as the existing participant without prompting for a name.
 5. Switching devices mid-retro creates a new participant — the token lives in the browser, not the person. Acceptable tradeoff for v1.
-6. Display name is required, max 50 characters. No uniqueness constraint — two participants can share the same name.
+6. Display name is required, max 50 characters. Display names must be unique within a sprint (case-insensitive comparison). Duplicate names are rejected with 409. See `docs/features/CreatorAutoJoin.md`.
 7. Participant rows are permanent within their sprint. Disconnecting fires a presence event but does not delete the row. The participant can rejoin at any time with the same token.
 8. The Scrum Master participates in the retro by also joining as a participant. Their SM powers (via cookie auth) and their participant identity (via guest token) are independent.
 9. The participant list is visible to any authenticated participant in the sprint and to the Scrum Master.
@@ -137,7 +137,7 @@ Error responses:
 
 ## Out of Scope
 
-- **Participant deletion or kick** — no mechanism to remove a participant in v1. SM handles disruptive behavior out-of-band.
+- **~~Participant deletion or kick~~** — Implemented. SM can kick participants from the sprint management page. See backlog item #18.
 - **Display name editing after join** — name is set once. Changing requires creating a new participant (new token, new row).
 - **Online/offline presence indicators** — ParticipantLeft fires on disconnect but the frontend does not display real-time connection status. The participant list shows everyone who has joined, not who is currently connected.
 - **Cross-sprint identity linking** — each sprint has independent participants. No "same person across sprints" concept in v1.

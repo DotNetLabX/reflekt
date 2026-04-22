@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { PenLine, ThumbsUp, MessageSquare, FileText, Check } from 'lucide-vue-next'
+import { PenLine, Layers, ThumbsUp, MessageSquare, FileText, Check } from 'lucide-vue-next'
 
 const props = defineProps<{
   currentPhase: string
@@ -32,6 +32,7 @@ const props = defineProps<{
 
 const phases = [
   { name: 'Writing', short: 'Write', icon: PenLine },
+  { name: 'Grouping', short: 'Group', icon: Layers },
   { name: 'Voting', short: 'Vote', icon: ThumbsUp },
   { name: 'Discussing', short: 'Discuss', icon: MessageSquare },
   { name: 'Reporting', short: 'Report', icon: FileText },

@@ -46,23 +46,31 @@
           <div v-if="report.notes.wentWell.length === 0" class="text-gray-400 text-sm text-center py-4">
             No items
           </div>
-          <ul v-else class="flex flex-col gap-3">
-            <li v-for="(card, i) in report.notes.wentWell" :key="i">
-              <p class="text-sm text-gray-800">{{ card.text }}</p>
-              <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
-                <a
-                  v-for="(link, j) in card.evidenceLinks"
-                  :key="j"
-                  :href="link.url"
-                  target="_blank"
-                  rel="noopener"
-                  class="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
-                >
-                  {{ link.title || truncateUrl(link.url) }}
-                </a>
+          <div v-else class="flex flex-col gap-4">
+            <div v-for="(group, i) in report.notes.wentWell" :key="i">
+              <div class="flex items-center gap-2 mb-1">
+                <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
+                <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
               </div>
-            </li>
-          </ul>
+              <ul class="flex flex-col gap-1 pl-3 border-l-2 border-green-200">
+                <li v-for="(card, j) in group.cards" :key="j">
+                  <p class="text-sm text-gray-700">{{ card.text }}</p>
+                  <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
+                    <a
+                      v-for="(link, k) in card.evidenceLinks"
+                      :key="k"
+                      :href="link.url"
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
+                    >
+                      {{ link.title || truncateUrl(link.url) }}
+                    </a>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -75,23 +83,31 @@
           <div v-if="report.notes.didntGoWell.length === 0" class="text-gray-400 text-sm text-center py-4">
             No items
           </div>
-          <ul v-else class="flex flex-col gap-3">
-            <li v-for="(card, i) in report.notes.didntGoWell" :key="i">
-              <p class="text-sm text-gray-800">{{ card.text }}</p>
-              <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
-                <a
-                  v-for="(link, j) in card.evidenceLinks"
-                  :key="j"
-                  :href="link.url"
-                  target="_blank"
-                  rel="noopener"
-                  class="inline-block px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
-                >
-                  {{ link.title || truncateUrl(link.url) }}
-                </a>
+          <div v-else class="flex flex-col gap-4">
+            <div v-for="(group, i) in report.notes.didntGoWell" :key="i">
+              <div class="flex items-center gap-2 mb-1">
+                <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
+                <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
               </div>
-            </li>
-          </ul>
+              <ul class="flex flex-col gap-1 pl-3 border-l-2 border-red-200">
+                <li v-for="(card, j) in group.cards" :key="j">
+                  <p class="text-sm text-gray-700">{{ card.text }}</p>
+                  <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
+                    <a
+                      v-for="(link, k) in card.evidenceLinks"
+                      :key="k"
+                      :href="link.url"
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-block px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
+                    >
+                      {{ link.title || truncateUrl(link.url) }}
+                    </a>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 

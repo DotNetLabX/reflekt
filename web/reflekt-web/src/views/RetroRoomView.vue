@@ -129,29 +129,59 @@
             name="card-list"
             tag="div"
             class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto min-h-0 relative"
+            :class="{ 'bg-primary-50/30': columnDragOver === 'WentWell' }"
+            @dragover="onColumnDragOver($event, 'WentWell')"
+            @dragleave="onColumnDragLeave('WentWell')"
+            @drop="onColumnDrop($event, 'WentWell')"
           >
-            <div v-if="wentWell.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
-              No cards yet
-            </div>
-            <CardItem
-              v-for="card in wentWell"
-              :key="card.id"
-              :card="card"
-              :can-edit="canMutateCard(card)"
-              :blurred="isWritingPhase && card.participantId !== currentParticipantId"
-              :can-attach-link="policyStore.isAllowed(currentPhase, 'AttachEvidenceLink')"
-              :show-voting="policyStore.isAllowed(currentPhase, 'CastVote')"
-              :vote-count="voteStore.voteCountForCard(card.id)"
-              :my-vote-count="voteStore.myVotesOnCard(card.id)"
-              :remaining-budget="voteStore.remainingBudget"
-              column-color="went-well"
-              @edit="saveEdit"
-              @delete="requestDelete"
-              @vote="castVote"
-              @retract-vote="retractVote"
-              @attach-evidence-link="attachEvidenceLink"
-              @detach-evidence-link="detachEvidenceLink"
-            />
+            <template v-if="showGroups">
+              <div v-if="wentWellGroups.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
+                No groups yet
+              </div>
+              <CardGroupItem
+                v-for="group in wentWellGroups"
+                :key="'g' + group.id"
+                :group="group"
+                column-color="went-well"
+                :show-voting="policyStore.isAllowed(currentPhase, 'CastVote')"
+                :vote-count="voteStore.voteCountForGroup(group.id)"
+                :my-vote-count="voteStore.myVotesOnGroup(group.id)"
+                :remaining-budget="voteStore.remainingBudget"
+                :is-scrum-master="isScrumMaster"
+                :can-group="canGroup"
+                :can-ungroup="canUngroup"
+                @vote="castGroupVote"
+                @retract-vote="retractGroupVote"
+                @dissolve="dissolveGroup"
+                @update-title="updateGroupTitle"
+                @merge="mergeGroups"
+                @remove-card="removeCardFromGroup"
+              />
+            </template>
+            <template v-else>
+              <div v-if="wentWell.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
+                No cards yet
+              </div>
+              <CardItem
+                v-for="card in wentWell"
+                :key="card.id"
+                :card="card"
+                :can-edit="canMutateCard(card)"
+                :blurred="isWritingPhase && card.participantId !== currentParticipantId"
+                :can-attach-link="policyStore.isAllowed(currentPhase, 'AttachEvidenceLink')"
+                :show-voting="false"
+                :vote-count="0"
+                :my-vote-count="0"
+                :remaining-budget="voteStore.remainingBudget"
+                column-color="went-well"
+                @edit="saveEdit"
+                @delete="requestDelete"
+                @vote="castVote"
+                @retract-vote="retractVote"
+                @attach-evidence-link="attachEvidenceLink"
+                @detach-evidence-link="detachEvidenceLink"
+              />
+            </template>
           </TransitionGroup>
           <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="p-3 border-t flex gap-2">
             <BaseInput
@@ -183,29 +213,59 @@
             name="card-list"
             tag="div"
             class="flex-1 flex flex-col gap-2 p-3 overflow-y-auto min-h-0 relative"
+            :class="{ 'bg-primary-50/30': columnDragOver === 'DidntGoWell' }"
+            @dragover="onColumnDragOver($event, 'DidntGoWell')"
+            @dragleave="onColumnDragLeave('DidntGoWell')"
+            @drop="onColumnDrop($event, 'DidntGoWell')"
           >
-            <div v-if="didntGoWell.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
-              No cards yet
-            </div>
-            <CardItem
-              v-for="card in didntGoWell"
-              :key="card.id"
-              :card="card"
-              :can-edit="canMutateCard(card)"
-              :blurred="isWritingPhase && card.participantId !== currentParticipantId"
-              :can-attach-link="policyStore.isAllowed(currentPhase, 'AttachEvidenceLink')"
-              :show-voting="policyStore.isAllowed(currentPhase, 'CastVote')"
-              :vote-count="voteStore.voteCountForCard(card.id)"
-              :my-vote-count="voteStore.myVotesOnCard(card.id)"
-              :remaining-budget="voteStore.remainingBudget"
-              column-color="didnt-go-well"
-              @edit="saveEdit"
-              @delete="requestDelete"
-              @vote="castVote"
-              @retract-vote="retractVote"
-              @attach-evidence-link="attachEvidenceLink"
-              @detach-evidence-link="detachEvidenceLink"
-            />
+            <template v-if="showGroups">
+              <div v-if="didntGoWellGroups.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
+                No groups yet
+              </div>
+              <CardGroupItem
+                v-for="group in didntGoWellGroups"
+                :key="'g' + group.id"
+                :group="group"
+                column-color="didnt-go-well"
+                :show-voting="policyStore.isAllowed(currentPhase, 'CastVote')"
+                :vote-count="voteStore.voteCountForGroup(group.id)"
+                :my-vote-count="voteStore.myVotesOnGroup(group.id)"
+                :remaining-budget="voteStore.remainingBudget"
+                :is-scrum-master="isScrumMaster"
+                :can-group="canGroup"
+                :can-ungroup="canUngroup"
+                @vote="castGroupVote"
+                @retract-vote="retractGroupVote"
+                @dissolve="dissolveGroup"
+                @update-title="updateGroupTitle"
+                @merge="mergeGroups"
+                @remove-card="removeCardFromGroup"
+              />
+            </template>
+            <template v-else>
+              <div v-if="didntGoWell.length === 0" key="empty" class="text-gray-400 text-sm text-center py-4">
+                No cards yet
+              </div>
+              <CardItem
+                v-for="card in didntGoWell"
+                :key="card.id"
+                :card="card"
+                :can-edit="canMutateCard(card)"
+                :blurred="isWritingPhase && card.participantId !== currentParticipantId"
+                :can-attach-link="policyStore.isAllowed(currentPhase, 'AttachEvidenceLink')"
+                :show-voting="false"
+                :vote-count="0"
+                :my-vote-count="0"
+                :remaining-budget="voteStore.remainingBudget"
+                column-color="didnt-go-well"
+                @edit="saveEdit"
+                @delete="requestDelete"
+                @vote="castVote"
+                @retract-vote="retractVote"
+                @attach-evidence-link="attachEvidenceLink"
+                @detach-evidence-link="detachEvidenceLink"
+              />
+            </template>
           </TransitionGroup>
           <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="p-3 border-t flex gap-2">
             <BaseInput
@@ -314,8 +374,10 @@ import { useSprintHub } from '../composables/useSprintHub'
 import { useVoteStore } from '../stores/vote'
 import { useSprintStore } from '../stores/sprint'
 import { usePolicyStore } from '../stores/policy'
+import { useCardGroupStore, type CardGroup } from '../stores/cardGroup'
 import { useToast } from '../composables/useToast'
 import CardItem from '../components/CardItem.vue'
+import CardGroupItem from '../components/CardGroupItem.vue'
 import PhaseIndicator from '../components/PhaseIndicator.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseInput from '../components/ui/BaseInput.vue'
@@ -332,6 +394,7 @@ const authStore = useAuthStore()
 const voteStore = useVoteStore()
 const sprintStore = useSprintStore()
 const policyStore = usePolicyStore()
+const cardGroupStore = useCardGroupStore()
 const { addToast } = useToast()
 const kicked = ref(false)
 const { connect, disconnect } = useSprintHub(() => {
@@ -351,6 +414,7 @@ const newCardText = ref({ WentWell: '', DidntGoWell: '' })
 const newActionText = ref('')
 const newActionAssignee = ref('')
 const deleteTarget = ref<Card | null>(null)
+const columnDragOver = ref<string | null>(null)
 const activeTab = ref<'WentWell' | 'DidntGoWell' | 'ActionItems'>('WentWell')
 const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth < 640 : false)
 
@@ -367,7 +431,24 @@ const currentPhase = computed(() => sprintStore.currentSummary?.currentPhase ?? 
 const summaryParticipants = computed(() => sprintStore.currentSummary?.participants ?? [])
 const currentParticipantId = computed(() => participantStore.currentParticipant?.id ?? 0)
 const isWritingPhase = computed(() => currentPhase.value === 'Writing')
-const showActionItems = computed(() => policyStore.isAllowed(currentPhase.value, 'CreateActionItem'))
+const isGroupingOrLater = computed(() => ['Grouping', 'Voting', 'Discussing', 'Reporting'].includes(currentPhase.value))
+const showGroups = computed(() => isGroupingOrLater.value)
+const isScrumMaster = computed(() => authStore.isSignedIn)
+const canGroup = computed(() => policyStore.isAllowed(currentPhase.value, 'GroupCards'))
+const canUngroup = computed(() => policyStore.isAllowed(currentPhase.value, 'UngroupCards'))
+const wentWellGroups = computed(() =>
+  [...cardGroupStore.wentWellGroups].sort((a, b) =>
+    voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)
+  )
+)
+const didntGoWellGroups = computed(() =>
+  [...cardGroupStore.didntGoWellGroups].sort((a, b) =>
+    voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)
+  )
+)
+const showActionItems = computed(() =>
+  policyStore.isAllowed(currentPhase.value, 'CreateActionItem') || currentPhase.value === 'Reporting'
+)
 
 const boardGridClasses = computed(() => {
   if (showActionItems.value) {
@@ -407,26 +488,9 @@ async function addNote(column: 'WentWell' | 'DidntGoWell') {
   const text = newCardText.value[column].trim()
   if (!text) return
   newCardText.value[column] = ''
-  const optimistic: Card = {
-    id: -Date.now(),
-    sprintId,
-    participantId: participantStore.currentParticipant?.id ?? 0,
-    columnType: column,
-    cardType: 'Note',
-    text,
-    assigneeName: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    voteCount: 0,
-    evidenceLinks: [],
-  }
-  cardStore.cards.unshift(optimistic)
   try {
-    const created = await cardStore.createCard(sprintId, { text, columnType: column, cardType: 'Note' })
-    const idx = cardStore.cards.findIndex((c) => c.id === optimistic.id)
-    if (idx !== -1) cardStore.cards[idx] = created
+    await cardStore.createCard(sprintId, { text, columnType: column, cardType: 'Note' })
   } catch {
-    cardStore.cards = cardStore.cards.filter((c) => c.id !== optimistic.id)
     showToast('Failed to add card.')
   }
 }
@@ -437,26 +501,9 @@ async function addActionItem() {
   if (!text || !assigneeName) return
   newActionText.value = ''
   newActionAssignee.value = ''
-  const optimistic: Card = {
-    id: -Date.now(),
-    sprintId,
-    participantId: participantStore.currentParticipant?.id ?? 0,
-    columnType: 'ActionItems',
-    cardType: 'ActionItem',
-    text,
-    assigneeName,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    voteCount: 0,
-    evidenceLinks: [],
-  }
-  cardStore.cards.unshift(optimistic)
   try {
-    const created = await cardStore.createCard(sprintId, { text, columnType: 'ActionItems', cardType: 'ActionItem', assigneeName })
-    const idx = cardStore.cards.findIndex((c) => c.id === optimistic.id)
-    if (idx !== -1) cardStore.cards[idx] = created
+    await cardStore.createCard(sprintId, { text, columnType: 'ActionItems', cardType: 'ActionItem', assigneeName })
   } catch {
-    cardStore.cards = cardStore.cards.filter((c) => c.id !== optimistic.id)
     showToast('Failed to add action item.')
   }
 }
@@ -534,6 +581,7 @@ async function enterRoom() {
   await Promise.all([
     participantStore.fetchParticipants(sprintId),
     cardStore.fetchCards(sprintId),
+    cardGroupStore.fetchGroups(sprintId),
   ])
   await voteStore.fetchMyVotes(sprintId)
   await connect(sprintId)
@@ -542,19 +590,118 @@ async function enterRoom() {
 }
 
 async function castVote(card: Card) {
+  if (!card.groupId) return
   try {
-    await voteStore.castVote(sprintId, card.id)
+    await voteStore.castVote(sprintId, card.groupId)
   } catch {
     showToast('Failed to cast vote.')
   }
 }
 
 async function retractVote(card: Card) {
+  if (!card.groupId) return
   try {
-    await voteStore.retractVote(sprintId, card.id)
+    await voteStore.retractVote(sprintId, card.groupId)
   } catch {
     showToast('Failed to retract vote.')
   }
+}
+
+async function castGroupVote(group: CardGroup) {
+  try {
+    await voteStore.castVote(sprintId, group.id)
+  } catch {
+    showToast('Failed to cast vote.')
+  }
+}
+
+async function retractGroupVote(group: CardGroup) {
+  try {
+    await voteStore.retractVote(sprintId, group.id)
+  } catch {
+    showToast('Failed to retract vote.')
+  }
+}
+
+async function dissolveGroup(group: CardGroup) {
+  try {
+    await cardGroupStore.dissolveGroup(sprintId, group.id)
+  } catch {
+    showToast('Failed to dissolve group.')
+  }
+}
+
+async function updateGroupTitle(group: CardGroup, title: string | null) {
+  try {
+    await cardGroupStore.updateGroupTitle(sprintId, group.id, title)
+  } catch {
+    showToast('Failed to update group title.')
+  }
+}
+
+async function mergeGroups(source: CardGroup, target: CardGroup) {
+  try {
+    const sourceIsSolo = source.cards.length === 1
+    const targetIsSolo = target.cards.length === 1
+
+    if (sourceIsSolo && !targetIsSolo) {
+      await cardGroupStore.addCardToGroup(sprintId, target.id, source.cards[0]!.id)
+    } else if (!sourceIsSolo && targetIsSolo) {
+      await cardGroupStore.addCardToGroup(sprintId, source.id, target.cards[0]!.id)
+    } else {
+      const allCardIds = [...source.cards.map((c) => c.id), ...target.cards.map((c) => c.id)]
+      await cardGroupStore.createGroup(sprintId, allCardIds)
+    }
+  } catch {
+    showToast('Failed to merge groups.')
+  }
+}
+
+async function removeCardFromGroup(groupId: number, cardId: number) {
+  try {
+    await cardGroupStore.removeCardFromGroup(sprintId, groupId, cardId)
+  } catch {
+    showToast('Failed to remove card from group.')
+  }
+}
+
+function onColumnDragOver(e: DragEvent, column: string) {
+  try {
+    const types = e.dataTransfer?.types ?? []
+    if (!types.includes('application/json')) return
+  } catch {
+    // Firefox: allow drop
+  }
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+  columnDragOver.value = column
+}
+
+function onColumnDragLeave(column: string) {
+  if (columnDragOver.value === column) {
+    columnDragOver.value = null
+  }
+}
+
+function onColumnDrop(e: DragEvent, column: string) {
+  e.preventDefault()
+  columnDragOver.value = null
+
+  const raw = e.dataTransfer?.getData('application/json')
+  if (!raw) return
+
+  let payload: { type: string; columnType: string; sourceGroupId?: number; cardId?: number }
+  try {
+    payload = JSON.parse(raw)
+  } catch {
+    return
+  }
+
+  if (payload.type !== 'card') return
+  if (payload.columnType !== column) return
+  if (!payload.sourceGroupId || !payload.cardId) return
+
+  removeCardFromGroup(payload.sourceGroupId, payload.cardId)
 }
 
 async function attachEvidenceLink(cardId: number, url: string) {

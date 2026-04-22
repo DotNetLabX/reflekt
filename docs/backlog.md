@@ -155,6 +155,21 @@ The user who created the sprint (signed in via Google) shouldn't have to pick a 
   - If a joiner submits a name that already exists in `Participant WHERE SprintId = X`, return a 409 from `JoinSprint` with a clear message — UI shows "Name already taken. Choose another." inline under the input.
 - **Open question:** what if the creator's Google given_name collides with an already-joined participant (creator left the retro and is re-entering after someone joined with that name)? v1 can treat creator as a normal joiner in that case — show the name-picker with an error — but document the decision in the plan.
 
+### 20. Card Grouping — drag-and-drop UX missing
+**Status: Complete**
+**Source:** User testing, 2026-04-22.
+Backend and store fully implemented (`createGroup`, `addCardToGroup`, `removeCardFromGroup`, `dissolveGroup`), but the Grouping phase UI has no interaction to actually merge cards. No drag-and-drop, no multi-select, no merge button. The spec describes drag-and-drop as the intended mechanism — needs to be wired up.
+
+### 21. Representative Cards — highlight key takeaways
+**Status: Open**
+**Source:** User feedback, 2026-04-22.
+After voting, the SM (or participants) should be able to mark the most-voted cards/groups as "representative" — the key takeaways of this retro. These cards would be highlighted in the report and could carry forward across sprints as reference points. Needs PO discussion to define the interaction model (auto-select top N? manual pick? both?), where they surface (report only? dashboard? next sprint's context?), and whether this is a Discussing-phase or Reporting-phase action.
+
+### 22. Phase revert — undo accidental phase advance
+**Status: Open**
+**Source:** PO discussion, 2026-04-22.
+SM accidentally advancing a phase has no undo. Potential approach: snapshot sprint state at each phase boundary, revert = restore snapshot + discard changes made in the current phase. Confirmation dialog + minimum-discussed gate (see #21) are the short-term safety net. Full revert is a separate feature — event-sourcing-style snapshots would work conceptually but may be overengineering for the problem size. Evaluate after #21 ships and real usage shows whether accidental advances are a real pain point.
+
 ---
 
 ## How to resume in a new session

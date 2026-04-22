@@ -15,6 +15,7 @@ public sealed class GetSprintReportEndpoint(
     TeamRepository teamRepository,
     SprintRepository sprintRepository,
     CardRepository cardRepository,
+    CardGroupRepository cardGroupRepository,
     VoteRepository voteRepository,
     ParticipantRepository participantRepository)
     : Endpoint<GetSprintReportRequest, ReportResponse>
@@ -45,25 +46,36 @@ public sealed class GetSprintReportEndpoint(
         }
 
         var cards = await cardRepository.GetBySprintIdAsync(req.SprintId, ct);
-        var voteCounts = await voteRepository.GetVoteCountsByCardIdsAsync(cards.Select(c => c.Id), ct);
+        var groups = await cardGroupRepository.GetBySprintIdAsync(req.SprintId, ct);
+        var voteCounts = await voteRepository.GetVoteCountsByGroupIdsAsync(groups.Select(g => g.Id), ct);
         var participants = await participantRepository.GetBySprintIdAsync(req.SprintId, ct);
         var teamInfo = await teamRepository.GetByIdAsync(req.TeamId, ct);
 
-        var notes = cards
-            .Where(c => c.CardType == CardType.Note)
-            .Select(c => (Card: c, Votes: voteCounts.GetValueOrDefault(c.Id, 0)))
+        var cardsByGroup = cards
+            .Where(c => c.CardType == CardType.Note && c.GroupId.HasValue)
+            .GroupBy(c => c.GroupId!.Value)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CreatedAt).ToList());
+
+        var groupEntries = groups
+            .Select(g =>
+            {
+                var votes = voteCounts.GetValueOrDefault(g.Id, 0);
+                var groupCards = cardsByGroup.GetValueOrDefault(g.Id, []);
+                var title = g.Title ?? groupCards.FirstOrDefault()?.Text ?? "";
+                return (Group: g, Title: title, Votes: votes, Cards: groupCards);
+            })
             .Where(x => x.Votes > 0)
             .OrderByDescending(x => x.Votes)
             .ToList();
 
-        var wentWell = notes
-            .Where(x => x.Card.ColumnType == ColumnType.WentWell)
-            .Select(x => ReportMappings.ToCardEntry(x.Card))
+        var wentWell = groupEntries
+            .Where(x => x.Group.ColumnType == ColumnType.WentWell)
+            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.Cards.Select(ReportMappings.ToCardEntry).ToList()))
             .ToList();
 
-        var didntGoWell = notes
-            .Where(x => x.Card.ColumnType == ColumnType.DidntGoWell)
-            .Select(x => ReportMappings.ToCardEntry(x.Card))
+        var didntGoWell = groupEntries
+            .Where(x => x.Group.ColumnType == ColumnType.DidntGoWell)
+            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.Cards.Select(ReportMappings.ToCardEntry).ToList()))
             .ToList();
 
         var actionItems = cards

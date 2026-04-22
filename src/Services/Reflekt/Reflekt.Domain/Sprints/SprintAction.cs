@@ -13,4 +13,7 @@ public enum SprintAction
     AttachEvidenceLink,
     DetachEvidenceLink,
     AdvancePhase,
+    GroupCards,
+    UngroupCards,
+    RenameGroup,
 }

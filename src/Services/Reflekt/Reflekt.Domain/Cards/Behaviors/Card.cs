@@ -61,6 +61,11 @@ public sealed partial class Card
         AddDomainEvent(new CardUpdatedEvent(this));
     }
 
+    public void SetGroupId(int? groupId)
+    {
+        GroupId = groupId;
+    }
+
     public void MarkDeleted()
     {
         AddDomainEvent(new CardDeletedEvent(this));

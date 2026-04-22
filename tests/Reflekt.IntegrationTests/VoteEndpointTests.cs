@@ -95,24 +95,24 @@ public class VoteEndpointTests : IAsyncLifetime
     [Fact]
     public async Task CastVote_Returns201()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
 
-        var res = await PostVote(token, sprintId, cardId);
+        var res = await PostVote(token, sprintId, groupId);
 
         res.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
-        body.GetProperty("cardId").GetInt32().Should().Be(cardId);
+        body.GetProperty("groupId").GetInt32().Should().Be(groupId);
         body.GetProperty("voteCount").GetInt32().Should().Be(1);
         body.GetProperty("myVoteCount").GetInt32().Should().Be(1);
     }
 
     [Fact]
-    public async Task CastVote_MultipleTimes_SameCard_Succeeds()
+    public async Task CastVote_MultipleTimes_SameGroup_Succeeds()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
 
-        await PostVote(token, sprintId, cardId);
-        var res = await PostVote(token, sprintId, cardId);
+        await PostVote(token, sprintId, groupId);
+        var res = await PostVote(token, sprintId, groupId);
 
         res.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
@@ -122,75 +122,60 @@ public class VoteEndpointTests : IAsyncLifetime
     [Fact]
     public async Task CastVote_BudgetExhausted_Returns409()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
 
-        await PostVote(token, sprintId, cardId);
-        await PostVote(token, sprintId, cardId);
-        await PostVote(token, sprintId, cardId);
+        await PostVote(token, sprintId, groupId);
+        await PostVote(token, sprintId, groupId);
+        await PostVote(token, sprintId, groupId);
 
-        var res = await PostVote(token, sprintId, cardId);
+        var res = await PostVote(token, sprintId, groupId);
         res.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]
-    public async Task CastVote_OnActionItem_Returns400()
+    public async Task CastVote_NonexistentGroup_Returns404()
     {
-        var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
-        var cardId = await CreateActionItemCardAsync(token, sprintId);
-
-        var res = await PostVote(token, sprintId, cardId);
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task CastVote_ClosedSprint_Returns409()
-    {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
-        await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/close", new { });
-
-        var res = await PostVote(token, sprintId, cardId);
-        res.StatusCode.Should().Be(HttpStatusCode.Conflict);
-    }
-
-    [Fact]
-    public async Task CastVote_NonexistentCard_Returns404()
-    {
-        var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
+        var (sprintId, token) = await SetupVotingSprintWithParticipantAsync("Ana");
 
         var res = await PostVote(token, sprintId, 9999);
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
-    public async Task CastVote_CardInDifferentSprint_Returns404()
+    public async Task CastVote_ClosedSprint_Returns409()
     {
-        var sprintA = await CreateActiveSprintAsync("Sprint A");
-        var sprintB = await CreateActiveSprintAsync("Sprint B");
-        var (_, tokenA) = await JoinSprintAsync(sprintA, "Ana");
-        var (_, tokenB) = await JoinSprintAsync(sprintB, "Mihai");
-        var cardIdInB = await CreateNoteCardAsync(tokenB, sprintB);
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
+        await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/close", new { });
 
-        var res = await PostVote(tokenA, sprintA, cardIdInB);
+        var res = await PostVote(token, sprintId, groupId);
+        res.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task CastVote_GroupInDifferentSprint_Returns404()
+    {
+        var (sprintIdA, tokenA, _) = await SetupSprintWithNoteGroupAsync("Ana");
+        var (_, _, groupIdB) = await SetupSprintWithNoteGroupAsync("Mihai");
+
+        var res = await PostVote(tokenA, sprintIdA, groupIdB);
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task CastVote_NoGuestToken_Returns401()
     {
-        var res = await _anonClient.PostAsync("/api/sprints/1/cards/1/votes", null);
+        var res = await _anonClient.PostAsync("/api/sprints/1/card-groups/1/votes", null);
         res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
     public async Task CastVote_WrongSprint_Returns401()
     {
-        var sprintA = await CreateActiveSprintAsync("Sprint A");
-        var sprintB = await CreateActiveSprintAsync("Sprint B");
-        var (_, tokenA) = await JoinSprintAsync(sprintA, "Ana");
-        var (_, tokenB) = await JoinSprintAsync(sprintB, "Mihai");
-        var cardIdInB = await CreateNoteCardAsync(tokenB, sprintB);
+        var (sprintIdB, _, groupIdB) = await SetupSprintWithNoteGroupAsync("Mihai");
+        var (_, tokenA) = await SetupVotingSprintWithParticipantAsync("Ana");
 
-        var res = await PostVote(tokenA, sprintB, cardIdInB);
+        // tokenA is bound to sprintA, but posting to sprintB — sprint claim mismatch
+        var res = await PostVote(tokenA, sprintIdB, groupIdB);
         res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -199,11 +184,11 @@ public class VoteEndpointTests : IAsyncLifetime
     [Fact]
     public async Task RetractVote_Returns200()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
-        await PostVote(token, sprintId, cardId);
-        await PostVote(token, sprintId, cardId);
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
+        await PostVote(token, sprintId, groupId);
+        await PostVote(token, sprintId, groupId);
 
-        var res = await DeleteVote(token, sprintId, cardId);
+        var res = await DeleteVote(token, sprintId, groupId);
 
         res.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
@@ -211,46 +196,46 @@ public class VoteEndpointTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RetractVote_WhenNoVotesOnCard_Returns409()
+    public async Task RetractVote_WhenNoVotesOnGroup_Returns409()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
 
-        var res = await DeleteVote(token, sprintId, cardId);
+        var res = await DeleteVote(token, sprintId, groupId);
         res.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]
     public async Task RetractVote_ClosedSprint_Returns409()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
-        await PostVote(token, sprintId, cardId);
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
+        await PostVote(token, sprintId, groupId);
         await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/close", new { });
 
-        var res = await DeleteVote(token, sprintId, cardId);
+        var res = await DeleteVote(token, sprintId, groupId);
         res.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]
     public async Task RetractVote_ReturnsBudget()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
 
-        await PostVote(token, sprintId, cardId);
-        await PostVote(token, sprintId, cardId);
-        await PostVote(token, sprintId, cardId);
+        await PostVote(token, sprintId, groupId);
+        await PostVote(token, sprintId, groupId);
+        await PostVote(token, sprintId, groupId);
 
         // Budget exhausted — retract one
-        await DeleteVote(token, sprintId, cardId);
+        await DeleteVote(token, sprintId, groupId);
 
         // Now should be able to cast again
-        var res = await PostVote(token, sprintId, cardId);
+        var res = await PostVote(token, sprintId, groupId);
         res.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
     public async Task RetractVote_NoGuestToken_Returns401()
     {
-        var res = await _anonClient.DeleteAsync("/api/sprints/1/cards/1/votes");
+        var res = await _anonClient.DeleteAsync("/api/sprints/1/card-groups/1/votes");
         res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -263,24 +248,31 @@ public class VoteEndpointTests : IAsyncLifetime
         var cardId1 = await CreateNoteCardAsync(token, sprintId);
         var cardId2 = await CreateNoteCardAsync(token, sprintId);
 
-        await PostVote(token, sprintId, cardId1);
-        await PostVote(token, sprintId, cardId1);
-        await PostVote(token, sprintId, cardId2);
+        // Advance to Grouping (auto-creates groups) then to Voting
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
+
+        var groupId1 = await GetGroupIdForCardAsync(token, sprintId, cardId1);
+        var groupId2 = await GetGroupIdForCardAsync(token, sprintId, cardId2);
+
+        await PostVote(token, sprintId, groupId1);
+        await PostVote(token, sprintId, groupId1);
+        await PostVote(token, sprintId, groupId2);
 
         var res = await GetMyVotes(token, sprintId);
         res.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await res.Content.ReadFromJsonAsync<JsonElement[]>();
         body.Should().HaveCount(2);
-        var card1Entry = body!.First(e => e.GetProperty("cardId").GetInt32() == cardId1);
-        card1Entry.GetProperty("count").GetInt32().Should().Be(2);
-        var card2Entry = body!.First(e => e.GetProperty("cardId").GetInt32() == cardId2);
-        card2Entry.GetProperty("count").GetInt32().Should().Be(1);
+        var group1Entry = body!.First(e => e.GetProperty("groupId").GetInt32() == groupId1);
+        group1Entry.GetProperty("count").GetInt32().Should().Be(2);
+        var group2Entry = body!.First(e => e.GetProperty("groupId").GetInt32() == groupId2);
+        group2Entry.GetProperty("count").GetInt32().Should().Be(1);
     }
 
     [Fact]
     public async Task GetMyVotes_Empty_ReturnsEmptyList()
     {
-        var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
+        var (sprintId, token) = await SetupVotingSprintWithParticipantAsync("Ana");
 
         var res = await GetMyVotes(token, sprintId);
         res.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -298,8 +290,7 @@ public class VoteEndpointTests : IAsyncLifetime
     [Fact]
     public async Task GetMyVotes_WrongSprint_Returns401()
     {
-        // Auth check (sprint claim mismatch) fires before sprint lookup — always 401
-        var (_, token) = await SetupActiveSprintWithParticipantAsync("Ana");
+        var (_, token) = await SetupVotingSprintWithParticipantAsync("Ana");
 
         var res = await GetMyVotes(token, 9999);
         res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -310,25 +301,25 @@ public class VoteEndpointTests : IAsyncLifetime
     [Fact]
     public async Task ListCards_IncludesVoteCount()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
-        await PostVote(token, sprintId, cardId);
-        await PostVote(token, sprintId, cardId);
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
+        await PostVote(token, sprintId, groupId);
+        await PostVote(token, sprintId, groupId);
 
         var res = await GetCards(token, sprintId);
         res.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await res.Content.ReadFromJsonAsync<JsonElement[]>();
-        var card = body!.First(c => c.GetProperty("id").GetInt32() == cardId);
+        var card = body!.First(c => c.GetProperty("groupId").GetInt32() == groupId);
         card.GetProperty("voteCount").GetInt32().Should().Be(2);
     }
 
     [Fact]
     public async Task ListCards_NoVotes_VoteCountIsZero()
     {
-        var (sprintId, token, cardId) = await SetupSprintWithNoteCardAsync("Ana");
+        var (sprintId, token, groupId) = await SetupSprintWithNoteGroupAsync("Ana");
 
         var res = await GetCards(token, sprintId);
         var body = await res.Content.ReadFromJsonAsync<JsonElement[]>();
-        var card = body!.First(c => c.GetProperty("id").GetInt32() == cardId);
+        var card = body!.First(c => c.GetProperty("groupId").GetInt32() == groupId);
         card.GetProperty("voteCount").GetInt32().Should().Be(0);
     }
 
@@ -348,6 +339,11 @@ public class VoteEndpointTests : IAsyncLifetime
         return sprintId;
     }
 
+    private async Task AdvancePhaseAsync(int sprintId)
+    {
+        await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
+    }
+
     private async Task<(int participantId, string guestToken)> JoinSprintAsync(int sprintId, string displayName)
     {
         var res = await _client.PostAsJsonAsync($"/api/sprints/{sprintId}/join", new { displayName });
@@ -359,6 +355,14 @@ public class VoteEndpointTests : IAsyncLifetime
     {
         var sprintId = await CreateActiveSprintAsync($"Sprint-{Guid.NewGuid():N}");
         var (_, token) = await JoinSprintAsync(sprintId, name);
+        return (sprintId, token);
+    }
+
+    private async Task<(int sprintId, string token)> SetupVotingSprintWithParticipantAsync(string name)
+    {
+        var (sprintId, token) = await SetupActiveSprintWithParticipantAsync(name);
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
         return (sprintId, token);
     }
 
@@ -374,28 +378,30 @@ public class VoteEndpointTests : IAsyncLifetime
         return body.GetProperty("id").GetInt32();
     }
 
-    private async Task<int> CreateActionItemCardAsync(string token, int sprintId)
+    private async Task<int> GetGroupIdForCardAsync(string token, int sprintId, int cardId)
     {
-        var req = new HttpRequestMessage(HttpMethod.Post, $"/api/sprints/{sprintId}/cards")
-        {
-            Content = JsonContent.Create(new { text = "Fix bug", columnType = "ActionItems", cardType = "ActionItem", assigneeName = "Ana" }),
-        };
+        var req = new HttpRequestMessage(HttpMethod.Get, $"/api/sprints/{sprintId}/cards");
         req.Headers.Add("X-Guest-Token", token);
         var res = await _client.SendAsync(req);
-        var body = await res.Content.ReadFromJsonAsync<JsonElement>();
-        return body.GetProperty("id").GetInt32();
+        var cards = await res.Content.ReadFromJsonAsync<JsonElement[]>();
+        var card = cards!.First(c => c.GetProperty("id").GetInt32() == cardId);
+        return card.GetProperty("groupId").GetInt32();
     }
 
-    private async Task<(int sprintId, string token, int cardId)> SetupSprintWithNoteCardAsync(string name)
+    private async Task<(int sprintId, string token, int groupId)> SetupSprintWithNoteGroupAsync(string name)
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync(name);
         var cardId = await CreateNoteCardAsync(token, sprintId);
-        return (sprintId, token, cardId);
+        // Advance Writing -> Grouping (auto-creates solo groups) -> Voting
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
+        var groupId = await GetGroupIdForCardAsync(token, sprintId, cardId);
+        return (sprintId, token, groupId);
     }
 
-    private Task<HttpResponseMessage> PostVote(string token, int sprintId, int cardId)
+    private Task<HttpResponseMessage> PostVote(string token, int sprintId, int groupId)
     {
-        var req = new HttpRequestMessage(HttpMethod.Post, $"/api/sprints/{sprintId}/cards/{cardId}/votes")
+        var req = new HttpRequestMessage(HttpMethod.Post, $"/api/sprints/{sprintId}/card-groups/{groupId}/votes")
         {
             Content = JsonContent.Create(new { }),
         };
@@ -403,9 +409,9 @@ public class VoteEndpointTests : IAsyncLifetime
         return _client.SendAsync(req);
     }
 
-    private Task<HttpResponseMessage> DeleteVote(string token, int sprintId, int cardId)
+    private Task<HttpResponseMessage> DeleteVote(string token, int sprintId, int groupId)
     {
-        var req = new HttpRequestMessage(HttpMethod.Delete, $"/api/sprints/{sprintId}/cards/{cardId}/votes");
+        var req = new HttpRequestMessage(HttpMethod.Delete, $"/api/sprints/{sprintId}/card-groups/{groupId}/votes");
         req.Headers.Add("X-Guest-Token", token);
         return _client.SendAsync(req);
     }

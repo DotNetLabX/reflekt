@@ -16,8 +16,10 @@ public sealed record ReportTeamInfo(int Id, string Name);
 public sealed record ReportParticipantInfo(string DisplayName);
 
 public sealed record ReportNotesSection(
-    List<ReportCardEntry> WentWell,
-    List<ReportCardEntry> DidntGoWell);
+    List<ReportGroupEntry> WentWell,
+    List<ReportGroupEntry> DidntGoWell);
+
+public sealed record ReportGroupEntry(string GroupTitle, int VoteCount, List<ReportCardEntry> Cards);
 
 public sealed record ReportCardEntry(string Text, List<ReportEvidenceLinkEntry> EvidenceLinks);
 

@@ -4,6 +4,7 @@ import { useParticipantStore } from '../stores/participant'
 import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
 import { useVoteStore } from '../stores/vote'
 import { useSprintStore } from '../stores/sprint'
+import { useCardGroupStore } from '../stores/cardGroup'
 
 let connection: signalR.HubConnection | null = null
 
@@ -13,6 +14,7 @@ export function useSprintHub(onKicked?: () => void) {
   const cardStore = useCardStore()
   const voteStore = useVoteStore()
   const sprintStore = useSprintStore()
+  const cardGroupStore = useCardGroupStore()
 
   function build(sprintId: number) {
     connection = new signalR.HubConnectionBuilder()
@@ -34,9 +36,7 @@ export function useSprintHub(onKicked?: () => void) {
       }
     })
 
-    connection.on('ParticipantLeft', (_payload: { participantId: number }) => {
-      // No UI indicator in v1 — participant stays in list
-    })
+    connection.on('ParticipantLeft', (_payload: { participantId: number }) => {})
 
     connection.on('ParticipantKicked', (payload: { participantId: number }) => {
       participantStore.participants = participantStore.participants.filter(
@@ -52,8 +52,12 @@ export function useSprintHub(onKicked?: () => void) {
       if (sprintStore.currentSummary) {
         sprintStore.currentSummary.currentPhase = phase
       }
-      if (wasWriting && phase !== 'Writing') {
+      if (wasWriting && phase === 'Grouping') {
         cardStore.fetchCards(sprintId)
+        cardGroupStore.fetchGroups(sprintId)
+      } else if (phase !== 'Writing') {
+        cardStore.fetchCards(sprintId)
+        cardGroupStore.fetchGroups(sprintId)
       }
     })
 
@@ -81,12 +85,33 @@ export function useSprintHub(onKicked?: () => void) {
       }
     })
 
-    connection.on('VoteCast', (payload: { cardId: number; newCount: number }) => {
-      voteStore.setVoteCount(payload.cardId, payload.newCount)
+    connection.on('VoteCast', (payload: { groupId: number; newCount: number }) => {
+      voteStore.setVoteCount(payload.groupId, payload.newCount)
     })
 
-    connection.on('VoteRetracted', (payload: { cardId: number; newCount: number }) => {
-      voteStore.setVoteCount(payload.cardId, payload.newCount)
+    connection.on('VoteRetracted', (payload: { groupId: number; newCount: number }) => {
+      voteStore.setVoteCount(payload.groupId, payload.newCount)
+    })
+
+    connection.on('GroupCreated', () => {
+      cardGroupStore.fetchGroups(sprintId)
+    })
+
+    connection.on('CardsGrouped', () => {
+      cardGroupStore.fetchGroups(sprintId)
+    })
+
+    connection.on('CardUngrouped', () => {
+      cardGroupStore.fetchGroups(sprintId)
+    })
+
+    connection.on('GroupDissolved', () => {
+      cardGroupStore.fetchGroups(sprintId)
+    })
+
+    connection.on('GroupTitleChanged', (payload: { groupId: number; title: string | null }) => {
+      const group = cardGroupStore.groups.find((g) => g.id === payload.groupId)
+      if (group) group.title = payload.title
     })
   }
 

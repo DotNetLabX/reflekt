@@ -6,7 +6,7 @@ public sealed partial class Vote : AggregateRoot
 {
     private Vote() { }
 
-    public int CardId { get; private set; }
+    public int GroupId { get; private set; }
     public int ParticipantId { get; private set; }
     public DateTime CreatedAt { get; private set; }
 }

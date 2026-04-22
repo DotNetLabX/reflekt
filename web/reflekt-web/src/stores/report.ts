@@ -13,6 +13,12 @@ export interface ReportCardEntry {
   evidenceLinks: ReportEvidenceLinkEntry[]
 }
 
+export interface ReportGroupEntry {
+  groupTitle: string
+  voteCount: number
+  cards: ReportCardEntry[]
+}
+
 export interface ReportActionItemEntry {
   text: string
   assigneeName: string | null
@@ -20,8 +26,8 @@ export interface ReportActionItemEntry {
 }
 
 export interface ReportNotesSection {
-  wentWell: ReportCardEntry[]
-  didntGoWell: ReportCardEntry[]
+  wentWell: ReportGroupEntry[]
+  didntGoWell: ReportGroupEntry[]
 }
 
 export interface ReportSprintInfo {
@@ -99,21 +105,27 @@ export const useReportStore = defineStore('report', {
       lines.push('')
       lines.push('## Went Well')
       lines.push('')
-      for (const card of r.notes.wentWell) {
-        lines.push(`- ${card.text}`)
-        for (const link of card.evidenceLinks) {
-          const label = link.title || link.url
-          lines.push(`  - [${label}](${link.url})`)
+      for (const group of r.notes.wentWell) {
+        lines.push(`### ${group.groupTitle} (${group.voteCount} votes)`)
+        for (const card of group.cards) {
+          lines.push(`- ${card.text}`)
+          for (const link of card.evidenceLinks) {
+            const label = link.title || link.url
+            lines.push(`  - [${label}](${link.url})`)
+          }
         }
       }
       lines.push('')
       lines.push("## Didn't Go Well")
       lines.push('')
-      for (const card of r.notes.didntGoWell) {
-        lines.push(`- ${card.text}`)
-        for (const link of card.evidenceLinks) {
-          const label = link.title || link.url
-          lines.push(`  - [${label}](${link.url})`)
+      for (const group of r.notes.didntGoWell) {
+        lines.push(`### ${group.groupTitle} (${group.voteCount} votes)`)
+        for (const card of group.cards) {
+          lines.push(`- ${card.text}`)
+          for (const link of card.evidenceLinks) {
+            const label = link.title || link.url
+            lines.push(`  - [${label}](${link.url})`)
+          }
         }
       }
       lines.push('')

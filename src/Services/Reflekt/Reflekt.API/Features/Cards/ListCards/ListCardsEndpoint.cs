@@ -44,7 +44,8 @@ public sealed class ListCardsEndpoint(
         }
 
         var cards = await cardRepository.GetBySprintIdAsync(req.SprintId, ct);
-        var voteCounts = await voteRepository.GetVoteCountsByCardIdsAsync(cards.Select(c => c.Id), ct);
+        var groupIds = cards.Where(c => c.GroupId.HasValue).Select(c => c.GroupId!.Value).Distinct();
+        var voteCounts = await voteRepository.GetVoteCountsByGroupIdsAsync(groupIds, ct);
 
         var requestingParticipantId = participantIdClaim is not null ? int.Parse(participantIdClaim) : (int?)null;
         var redactOthers = sprint.CurrentPhase == SprintPhase.Writing && requestingParticipantId is not null;
@@ -52,7 +53,8 @@ public sealed class ListCardsEndpoint(
         await SendOkAsync(
             cards.Select(c =>
             {
-                var response = CardMappings.ToResponse(c, voteCounts.GetValueOrDefault(c.Id, 0));
+                var voteCount = c.GroupId.HasValue ? voteCounts.GetValueOrDefault(c.GroupId.Value, 0) : 0;
+                var response = CardMappings.ToResponse(c, voteCount);
                 if (redactOthers && c.ParticipantId != requestingParticipantId)
                     return response with { Text = "", AssigneeName = null, EvidenceLinks = [] };
                 return response;

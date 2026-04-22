@@ -112,6 +112,10 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task CreateCard_ActionItem_Returns201()
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
+        // Advance to Discussing phase (Writing -> Grouping -> Voting -> Discussing)
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
 
         var res = await PostCard(token, sprintId, new { text = "Update docs", columnType = "ActionItems", cardType = "ActionItem", assigneeName = "Ana" });
 
@@ -140,6 +144,10 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task CreateCard_ActionItem_NoAssignee_Returns400()
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
+        // Advance to Discussing phase where ActionItem creation is allowed
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
         var res = await PostCard(token, sprintId, new { text = "Fix bug", columnType = "ActionItems", cardType = "ActionItem" });
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -148,6 +156,10 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task CreateCard_ActionItem_WrongColumn_Returns400()
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
+        // Advance to Discussing phase where ActionItem creation is allowed
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
+        await AdvancePhaseAsync(sprintId);
         var res = await PostCard(token, sprintId, new { text = "Fix bug", columnType = "WentWell", cardType = "ActionItem", assigneeName = "Ana" });
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -372,6 +384,11 @@ public class CardEndpointTests : IAsyncLifetime
         var sprintId = await CreateSprintAsync(name);
         await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/start", new { });
         return sprintId;
+    }
+
+    private async Task AdvancePhaseAsync(int sprintId)
+    {
+        await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
     }
 
     private async Task<(int participantId, string guestToken)> JoinSprintAsync(int sprintId, string displayName)

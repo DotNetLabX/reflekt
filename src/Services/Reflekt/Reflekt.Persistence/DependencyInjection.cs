@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<ParticipantRepository>();
         services.AddScoped<CardRepository>();
         services.AddScoped<VoteRepository>();
+        services.AddScoped<CardGroupRepository>();
 
         return services;
     }

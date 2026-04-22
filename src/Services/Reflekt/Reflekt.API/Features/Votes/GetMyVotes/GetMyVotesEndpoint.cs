@@ -33,6 +33,6 @@ public sealed class GetMyVotesEndpoint(
         if (sprint is null) { await SendNotFoundAsync(ct); return; }
 
         var distribution = await voteRepository.GetVoteDistributionAsync(participantId, ct);
-        await SendOkAsync(distribution.Select(e => new VoteDistributionEntry(e.CardId, e.Count)).ToList(), ct);
+        await SendOkAsync(distribution.Select(e => new VoteDistributionEntry(e.GroupId, e.Count)).ToList(), ct);
     }
 }

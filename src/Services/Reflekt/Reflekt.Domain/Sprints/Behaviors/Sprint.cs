@@ -34,7 +34,8 @@ public sealed partial class Sprint
             throw new InvalidOperationException("Sprint must be Active to advance phase.");
         CurrentPhase = CurrentPhase switch
         {
-            SprintPhase.Writing => SprintPhase.Voting,
+            SprintPhase.Writing => SprintPhase.Grouping,
+            SprintPhase.Grouping => SprintPhase.Voting,
             SprintPhase.Voting => SprintPhase.Discussing,
             SprintPhase.Discussing => SprintPhase.Reporting,
             SprintPhase.Reporting => throw new InvalidOperationException("Sprint phase is already Reporting."),

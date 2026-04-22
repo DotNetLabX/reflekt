@@ -13,6 +13,7 @@ public sealed partial class Card : AggregateRoot
     public string Text { get; private set; } = default!;
     public string? AssigneeName { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public int? GroupId { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
     private readonly List<EvidenceLink> _evidenceLinks = [];

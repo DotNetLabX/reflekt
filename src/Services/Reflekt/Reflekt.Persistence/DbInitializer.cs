@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Reflekt.Domain.CardGroups;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Participants;
 using Reflekt.Domain.Sprints;
@@ -78,6 +79,24 @@ internal static class DbInitializer
             await db.SaveChangesAsync(ct);
         }
 
+        if (!await db.CardGroups.AnyAsync(g => g.SprintId == sprint.Id, ct))
+        {
+            var noteCards = await db.Cards
+                .Where(c => c.SprintId == sprint.Id && c.CardType == CardType.Note)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync(ct);
+
+            foreach (var card in noteCards)
+            {
+                var group = CardGroup.Create(sprint.Id, card.ColumnType);
+                group.ClearDomainEvents();
+                db.CardGroups.Add(group);
+                await db.SaveChangesAsync(ct);
+                card.SetGroupId(group.Id);
+            }
+            await db.SaveChangesAsync(ct);
+        }
+
         var firstWentWellCard = await db.Cards
             .FirstOrDefaultAsync(c => c.SprintId == sprint.Id && c.ColumnType == ColumnType.WentWell, ct);
 
@@ -101,24 +120,22 @@ internal static class DbInitializer
                 .OrderBy(c => c.CreatedAt)
                 .ToListAsync(ct);
 
-            var wentWellCards = cards.Where(c => c.ColumnType == ColumnType.WentWell).ToList();
-            var didntGoWellCards = cards.Where(c => c.ColumnType == ColumnType.DidntGoWell).ToList();
+            var wentWellCards = cards.Where(c => c.ColumnType == ColumnType.WentWell && c.GroupId.HasValue).ToList();
+            var didntGoWellCards = cards.Where(c => c.ColumnType == ColumnType.DidntGoWell && c.GroupId.HasValue).ToList();
 
             if (wentWellCards.Count > 0 && didntGoWellCards.Count > 0)
             {
-                // Participant A: 2 votes on first WentWell, 1 vote on first DidntGoWell (full budget of 3)
                 var votesA = new[]
                 {
-                    Vote.Create(wentWellCards[0].Id, participants[0].Id),
-                    Vote.Create(wentWellCards[0].Id, participants[0].Id),
-                    Vote.Create(didntGoWellCards[0].Id, participants[0].Id),
+                    Vote.Create(wentWellCards[0].GroupId!.Value, participants[0].Id),
+                    Vote.Create(wentWellCards[0].GroupId!.Value, participants[0].Id),
+                    Vote.Create(didntGoWellCards[0].GroupId!.Value, participants[0].Id),
                 };
 
-                // Participant B: 1 vote on first WentWell, 1 vote on first DidntGoWell (2 of 3)
                 var votesB = new[]
                 {
-                    Vote.Create(wentWellCards[0].Id, participants[1].Id),
-                    Vote.Create(didntGoWellCards[0].Id, participants[1].Id),
+                    Vote.Create(wentWellCards[0].GroupId!.Value, participants[1].Id),
+                    Vote.Create(didntGoWellCards[0].GroupId!.Value, participants[1].Id),
                 };
 
                 foreach (var vote in votesA.Concat(votesB))

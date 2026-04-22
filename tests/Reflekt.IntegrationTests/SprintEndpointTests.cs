@@ -146,23 +146,27 @@ public class SprintEndpointTests : IAsyncLifetime
 
         var res1 = await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
         res1.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await res1.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("currentPhase").GetString().Should().Be("Voting");
+        (await res1.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("currentPhase").GetString().Should().Be("Grouping");
 
         var res2 = await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
         res2.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await res2.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("currentPhase").GetString().Should().Be("Discussing");
+        (await res2.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("currentPhase").GetString().Should().Be("Voting");
 
         var res3 = await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
         res3.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await res3.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("currentPhase").GetString().Should().Be("Closed");
+        (await res3.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("currentPhase").GetString().Should().Be("Discussing");
+
+        var res4 = await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
+        res4.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await res4.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("currentPhase").GetString().Should().Be("Reporting");
     }
 
     [Fact]
-    public async Task AdvancePhase_OnClosedPhase_Returns409()
+    public async Task AdvancePhase_OnReportingPhase_Returns409()
     {
-        var sprintId = await CreateSprintAsync("Advance Closed Test");
+        var sprintId = await CreateSprintAsync("Advance Reporting Test");
         await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/start", new { });
-        for (var i = 0; i < 3; i++)
+        for (var i = 0; i < 4; i++)
             await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
 
         var res = await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });

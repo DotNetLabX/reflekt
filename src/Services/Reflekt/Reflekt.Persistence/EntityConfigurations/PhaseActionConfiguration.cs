@@ -29,7 +29,12 @@ internal sealed class PhaseActionConfiguration : IEntityTypeConfiguration<PhaseA
             new PhaseAction(SprintPhase.Discussing, SprintAction.DeleteActionItem),
             new PhaseAction(SprintPhase.Discussing, SprintAction.AttachEvidenceLink),
             new PhaseAction(SprintPhase.Discussing, SprintAction.DetachEvidenceLink),
-            new PhaseAction(SprintPhase.Discussing, SprintAction.AdvancePhase)
+            new PhaseAction(SprintPhase.Discussing, SprintAction.AdvancePhase),
+            // Grouping phase
+            new PhaseAction(SprintPhase.Grouping, SprintAction.GroupCards),
+            new PhaseAction(SprintPhase.Grouping, SprintAction.UngroupCards),
+            new PhaseAction(SprintPhase.Grouping, SprintAction.RenameGroup),
+            new PhaseAction(SprintPhase.Grouping, SprintAction.AdvancePhase)
             // Reporting: no permitted actions
         );
     }

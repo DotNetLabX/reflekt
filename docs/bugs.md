@@ -14,11 +14,107 @@ Severity guide:
 
 ## Open
 
-_(nothing)_
+_(none)_
 
 ---
 
 ## Resolved
+
+### BUG-011 — Reporting phase hides Action Items column
+**Severity:** Medium
+**Source:** User testing, 2026-04-22
+**File:** `web/reflekt-web/src/views/RetroRoomView.vue:441`
+
+**Root cause:** `showActionItems` was gated on `policyStore.isAllowed(phase, 'CreateActionItem')`, which only returns true for `Discussing`. Reporting had no policy entries, so the Action Items column was hidden.
+
+**Fix:** `showActionItems` now also returns true when `currentPhase === 'Reporting'` (read-only display).
+
+---
+
+### BUG-010 — Card groups not sorted by vote count
+**Severity:** Medium
+**Source:** User testing, 2026-04-22
+**File:** `web/reflekt-web/src/views/RetroRoomView.vue:439-440`, `web/reflekt-web/src/stores/cardGroup.ts:26-29`
+
+**Root cause:** `wentWellGroups` and `didntGoWellGroups` getters filtered by column type but never sorted. Groups with high vote counts appeared below solo cards with fewer votes.
+
+**Fix:** Computed properties in `RetroRoomView.vue` now sort groups by `voteStore.voteCountForGroup` descending.
+
+---
+
+### BUG-009 — Vote retract not broadcast to other participants in real time
+**Severity:** High
+**Source:** User testing, 2026-04-22
+**File:** `src/Services/Reflekt/Reflekt.API/Features/Votes/RetractVote/RetractVoteEndpoint.cs`, `src/BuildingBlocks/BuildingBlocks.Persistence/DomainEventPublishingInterceptor.cs`
+
+**Root cause:** `MarkRetracted()` raised `VoteRetractedEvent` on the Vote entity, then `Remove(vote)` deleted it. After `SaveChangesAsync`, the deleted entity was `Detached` from the EF change tracker. The `DomainEventPublishingInterceptor.SavedChangesAsync` scans `ChangeTracker.Entries()` — detached entities are invisible, so `VoteRetractedEvent` was silently lost and never broadcast.
+
+**Fix:** Removed `MarkRetracted()` call (only purpose was raising the lost event). Added manual `hubContext.Clients.Group(...).SendAsync("VoteRetracted", ...)` after save.
+
+---
+
+### BUG-008 — Vote cast not broadcast to other participants in real time
+**Severity:** High
+**Source:** User testing, 2026-04-22
+**File:** `src/Services/Reflekt/Reflekt.API/Features/Votes/CastVote/CastVoteEndpoint.cs`
+
+**Root cause:** Serializable transaction wraps the vote insert. `SaveChangesAsync` fires the domain event within the transaction (before `CommitAsync`). The `BroadcastVoteCountOnVoteCastHandler` resolves in a new DI scope with a separate `DbContext` that cannot see uncommitted data — it broadcast the OLD vote count.
+
+**Fix:** `vote.ClearDomainEvents()` suppresses automatic broadcast. Manual `hubContext.Clients.Group(...).SendAsync("VoteCast", ...)` fires after `tx.CommitAsync()` with the correct count.
+
+---
+
+### BUG-007a — Grouped cards still visible as individual cards on other participants
+**Severity:** High
+**Source:** User testing, 2026-04-22
+**File:** `src/Services/Reflekt/Reflekt.API/Features/CardGroups/CreateGroup/CreateGroupEndpoint.cs`
+
+**Root cause:** Two `SaveChangesAsync` calls — first creates the group (fires `GroupCreated` domain event), second reassigns cards. The broadcast handler fires on the first save, queries cards with `GroupId == newGroup.Id`, finds none (cards not yet reassigned), and broadcasts an empty group. Clients see the new group AND the original individual cards.
+
+**Fix:** `newGroup.ClearDomainEvents()` suppresses automatic broadcast. Manual `hubContext.Clients.Group(...).SendAsync("GroupCreated", ...)` fires after the second save with complete data.
+
+---
+
+### BUG-007 — Voting broken: race condition, multi-vote, counts not syncing
+**Severity:** Critical
+**Source:** User testing, 2026-04-22
+**File:** `CastVoteEndpoint.cs`, `VoteRepository.cs`, `CardGroupItem.vue`, `cardGroup.ts`, `card.ts`
+
+Multiple voting defects:
+- Budget could be exceeded (negative remaining votes) — no atomic check-and-insert.
+- Users could vote multiple times on the same group — no per-group uniqueness check.
+- Vote counts showed 0 on page load — `fetchGroups` never initialized the vote store.
+- Frontend vote buttons stayed enabled after voting.
+
+**Fix:**
+- Backend: serializable transaction wraps budget check + existing vote check + insert atomically. `BeginSerializableAsync` added to `VoteRepository`.
+- Backend: `GetOneByParticipantAndGroupAsync` rejects duplicate votes per group (409).
+- Frontend: `cardGroup.ts` `fetchGroups` now calls `voteStore.initVoteCounts()` with server data. Removed broken init from `card.ts`.
+- Frontend: vote button disabled when `myVoteCount > 0`. Unified solo/group voting UI to single toggle button (chevron-up → check icon when voted).
+
+---
+
+### BUG-006 — Solo groups render with group chrome and duplicated text
+**Severity:** Medium
+**Source:** User report, 2026-04-22
+**File:** `web/reflekt-web/src/components/CardGroupItem.vue`
+
+**Root cause:** `CardGroupItem` renders all groups identically regardless of card count. Solo groups showed title + expand/collapse + card text (duplicated).
+
+**Fix:** Render solo groups (1 card) as plain card items without group chrome. Group styling only for 2+ cards.
+
+---
+
+### BUG-005 — Card duplicated on writer's screen after creation
+**Severity:** Medium
+**Source:** User report, 2026-04-22
+**File:** `web/reflekt-web/src/views/RetroRoomView.vue`, `web/reflekt-web/src/composables/useSprintHub.ts`
+
+**Root cause:** Optimistic UI pushed a card with negative id. SignalR broadcast added a second copy with the real id. Dedup guard missed because ids differed.
+
+**Fix:** Removed optimistic UI from `addNote()` and `addActionItem()`. Cards appear on SignalR broadcast only.
+
+---
 
 ### BUG-001 — Closed sprint page is a navigation dead-end
 **Severity:** High
