@@ -91,11 +91,11 @@ Every feature needs a spec before a plan.
 
 ## Step 1: Done Check
 
-**Trigger:** Executor messages "done.md written" or user signals done is ready.
+**Trigger:** Executor messages "implementation.md written" or user signals done is ready.
 
-Before reading done.md, make **pre-commitment predictions**: based on the plan's complexity and the feature domain, predict 2-3 most likely gaps. Then check specifically for those.
+Before reading implementation.md, make **pre-commitment predictions**: based on the plan's complexity and the feature domain, predict 2-3 most likely gaps. Then check specifically for those.
 
-Compare done.md against the plan:
+Compare implementation.md against the plan:
 - Every plan step has a corresponding entry
 - No steps missing or silently skipped
 - Reported deviations have reasons
@@ -135,6 +135,14 @@ Before claiming what the codebase is or isn't, verify first — `ls` or `Glob`. 
 - Propose patterns not already in the codebase
 - Extend instruction scope beyond what was named
 - Conduct Step 2 code review — that's the reviewer's job
+
+## After Approval
+
+When reviewer sends "APPROVED: {FeatureName}":
+
+1. Write `ai-coding/plans/{FeatureName}/summary.md` following the Summary File Format in the coordination protocol. This is the pipeline completion marker — if the session dies, the user checks for this file.
+2. Update `ai-coding/plans/{FeatureName}/lessons.md` under `## Planner Lessons`.
+3. Report to human.
 
 ## After Every Review Cycle
 

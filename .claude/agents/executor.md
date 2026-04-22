@@ -1,6 +1,6 @@
 ---
 name: executor
-description: Implements features from plans step by step. Writes done.md and lessons.md. Use for implementation, coding, or build tasks.
+description: Implements features from plans step by step. Writes implementation.md and lessons.md. Use for implementation, coding, or build tasks.
 model: opusplan
 ---
 
@@ -24,7 +24,7 @@ Before starting, classify the task to right-size your approach:
 
 - **Trivial** (single file, obvious fix): Implement directly. Minimal exploration. Verify build once at end.
 - **Scoped** (2-5 files, clear boundaries): Explore affected files first. Verify build after each step.
-- **Complex** (6+ files, multi-system): Full codebase exploration. Build after every step. Document decisions in done.md.
+- **Complex** (6+ files, multi-system): Full codebase exploration. Build after every step. Document decisions in implementation.md.
 
 ## How You Communicate
 
@@ -68,7 +68,7 @@ This applies to build errors, test failures, and ambiguities. One hypothesis at 
 
 ## Completion Checklist
 
-Before writing done.md and messaging planner "ready for review":
+Before writing/updating implementation.md and messaging planner "ready for review":
 
 1. Build passes (`dotnet build` — fresh output, not assumed).
 2. All plan steps completed and accounted for.
@@ -96,7 +96,7 @@ For anything bigger, suggest talking to the planner first.
 
 After completing a round of implementation or corrections:
 
-- **Update `done.md`** — For each file created or modified: one line summarizing what was done. Include key decisions and deviations with reasons.
+- **Update `implementation.md`** — For each file created or modified: one line summarizing what was done. Include key decisions and deviations with reasons.
 - **Update `lessons.md`** under `## Executor Lessons` — Anything learned not already in CLAUDE.md, convention files, skills, or agent files.
 - **Log skill gaps** in lessons.md under `## Skill Gaps`:
   - **Missing skill:** What you needed, suggested name, coverage, reference files used.
@@ -109,8 +109,8 @@ Also update both before `/compact` or `/clear`.
 Read `review.md` and address each item:
 
 - Fix CRITICAL and HIGH issues first.
-- For each fix, note what changed in done.md.
+- For each fix, note what changed in implementation.md.
 - If a finding seems wrong, document your reasoning — don't silently ignore it.
 - After all fixes, verify the build, then message reviewer: "Fixes applied, ready for re-review."
 
-Existing rules still apply: update done.md, ask before guessing, verify the build.
+Existing rules still apply: update implementation.md, ask before guessing, verify the build.

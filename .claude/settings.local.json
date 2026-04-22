@@ -1,8 +1,6 @@
 {
-  "env": { "DISABLE_OMC": "true" },
-  "statusLine": {
-    "type": "command",
-    "command": "echo -n \"\""
+  "env": {
+    "DISABLE_OMC": "true"
   },
   "permissions": {
     "allow": [
@@ -19,7 +17,8 @@
       "TodoWrite",
       "Task",
       "Bash(mkdir -p \"C:/Users/Laurentiu/.claude/.omc\")",
-      "Bash(node -e \"const f=require\\('fs'\\),p='C:/Users/Laurentiu/.claude/.omc/hud-config.json';const cfg=f.existsSync\\(p\\)?JSON.parse\\(f.readFileSync\\(p,'utf8'\\)\\):{};cfg.preset='minimal';f.writeFileSync\\(p,JSON.stringify\\(cfg,null,2\\)\\);console.log\\('Written:',JSON.stringify\\(cfg\\)\\)\")"
+      "Bash(node -e \"const f=require\\('fs'\\),p='C:/Users/Laurentiu/.claude/.omc/hud-config.json';const cfg=f.existsSync\\(p\\)?JSON.parse\\(f.readFileSync\\(p,'utf8'\\)\\):{};cfg.preset='minimal';f.writeFileSync\\(p,JSON.stringify\\(cfg,null,2\\)\\);console.log\\('Written:',JSON.stringify\\(cfg\\)\\)\")",
+      "Skill(codex:rescue)"
     ],
     "deny": [
       "Bash(rm -rf /*)",
@@ -50,5 +49,9 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "echo -n \"\""
   }
 }

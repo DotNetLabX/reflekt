@@ -8,13 +8,15 @@ Three-agent pipeline for feature development. Agents coordinate through file-bas
 
 - Do not read files before delegating to agents. Send the file path in the message and let the agent read it.
 - Only read a file yourself when you need its content to make a routing or coordination decision — not to relay it.
+- Relay user questions about plan content to the planner — do not investigate or answer them yourself.
+- When a reusable rule or convention is identified, capture it in the appropriate rule or agent file — not in memory. Memory is for context that doesn't fit in rule files (user preferences, project state, external references).
 
 ## Agents
 
 | Agent | Model | Scope |
 |-------|-------|-------|
 | planner | opus | Specs, plans, Step 1 review (done check), question answers, escalation decisions |
-| executor | opusplan | Implementation, done.md, questions.md |
+| executor | opusplan | Implementation, implementation.md, questions.md |
 | reviewer | sonnet | Step 2 review (code review), severity-rated conformance checks |
 
 ## Pipeline
@@ -22,7 +24,7 @@ Three-agent pipeline for feature development. Agents coordinate through file-bas
 ```
 Human → planner (spec → plan → human approves)
                                     ↓
-                              executor (implement → done.md)
+                              executor (implement → implementation.md)
                                     ↓
                               planner (Step 1: done check)
                                ↓ fail          ↓ pass
@@ -39,9 +41,9 @@ Human → planner (spec → plan → human approves)
 Each handoff: trigger → sender → receiver → action.
 
 ### Executor → Planner: Ready for review
-**Trigger:** All plan steps complete, done.md written.
-**Message:** "done.md written for {FeatureName}, ready for Step 1."
-**Planner:** Reads done.md against plan. Pass → messages reviewer. Fail → writes review.md, messages executor.
+**Trigger:** Any implementation round complete (initial, amendment, or additional plan steps) — implementation.md written/updated.
+**Message:** "implementation.md written for {FeatureName}, ready for Step 1."
+**Planner:** Reads implementation.md against plan. Pass → messages reviewer. Fail → writes review.md, messages executor.
 
 ### Planner → Reviewer: Step 1 passed
 **Trigger:** Done check passes.
@@ -51,7 +53,7 @@ Each handoff: trigger → sender → receiver → action.
 ### Reviewer → Executor: Fixes needed
 **Trigger:** CRITICAL or HIGH issues found.
 **Message:** "Fixes needed for {FeatureName}, see review.md. Cycle {N}/3."
-**Executor:** Reads review.md, fixes each item, updates done.md, messages reviewer.
+**Executor:** Reads review.md, fixes each item, updates implementation.md, messages reviewer.
 
 ### Executor → Reviewer: Fixes applied
 **Trigger:** All review items addressed.
@@ -61,7 +63,7 @@ Each handoff: trigger → sender → receiver → action.
 ### Reviewer → Planner: Approved
 **Trigger:** APPROVE verdict.
 **Message:** "APPROVED: {FeatureName}."
-**Planner:** Updates lessons.md, reports to human.
+**Planner:** Writes summary.md, updates lessons.md, reports to human.
 
 ### Reviewer → Planner: Escalation
 **Trigger:** 3 fix cycles exhausted OR architecture decision needed.
@@ -124,12 +126,12 @@ Key scenarios to test.
 Unresolved decisions needing input.
 ```
 
-## Done File Format
+## Implementation File Format
 
-Written by executor after each implementation round: `ai-coding/plans/{FeatureName}/done.md`.
+Written by executor after each implementation round: `ai-coding/plans/{FeatureName}/implementation.md`.
 
 ```
-# {Feature Name} — Done
+# {Feature Name} — Implementation
 
 ## Files Created
 - `full/path/to/File.cs` — what it does
@@ -142,6 +144,30 @@ Written by executor after each implementation round: `ai-coding/plans/{FeatureNa
 
 ## Deviations from Plan
 - Steps done differently, with reasons
+```
+
+## Summary File Format
+
+Written by planner after reviewer approval: `ai-coding/plans/{FeatureName}/summary.md`. Its existence means the pipeline completed successfully.
+
+```
+# {Feature Name} — Summary
+
+## Status: COMPLETE
+
+## What Was Built
+- [1-3 sentence description of the feature/change]
+
+## Key Outcomes
+- [Files created/modified count]
+- [Build status]
+- [Review verdict and cycle count]
+
+## Deviations from Plan
+- [Any deviations, or "None"]
+
+## Notes
+- [Anything the user should know before committing]
 ```
 
 ## Questions File Format
@@ -199,7 +225,7 @@ Only add items not already in CLAUDE.md, convention files, skills, or agent file
 ## Review Checklist
 
 ### Step 1: Done check (planner, no code reading)
-- Every plan step has a corresponding done.md entry
+- Every plan step has a corresponding implementation.md entry
 - No plan steps missing or silently skipped
 - Reported deviations have reasons
 - No unexpected files or scope creep
