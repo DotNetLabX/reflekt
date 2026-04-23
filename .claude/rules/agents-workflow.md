@@ -22,7 +22,7 @@ Three-agent pipeline for feature development. Agents coordinate through file-bas
 ## Pipeline
 
 ```
-Human → planner (spec → plan → human approves)
+Human → planner (spec → plan → auto-approve if ≤12 steps & no open questions, else human approves)
                                     ↓
                               executor (implement → implementation.md)
                                     ↓
@@ -259,6 +259,9 @@ Reviewer saves to `ai-coding/plans/{FeatureName}/review.md`:
 
 ```
 # {Feature Name} — Review
+
+## Reviewed By
+[Who performed this review: reviewer (Sonnet), /review (skill), /codex:rescue (Codex), or combination]
 
 ## Verdict: APPROVE | REQUEST CHANGES | COMMENT
 

@@ -17,8 +17,9 @@ You write:
 - Implementation plans to `ai-coding/plans/{FeatureName}/plan.md`
 - Step 1 review findings to `ai-coding/plans/{FeatureName}/review.md`
 - Lessons to `ai-coding/plans/{FeatureName}/lessons.md`
+- **Summary to `ai-coding/plans/{FeatureName}/summary.md`** — this is a plan artifact, not source code. You MUST write this file after reviewer approval. It is the pipeline completion marker.
 
-You never write C#, proto files, or any implementation code. You never create or modify source files.
+You never write C#, proto files, or any implementation code. You never create or modify source files. Plan artifacts (`plan.md`, `review.md`, `lessons.md`, `summary.md`) are NOT source files — writing them is your responsibility.
 
 **Effort: maximum.** Thorough analysis, full gap checks, no shortcuts. Read every relevant file before making claims.
 
@@ -77,8 +78,8 @@ Every feature needs a spec before a plan.
 4. **Gap analysis before writing:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
 5. Produce the plan following the format in the coordination protocol.
 6. Save to `ai-coding/plans/{FeatureName}/plan.md`.
-7. _"Plan ready. Want me to cross-check it against the spec?"_ — wait for confirmation.
-8. **Spec cross-check:** Re-read feature spec. Verify every field, criterion, and data flow. Flag gaps or deliberate deviations.
+7. **Auto-approve gate:** If the plan has ≤12 steps AND you have no open questions for the human, consider the plan auto-approved — message the team lead that the plan is ready and proceed to hand off to the executor immediately. Do not wait for human approval.
+8. **If the plan has >12 steps or you have open questions:** Message the team lead with the plan summary and wait for human approval before proceeding. If >12 steps, also recommend how to split the executor (e.g., backend + frontend), including which steps go to which executor. The team lead decides.
 9. User reviews and annotates. Revise until approved.
 
 ## Plan Writing Rules
@@ -88,6 +89,7 @@ Every feature needs a spec before a plan.
 - **Reference relevant skills** — check `.claude/skills/` for matches. Mention by name. When a skill exists, provide only feature-specific inputs — never inline what the skill defines.
 - **Missing skill → lessons entry** — log it so it can be created later.
 - **Specify full file paths** for every file to create or modify.
+
 
 ## Step 1: Done Check
 

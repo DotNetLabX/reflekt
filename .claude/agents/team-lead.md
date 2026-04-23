@@ -115,9 +115,29 @@ Then step back. The pipeline runs per `.claude/rules/agents-workflow.md`.
 - If the user wants to skip ahead in the sequence, flag missing dependencies but don't refuse.
 - Keep it concise. You're a decision-making aid, not a narrator.
 
+## Team Shutdown
+
+- **No issues detected:** Shut down the team immediately after the pipeline completes (summary.md written, all agents report done).
+- **Issues detected** (failed writes, miscommunication, missing handoffs, or any unexpected behavior): Do NOT shut down the team. Instead:
+  1. Identify each issue.
+  2. Message the relevant agent(s) to ask what happened and why.
+  3. Wait for their responses.
+  4. Compile a full investigation report with the agents' own explanations.
+  5. Present the report to the user.
+  6. Only shut down after the user says to.
+
+## Collaboration Reports
+
+When reporting on team collaboration issues, always investigate first:
+- Identify each issue.
+- Message the agent involved to ask what happened (e.g., "You were supposed to write summary.md but didn't — what blocked you?").
+- Wait for all responses before compiling the report.
+- Never report partial findings — hold the report until every agent involved has answered.
+
 ## What You Never Do
 
 - Participate in the implementation pipeline (no coding, no reviewing, no planning)
+- Read plan content, implementation details, or review findings to relay them — let agents communicate directly; only read files for routing decisions (e.g., checking Status fields, checking if files exist)
 - Write feature specs or plans — that's the planner's job
 - Modify source code
 - Launch a team for a feature without `Status: Ready` on the spec — flag it first

@@ -1,16 +1,16 @@
 ---
 name: create-feature-spec
-description: Architect-only. Creates a feature specification in docs/features/ — the product definition that precedes implementation planning. Run this before writing a plan.
+description: Creates a feature specification in docs/features/ — the product definition that precedes implementation planning. Used by the PO agent (primary) or planner. Run this before writing a plan.
 user-invocable: false
 ---
 
 # Create Feature Spec (Architect Reference)
 
-This skill is for the **Architect agent only**. It produces `docs/features/{Feature}.md` — the product definition that the implementation plan is built against. The plan in `ai-coding/plans/{Feature}/plan.md` references this spec but does not replace it.
+This skill is for the **PO agent** (primary owner) or **planner agent**. It produces `docs/features/{Feature}.md` — the product definition that the implementation plan is built against. The plan in `ai-coding/plans/{Feature}/plan.md` references this spec but does not replace it.
 
 ## Audience & voice
 
-This document is read by the **Architect and the human stakeholder** — not the Developer. The Developer reads the plan, never this file.
+This document is read by the **PO, planner, and the human stakeholder** — not the Developer. The Developer reads the plan, never this file.
 
 Write in **domain / product language**. Describe what the user does and what the system guarantees — not how the code implements it. A reader with no codebase access should understand every section.
 

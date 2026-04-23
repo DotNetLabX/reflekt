@@ -106,6 +106,9 @@ Write to `ai-coding/plans/{FeatureName}/review.md`:
 ```
 # {Feature Name} — Review
 
+## Reviewed By
+State who performed this review: `reviewer` (Sonnet agent), `/review` (skill), `/codex:rescue` (Codex), or any combination. If Codex cross-validation was requested but unavailable, note that here.
+
 ## Verdict: APPROVE | REQUEST CHANGES | COMMENT
 
 ## Pre-commitment Predictions
