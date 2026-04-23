@@ -452,7 +452,7 @@
               @detach-evidence-link="detachEvidenceLink"
             />
           </TransitionGroup>
-          <div v-if="!isDiscussingPhase || isScrumMaster" class="p-3 border-t flex flex-col gap-2">
+          <div v-if="policyStore.isAllowed(currentPhase, 'CreateActionItem')" class="p-3 border-t flex flex-col gap-2">
             <BaseInput
               v-model="newActionText"
               :maxlength="2000"
@@ -570,7 +570,7 @@ const isDiscussingPhase = computed(() => currentPhase.value === 'Discussing')
 const isReportingPhase = computed(() => currentPhase.value === 'Reporting')
 const isGroupingOrLater = computed(() => ['Grouping', 'Voting', 'Discussing', 'Reporting'].includes(currentPhase.value))
 const showGroups = computed(() => isGroupingOrLater.value)
-const isScrumMaster = computed(() => authStore.isSignedIn)
+const isScrumMaster = computed(() => sprintStore.currentSummary?.isScrumMaster ?? false)
 const canGroup = computed(() => policyStore.isAllowed(currentPhase.value, 'GroupCards'))
 const canUngroup = computed(() => policyStore.isAllowed(currentPhase.value, 'UngroupCards'))
 const wentWellGroups = computed(() =>

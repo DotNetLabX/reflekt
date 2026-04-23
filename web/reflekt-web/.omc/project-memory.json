@@ -123,9 +123,15 @@
   "hotPaths": [
     {
       "path": "src\\views\\RetroRoomView.vue",
-      "accessCount": 15,
-      "lastAccessed": 1776892963168,
+      "accessCount": 18,
+      "lastAccessed": 1776893942017,
       "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 9,
+      "lastAccessed": 1776894456326,
+      "type": "directory"
     },
     {
       "path": "src\\components\\CardGroupItem.vue",
@@ -140,10 +146,10 @@
       "type": "file"
     },
     {
-      "path": "src",
+      "path": "src\\views\\ReportView.vue",
       "accessCount": 5,
-      "lastAccessed": 1776892952991,
-      "type": "directory"
+      "lastAccessed": 1776894509872,
+      "type": "file"
     },
     {
       "path": "src\\stores\\card.ts",
@@ -164,16 +170,22 @@
       "type": "file"
     },
     {
-      "path": "src\\views\\ReportView.vue",
+      "path": "src\\stores",
       "accessCount": 2,
-      "lastAccessed": 1776892964519,
-      "type": "file"
+      "lastAccessed": 1776893824055,
+      "type": "directory"
     },
     {
       "path": "src\\stores\\sprint.ts",
-      "accessCount": 1,
-      "lastAccessed": 1776776581865,
+      "accessCount": 2,
+      "lastAccessed": 1776893934796,
       "type": "file"
+    },
+    {
+      "path": "src\\views",
+      "accessCount": 2,
+      "lastAccessed": 1776894455722,
+      "type": "directory"
     },
     {
       "path": "src\\views\\SprintView.vue",
@@ -188,22 +200,10 @@
       "type": "file"
     },
     {
-      "path": "src\\stores",
-      "accessCount": 1,
-      "lastAccessed": 1776870952929,
-      "type": "directory"
-    },
-    {
       "path": "src\\stores\\policy.ts",
       "accessCount": 1,
       "lastAccessed": 1776870961862,
       "type": "file"
-    },
-    {
-      "path": "src\\views",
-      "accessCount": 1,
-      "lastAccessed": 1776890786209,
-      "type": "directory"
     },
     {
       "path": "",
@@ -221,6 +221,12 @@
       "path": "src\\components\\ui\\BaseBadge.vue",
       "accessCount": 1,
       "lastAccessed": 1776892957855,
+      "type": "file"
+    },
+    {
+      "path": "src\\stores\\auth.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776893824177,
       "type": "file"
     }
   ],

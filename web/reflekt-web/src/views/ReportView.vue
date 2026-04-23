@@ -52,7 +52,7 @@
                 <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
                 <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
               </div>
-              <ul class="flex flex-col gap-1 pl-3 border-l-2 border-green-200">
+              <ul v-if="group.cards.length > 1" class="flex flex-col gap-1 pl-3 border-l-2 border-green-200">
                 <li v-for="(card, j) in group.cards" :key="j">
                   <p class="text-sm text-gray-700">{{ card.text }}</p>
                   <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
@@ -69,6 +69,18 @@
                   </div>
                 </li>
               </ul>
+              <div v-else-if="(group.cards[0]?.evidenceLinks?.length ?? 0) > 0" class="flex flex-wrap gap-1 mt-1">
+                <a
+                  v-for="(link, k) in group.cards[0]?.evidenceLinks"
+                  :key="k"
+                  :href="link.url"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
+                >
+                  {{ link.title || truncateUrl(link.url) }}
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -89,7 +101,7 @@
                 <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
                 <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
               </div>
-              <ul class="flex flex-col gap-1 pl-3 border-l-2 border-red-200">
+              <ul v-if="group.cards.length > 1" class="flex flex-col gap-1 pl-3 border-l-2 border-red-200">
                 <li v-for="(card, j) in group.cards" :key="j">
                   <p class="text-sm text-gray-700">{{ card.text }}</p>
                   <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
@@ -106,6 +118,18 @@
                   </div>
                 </li>
               </ul>
+              <div v-else-if="(group.cards[0]?.evidenceLinks?.length ?? 0) > 0" class="flex flex-wrap gap-1 mt-1">
+                <a
+                  v-for="(link, k) in group.cards[0]?.evidenceLinks"
+                  :key="k"
+                  :href="link.url"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-block px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
+                >
+                  {{ link.title || truncateUrl(link.url) }}
+                </a>
+              </div>
             </div>
           </div>
         </div>

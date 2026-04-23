@@ -16,6 +16,7 @@ interface SprintSummary {
   name: string
   currentPhase: string
   votesPerParticipant: number
+  isScrumMaster: boolean
   participants: { displayName: string }[]
 }
 

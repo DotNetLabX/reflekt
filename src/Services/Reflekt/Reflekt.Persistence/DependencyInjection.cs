@@ -41,15 +41,12 @@ public static class DependencyInjection
         if (!string.IsNullOrEmpty(directory))
             Directory.CreateDirectory(directory);
 
-        if (app.Environment.IsDevelopment())
-        {
-            using var scope = app.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ReflektDbContext>();
-            db.Database.Migrate();
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ReflektDbContext>();
+        db.Database.Migrate();
 
-            if (app.Configuration.GetValue<bool>("Seed:Enabled"))
-                DbInitializer.SeedAsync(db, app.Configuration).GetAwaiter().GetResult();
-        }
+        if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Seed:Enabled"))
+            DbInitializer.SeedAsync(db, app.Configuration).GetAwaiter().GetResult();
 
         return app;
     }
