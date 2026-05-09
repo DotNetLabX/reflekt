@@ -2,8 +2,6 @@
 
 ## Pattern
 
-**Reference:** `src/Services/Submission/Submission.Application/Mappings/GrpcMappings.cs`
-
 Mapster configs are auto-discovered via `IRegister` interface + assembly scan:
 
 ```csharp
@@ -17,22 +15,27 @@ public class {Domain}Mappings : IRegister
 }
 ```
 
+### Location by service variant
+
+| Variant | Path |
+|---------|------|
+| MediatR (Application layer) | `{Svc}.Application/Mappings/{Domain}Mappings.cs` |
+| FastEndpoints (API layer) | `{Svc}.API/Mappings/{Domain}Mappings.cs` |
+
 ## Registration
 
-**File:** `src/BuildingBlocks/Blocks.Core/Mapster/DependencyInjection.cs`
-
-Auto-discovered — no manual registration:
+Auto-discovered — no manual registration beyond the assembly scan:
 ```csharp
-services.AddMapsterConfigsFromAssemblyContaining<GrpcMappings>();
-// or: services.AddMapsterConfigsFromCurrentAssembly();
+TypeAdapterConfig.GlobalSettings.Scan(assembly);
+// or: services.AddMapsterConfigsFromAssemblyContaining<GrpcMappings>();
 ```
 
 ## Inline Mapping (No Config Needed)
 
 For simple cases where property names match:
 ```csharp
-var response = entity.Adapt<ArticleResponse>();
-var entity = command.Adapt<Article>();
+var response = entity.Adapt<{ResponseType}>();
+var entity = command.Adapt<{Entity}>();
 ```
 
 ## Post-Mapping Actions
@@ -54,4 +57,4 @@ config.NewConfig<Source, DestinationRecord>().MapToConstructor();
 
 ## Location
 
-Mapping configs in Application project: `{Service}.Application/Mappings/{Domain}Mappings.cs`
+See "Location by service variant" table above. Check the service's CLAUDE.md for which variant applies.

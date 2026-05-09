@@ -31,41 +31,56 @@ Creates a complete vertical slice for a new feature. The endpoint framework dete
 
 ## Arguments
 
-Pass the feature name as argument: `/create-feature AssignReviewer`
+Pass the feature name as argument: `/create-feature CreateOrder`
 
 The feature name is used for all file names: `{FeatureName}Endpoint.cs`, `{FeatureName}Command.cs`, etc.
 
 ## Feature Folder Structure
 
-### FastEndpoints (Auth, Journals, Production)
+### FastEndpoints
 
 Everything co-located in the API project:
 ```
-{Service}.API/Features/{Domain}/{FeatureName}/
+{Svc}.API/Features/{Domain}/{FeatureName}/
 ├── {FeatureName}Endpoint.cs           (endpoint + handler logic)
-├── {FeatureName}Command.cs            (command + validator, co-located)
+├── {FeatureName}Command.cs            (command + response record + validator, co-located)
 ```
 
-### Carter (Review)
+### Query-Only / No Request DTO
+
+Some endpoints don't have a request body (GET queries, auth flows, DELETE with route-only params). These only need the endpoint file:
+
+```
+{Svc}.API/Features/{Domain}/{FeatureName}/
+└── {FeatureName}Endpoint.cs           (endpoint + response record if any)
+```
+
+- No command file, no validator
+- Response record (if any) lives in the endpoint file
+- For DELETE with route params: extend `EndpointWithoutRequest` or `Endpoint<TRequest>` binding from route only — no body expected
+
+### Carter + MediatR
 
 Endpoint in API project, handler in Application project:
 ```
-Review.API/Endpoints/{Domain}/
+{Svc}.API/Endpoints/{Domain}/
 └── {FeatureName}Endpoint.cs           (endpoint, dispatches to MediatR)
 
-Review.Application/Features/{Domain}/{FeatureName}/
-├── {FeatureName}Command.cs            (command + validator)
+{Svc}.Application/Features/{Domain}/{FeatureName}/
+├── {FeatureName}Command.cs            (command + response record + validator)
 └── {FeatureName}CommandHandler.cs     (MediatR handler)
 ```
 
-### Minimal APIs (Submission)
+### Minimal APIs + MediatR
 
 Endpoint flat in API project, handler in Application project:
 ```
-Submission.API/Endpoints/
+{Svc}.API/Endpoints/
 └── {FeatureName}Endpoint.cs           (endpoint, dispatches to MediatR)
 
-Submission.Application/Features/{FeatureName}/
-├── {FeatureName}Command.cs            (command + validator)
+{Svc}.Application/Features/{FeatureName}/
+├── {FeatureName}Command.cs            (command + response record + validator)
 └── {FeatureName}CommandHandler.cs     (MediatR handler)
 ```
+
+Check the service's CLAUDE.md for which framework to use.

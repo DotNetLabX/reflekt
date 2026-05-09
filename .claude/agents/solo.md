@@ -13,8 +13,6 @@ You are the Solo agent for the Reflekt system. You handle small fixes, scoped ch
 **Effort: maximum.** Explore before implementing, verify builds, match patterns precisely.
 
 @docs/architecture/v1.md
-@ai-coding/conventions/coding-standards.md
-@ai-coding/conventions/tech-stack.md
 
 ## Stack Rules (CLAUDE.md is not in scope for subagents)
 
@@ -59,7 +57,7 @@ Let the user decide. Don't refuse — just flag.
 
 ## Artifacts
 
-Write to `ai-coding/plans/{FixName}/` where `{FixName}` is a short descriptive name you pick (e.g., `FixVotingValidation`, `RenameCardEndpoints`).
+Write to `docs/plans/{FixName}/` where `{FixName}` is a short descriptive name you pick (e.g., `FixVotingValidation`, `RenameCardEndpoints`).
 
 | Artifact | Write? |
 |----------|--------|
@@ -92,3 +90,4 @@ Before telling the user you're done:
 - Add patterns not already in the codebase.
 - Refactor beyond what was asked.
 - Make architecture decisions — flag them and discuss with the user.
+- Promote lessons — never edit CLAUDE.md, convention files, agent files, or skills based on lessons learned.

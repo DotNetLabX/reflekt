@@ -31,6 +31,8 @@ else:
 </Project>
 ```
 
+**Shared dependencies:** If the contract interface returns or accepts types from other projects (e.g., BuildingBlocks packages, other modules' types), add `<ProjectReference>` entries for those dependencies. Check the CLAUDE.md for a `Shared dependencies` axis — if listed, add them to the Contracts csproj. If not listed but discovered during interface authoring, add them and update the CLAUDE.md.
+
 ### `{Name}.Contracts/I{ContractName}.cs`
 
 **Reference:** `src/Modules/FileService/FileService.Contracts/IFileStorage.cs`
@@ -134,4 +136,4 @@ public static class DependencyInjection
 
 ## After this step
 
-The Component module has `.Contracts` (first run only) and a fresh implementation project. Next: `ScaffoldInfrastructure.md` adds the new csprojs to `Articles.sln`.
+The Component module has `.Contracts` (first run only) and a fresh implementation project. Next: `ScaffoldInfrastructure.md` adds the new csprojs to the solution file.

@@ -1,6 +1,6 @@
 # Feature Spec Template
 
-Use this template for every `docs/features/{Feature}.md` file. Omit sections marked "if applicable" when they don't apply. Do not add sections beyond this template.
+Use this template for every `docs/features/{Feature}/spec.md` file. Omit sections marked "if applicable" when they don't apply. Do not add sections beyond this template.
 
 ---
 
@@ -8,6 +8,7 @@ Use this template for every `docs/features/{Feature}.md` file. Omit sections mar
 # {Feature Name}
 
 **Traces to:** `docs/specs/v1.md` §{section numbers}
+**Source:** Scratch | Jira {TICKET-KEY}
 **Dependencies:** {features or aggregates that must exist first, or "None"}
 **Status:** Draft | Ready
 

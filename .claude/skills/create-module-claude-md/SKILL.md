@@ -11,11 +11,11 @@ Walks the Architect through the axis checklist for a new module and writes `src/
 Modules come in two archetypes, and the captured axes differ per archetype:
 
 - **Component** — infra adapter with a `.Contracts` interface + one or more implementation projects (e.g., `FileService`, `EmailService`)
-- **Domain** — a mini-service-without-host: owns its own domain model, persistence, optional application layer, optional class-library API layer (e.g., `ArticleTimeline`)
+- **Domain** — a mini-service-without-host: owns its own domain model, persistence, optional application layer, optional class-library API layer
 
 ## Precondition
 
-The Architect is in the middle of a design conversation with the user, or has an existing plan in `ai-coding/plans/` with the module's shape already sketched out. Pull everything you can from conversation context before asking the user anything new.
+The Architect is in the middle of a design conversation with the user, or has an existing plan in `docs/plans/` with the module's shape already sketched out. Pull everything you can from conversation context before asking the user anything new.
 
 ## Steps
 
