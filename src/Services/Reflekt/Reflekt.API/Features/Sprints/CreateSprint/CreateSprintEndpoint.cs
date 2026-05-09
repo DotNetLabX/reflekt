@@ -29,6 +29,6 @@ public sealed class CreateSprintEndpoint(TeamRepository teamRepository, SprintRe
         await sprintRepository.AddAsync(sprint, ct);
         await sprintRepository.SaveChangesAsync(ct);
 
-        await SendAsync(SprintMappings.ToResponse(sprint), 201, ct);
+        await SendAsync(sprint.Adapt<SprintResponse>(), 201, ct);
     }
 }

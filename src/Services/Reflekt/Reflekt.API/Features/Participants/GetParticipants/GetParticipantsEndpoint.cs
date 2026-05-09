@@ -43,6 +43,6 @@ public sealed class GetParticipantsEndpoint(
         }
 
         var participants = await participantRepository.GetBySprintIdAsync(request.SprintId, ct);
-        await SendOkAsync(participants.Select(ParticipantMappings.ToResponse).ToList(), ct);
+        await SendOkAsync(participants.Select(p => p.Adapt<ParticipantResponse>()).ToList(), ct);
     }
 }

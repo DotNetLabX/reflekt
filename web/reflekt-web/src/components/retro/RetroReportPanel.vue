@@ -1,0 +1,131 @@
+<template>
+  <div class="flex-1 min-h-0 overflow-y-auto">
+    <div v-if="reportStore.loading" class="text-gray-500 text-sm text-center py-8">Loading report...</div>
+    <div v-else-if="reportStore.error" class="text-red-600 text-sm text-center py-8">{{ reportStore.error }}</div>
+    <div v-else-if="reportStore.report" class="flex flex-col gap-4 max-w-4xl mx-auto">
+      <!-- Report header -->
+      <div class="bg-surface rounded-[--radius-md] shadow-card p-4 flex items-start justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-gray-800">{{ reportStore.report.sprint.name }} — Sprint Report</h2>
+          <p class="text-sm text-gray-500 mt-1">
+            <span class="font-medium text-gray-700">{{ reportStore.report.team.name }}</span>
+            &middot; {{ formatDate(reportStore.report.sprint.createdAt) }}
+          </p>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <BaseBadge v-for="p in reportStore.report.participants" :key="p.displayName" variant="primary">
+              {{ p.displayName }}
+            </BaseBadge>
+          </div>
+        </div>
+        <BaseButton size="sm" variant="secondary" @click="$emit('copy-markdown')">Copy as markdown</BaseButton>
+      </div>
+
+      <!-- Went Well -->
+      <div class="bg-surface rounded-[--radius-md] shadow-card">
+        <div class="px-4 py-3 border-b bg-went-well-light rounded-t-[--radius-md]">
+          <h3 class="font-semibold text-went-well text-sm">Went Well</h3>
+        </div>
+        <div class="p-4">
+          <div v-if="reportStore.report.notes.wentWell.length === 0" class="text-gray-400 text-sm text-center py-4">No items</div>
+          <div v-else class="flex flex-col gap-4">
+            <div v-for="(group, i) in reportStore.report.notes.wentWell" :key="i">
+              <div class="flex items-center gap-2 mb-1">
+                <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
+                <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
+                <BaseBadge v-if="group.isDiscussed" variant="success">discussed</BaseBadge>
+              </div>
+              <ul class="flex flex-col gap-1 pl-3 border-l-2 border-green-200">
+                <li v-for="(card, j) in group.cards" :key="j">
+                  <p class="text-sm text-gray-700">{{ card.text }}</p>
+                  <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
+                    <a v-for="(link, k) in card.evidenceLinks" :key="k" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">
+                      {{ link.title || truncateUrl(link.url) }}
+                    </a>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Didn't Go Well -->
+      <div class="bg-surface rounded-[--radius-md] shadow-card">
+        <div class="px-4 py-3 border-b bg-didnt-go-well-light rounded-t-[--radius-md]">
+          <h3 class="font-semibold text-didnt-go-well text-sm">Didn't Go Well</h3>
+        </div>
+        <div class="p-4">
+          <div v-if="reportStore.report.notes.didntGoWell.length === 0" class="text-gray-400 text-sm text-center py-4">No items</div>
+          <div v-else class="flex flex-col gap-4">
+            <div v-for="(group, i) in reportStore.report.notes.didntGoWell" :key="i">
+              <div class="flex items-center gap-2 mb-1">
+                <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
+                <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
+                <BaseBadge v-if="group.isDiscussed" variant="success">discussed</BaseBadge>
+              </div>
+              <ul class="flex flex-col gap-1 pl-3 border-l-2 border-red-200">
+                <li v-for="(card, j) in group.cards" :key="j">
+                  <p class="text-sm text-gray-700">{{ card.text }}</p>
+                  <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
+                    <a v-for="(link, k) in card.evidenceLinks" :key="k" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                      {{ link.title || truncateUrl(link.url) }}
+                    </a>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Items -->
+      <div class="bg-surface rounded-[--radius-md] shadow-card">
+        <div class="px-4 py-3 border-b bg-action-items-light rounded-t-[--radius-md]">
+          <h3 class="font-semibold text-action-items text-sm">Action Items</h3>
+        </div>
+        <div class="p-4">
+          <div v-if="reportStore.report.actionItems.length === 0" class="text-gray-400 text-sm text-center py-4">No action items</div>
+          <ul v-else class="flex flex-col gap-3">
+            <li v-for="(item, i) in reportStore.report.actionItems" :key="i">
+              <p class="text-sm text-gray-800">
+                {{ item.text }}
+                <span v-if="item.assigneeName" class="text-primary-600 font-medium ml-1">@{{ item.assigneeName }}</span>
+              </p>
+              <div v-if="item.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
+                <a v-for="(link, j) in item.evidenceLinks" :key="j" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                  {{ link.title || truncateUrl(link.url) }}
+                </a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useReportStore } from '../../stores/report'
+import BaseBadge from '../ui/BaseBadge.vue'
+import BaseButton from '../ui/BaseButton.vue'
+
+defineEmits<{
+  'copy-markdown': []
+}>()
+
+const reportStore = useReportStore()
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString()
+}
+
+function truncateUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    const path = u.pathname.length > 20 ? u.pathname.slice(0, 20) + '...' : u.pathname
+    return u.hostname + path
+  } catch {
+    return url.length > 40 ? url.slice(0, 40) + '...' : url
+  }
+}
+</script>

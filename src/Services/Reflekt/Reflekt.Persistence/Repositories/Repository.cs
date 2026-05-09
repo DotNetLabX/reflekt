@@ -1,5 +1,5 @@
-using BuildingBlocks.Domain;
-using BuildingBlocks.Persistence.Repositories;
+using Blocks.Domain;
+using Blocks.Persistence.Repositories;
 
 namespace Reflekt.Persistence.Repositories;
 

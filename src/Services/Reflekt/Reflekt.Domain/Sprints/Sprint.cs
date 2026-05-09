@@ -1,4 +1,4 @@
-using BuildingBlocks.Domain;
+using Blocks.Domain;
 
 namespace Reflekt.Domain.Sprints;
 

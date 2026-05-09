@@ -9,5 +9,5 @@ public sealed class BroadcastCardCreatedHandler(IHubContext<SprintHub> hubContex
 {
     public Task HandleAsync(CardCreatedEvent ev, CancellationToken ct)
         => hubContext.Clients.Group($"sprint:{ev.Card.SprintId}")
-            .SendAsync("CardCreated", CardMappings.ToResponse(ev.Card), ct);
+            .SendAsync("CardCreated", ev.Card.Adapt<CardResponse>(), ct);
 }

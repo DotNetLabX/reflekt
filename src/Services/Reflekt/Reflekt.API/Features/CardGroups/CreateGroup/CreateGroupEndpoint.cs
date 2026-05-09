@@ -105,6 +105,10 @@ public sealed class CreateGroupEndpoint(
                 }
             }, ct);
 
-        await SendAsync(CardGroupMappings.ToResponse(newGroup, selectedCards, isFocused: sprint.FocusedGroupId == newGroup.Id), 201, ct);
+        await SendAsync(newGroup.Adapt<CardGroupResponse>() with
+        {
+            Cards = selectedCards.Select(c => c.Adapt<CardGroupCardEntry>()).ToList(),
+            IsFocused = sprint.FocusedGroupId == newGroup.Id
+        }, 201, ct);
     }
 }

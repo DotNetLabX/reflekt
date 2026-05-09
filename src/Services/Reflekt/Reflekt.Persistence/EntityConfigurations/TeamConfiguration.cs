@@ -1,4 +1,4 @@
-using BuildingBlocks.Persistence.EntityConfigurations;
+using Blocks.Persistence.EntityConfigurations;
 using Reflekt.Domain.Teams;
 
 namespace Reflekt.Persistence.EntityConfigurations;

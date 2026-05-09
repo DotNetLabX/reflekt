@@ -1,4 +1,4 @@
-using BuildingBlocks.Domain;
+using Blocks.Domain;
 using FluentAssertions;
 
 namespace Reflekt.UnitTests.BuildingBlocksTests;

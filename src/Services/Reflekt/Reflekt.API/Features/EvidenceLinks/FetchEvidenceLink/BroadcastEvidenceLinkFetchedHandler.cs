@@ -10,5 +10,5 @@ public sealed class BroadcastEvidenceLinkFetchedHandler(IHubContext<SprintHub> h
 {
     public Task HandleAsync(EvidenceLinkFetchedEvent ev, CancellationToken ct)
         => hubContext.Clients.Group($"sprint:{ev.Card.SprintId}")
-            .SendAsync("EvidenceLinkFetched", CardMappings.ToResponse(ev.EvidenceLink), ct);
+            .SendAsync("EvidenceLinkFetched", ev.EvidenceLink.Adapt<EvidenceLinkResponse>(), ct);
 }

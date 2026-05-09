@@ -54,7 +54,7 @@ public sealed class ListCardsEndpoint(
             cards.Select(c =>
             {
                 var voteCount = c.GroupId.HasValue ? voteCounts.GetValueOrDefault(c.GroupId.Value, 0) : 0;
-                var response = CardMappings.ToResponse(c, voteCount);
+                var response = c.Adapt<CardResponse>() with { VoteCount = voteCount };
                 if (redactOthers && c.ParticipantId != requestingParticipantId)
                     return response with { Text = "", AssigneeName = null, EvidenceLinks = [] };
                 return response;

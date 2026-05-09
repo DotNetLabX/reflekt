@@ -33,6 +33,6 @@ public sealed class GetCurrentParticipantEndpoint(ParticipantRepository particip
         var participant = await participantRepository.GetByIdAsync(participantId, ct);
         if (participant is null) { await SendNotFoundAsync(ct); return; }
 
-        await SendOkAsync(ParticipantMappings.ToResponse(participant), ct);
+        await SendOkAsync(participant.Adapt<ParticipantResponse>(), ct);
     }
 }

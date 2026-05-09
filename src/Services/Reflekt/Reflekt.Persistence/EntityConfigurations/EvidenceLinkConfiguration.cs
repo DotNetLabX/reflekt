@@ -1,4 +1,4 @@
-using BuildingBlocks.Persistence.EntityConfigurations;
+using Blocks.Persistence.EntityConfigurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Reflekt.Domain.Cards;

@@ -1,1 +1,1 @@
-global using BuildingBlocks.Domain;
+global using Blocks.Domain;

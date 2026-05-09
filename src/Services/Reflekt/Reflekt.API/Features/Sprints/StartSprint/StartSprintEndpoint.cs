@@ -38,6 +38,6 @@ public sealed class StartSprintEndpoint(TeamRepository teamRepository, SprintRep
         sprint.Start();
         await sprintRepository.SaveChangesAsync(ct);
 
-        await SendOkAsync(SprintMappings.ToResponse(sprint), ct);
+        await SendOkAsync(sprint.Adapt<SprintResponse>(), ct);
     }
 }

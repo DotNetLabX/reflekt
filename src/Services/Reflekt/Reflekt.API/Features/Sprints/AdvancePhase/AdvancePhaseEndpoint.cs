@@ -88,6 +88,6 @@ public sealed class AdvancePhaseEndpoint(
 
         await sprintRepository.SaveChangesAsync(ct);
 
-        await SendOkAsync(SprintMappings.ToResponse(sprint), ct);
+        await SendOkAsync(sprint.Adapt<SprintResponse>(), ct);
     }
 }

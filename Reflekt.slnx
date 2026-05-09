@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/BuildingBlocks/">
-    <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" />
-    <Project Path="src/BuildingBlocks/BuildingBlocks.Persistence/BuildingBlocks.Persistence.csproj" />
+    <Project Path="src/BuildingBlocks/Blocks.Core/Blocks.Core.csproj" />
+    <Project Path="src/BuildingBlocks/Blocks.Domain/Blocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/Blocks.Exceptions/Blocks.Exceptions.csproj" />
+    <Project Path="src/BuildingBlocks/Blocks.Persistence/Blocks.Persistence.csproj" />
   </Folder>
   <Folder Name="/src/Services/" />
   <Folder Name="/src/Services/Reflekt/">

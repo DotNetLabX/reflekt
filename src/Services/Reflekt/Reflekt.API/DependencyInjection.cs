@@ -15,10 +15,10 @@ public static class DependencyInjection
     {
         services.AddFastEndpoints();
         services.AddSignalR();
+        Mapster.TypeAdapterConfig.GlobalSettings.Scan(typeof(DependencyInjection).Assembly);
         services.AddSingleton(Mapster.TypeAdapterConfig.GlobalSettings);
         services.AddScoped<MapsterMapper.IMapper, MapsterMapper.ServiceMapper>();
         services.AddOpenApi();
-        services.AddProblemDetails();
 
         services.Configure<SeedOptions>(configuration.GetSection("Seed"));
 
@@ -32,10 +32,7 @@ public static class DependencyInjection
 
     public static WebApplication UseReflektApi(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
-            app.UseDeveloperExceptionPage();
-        else
-            app.UseExceptionHandler();
+        app.UseMiddleware<Reflekt.API.Middleware.GlobalExceptionMiddleware>();
 
         app.UseDefaultFiles();
         app.UseStaticFiles();

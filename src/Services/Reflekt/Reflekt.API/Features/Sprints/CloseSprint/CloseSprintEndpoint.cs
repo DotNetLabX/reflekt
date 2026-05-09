@@ -38,6 +38,6 @@ public sealed class CloseSprintEndpoint(TeamRepository teamRepository, SprintRep
         sprint.Close();
         await sprintRepository.SaveChangesAsync(ct);
 
-        await SendOkAsync(SprintMappings.ToResponse(sprint), ct);
+        await SendOkAsync(sprint.Adapt<SprintResponse>(), ct);
     }
 }

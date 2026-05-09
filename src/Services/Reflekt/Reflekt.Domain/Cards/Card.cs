@@ -1,4 +1,4 @@
-using BuildingBlocks.Domain;
+using Blocks.Domain;
 
 namespace Reflekt.Domain.Cards;
 
@@ -6,13 +6,13 @@ public sealed partial class Card : AggregateRoot
 {
     private Card() { }
 
-    public int SprintId { get; private set; }
-    public int ParticipantId { get; private set; }
-    public ColumnType ColumnType { get; private set; }
-    public CardType CardType { get; private set; }
+    public required int SprintId { get; init; }
+    public required int ParticipantId { get; init; }
+    public required ColumnType ColumnType { get; init; }
+    public required CardType CardType { get; init; }
     public string Text { get; private set; } = default!;
     public string? AssigneeName { get; private set; }
-    public DateTime CreatedAt { get; private set; }
+    public required DateTime CreatedAt { get; init; }
     public int? GroupId { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 

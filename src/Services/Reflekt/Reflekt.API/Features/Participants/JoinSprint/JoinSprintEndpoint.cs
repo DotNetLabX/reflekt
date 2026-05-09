@@ -26,6 +26,6 @@ public sealed class JoinSprintEndpoint(SprintRepository sprintRepository, Partic
         await participantRepository.AddAsync(participant, ct);
         await participantRepository.SaveChangesAsync(ct);
 
-        await SendAsync(ParticipantMappings.ToJoinResponse(participant), 201, ct);
+        await SendAsync(participant.Adapt<JoinSprintResponse>(), 201, ct);
     }
 }

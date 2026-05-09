@@ -1,4 +1,4 @@
-using BuildingBlocks.Domain;
+using Blocks.Domain;
 
 namespace Reflekt.Domain.Votes;
 
@@ -6,7 +6,7 @@ public sealed partial class Vote : AggregateRoot
 {
     private Vote() { }
 
-    public int GroupId { get; private set; }
-    public int ParticipantId { get; private set; }
-    public DateTime CreatedAt { get; private set; }
+    public required int GroupId { get; init; }
+    public required int ParticipantId { get; init; }
+    public required DateTime CreatedAt { get; init; }
 }

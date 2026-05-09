@@ -10,5 +10,5 @@ public sealed class BroadcastCardUpdatedOnEvidenceLinkDetachedHandler(IHubContex
 {
     public Task HandleAsync(EvidenceLinkDetachedEvent ev, CancellationToken ct)
         => hubContext.Clients.Group($"sprint:{ev.Card.SprintId}")
-            .SendAsync("CardUpdated", CardMappings.ToResponse(ev.Card), ct);
+            .SendAsync("CardUpdated", ev.Card.Adapt<CardResponse>(), ct);
 }

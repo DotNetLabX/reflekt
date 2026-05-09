@@ -62,17 +62,9 @@ public sealed class EditCardEndpoint(
             }
         }
 
-        try
-        {
-            card.Update(command.Text, command.AssigneeName);
-        }
-        catch (ArgumentException ex)
-        {
-            ThrowError(ex.Message);
-            return;
-        }
+        card.Update(command.Text, command.AssigneeName);
 
         await cardRepository.SaveChangesAsync(ct);
-        await SendOkAsync(CardMappings.ToResponse(card), ct);
+        await SendOkAsync(card.Adapt<CardResponse>(), ct);
     }
 }

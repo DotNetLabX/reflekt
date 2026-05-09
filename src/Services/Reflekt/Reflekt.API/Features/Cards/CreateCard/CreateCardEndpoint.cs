@@ -63,20 +63,11 @@ public sealed class CreateCardEndpoint(SprintRepository sprintRepository, CardRe
             }
         }
 
-        Card card;
-        try
-        {
-            card = Card.Create(command.Text, command.SprintId, participantId, columnType, cardType, command.AssigneeName);
-        }
-        catch (ArgumentException ex)
-        {
-            ThrowError(ex.Message);
-            return;
-        }
+        var card = Card.Create(command.Text, command.SprintId, participantId, columnType, cardType, command.AssigneeName);
 
         await cardRepository.AddAsync(card, ct);
         await cardRepository.SaveChangesAsync(ct);
 
-        await SendAsync(CardMappings.ToResponse(card), 201, ct);
+        await SendAsync(card.Adapt<CardResponse>(), 201, ct);
     }
 }

@@ -1,4 +1,4 @@
-using BuildingBlocks.Domain;
+using Blocks.Domain;
 
 namespace Reflekt.Domain.Participants;
 
@@ -6,8 +6,8 @@ public sealed partial class Participant : AggregateRoot
 {
     private Participant() { }
 
-    public int SprintId { get; private set; }
-    public string DisplayName { get; private set; } = default!;
-    public string GuestToken { get; private set; } = default!;
-    public DateTime JoinedAt { get; private set; }
+    public required int SprintId { get; init; }
+    public required string DisplayName { get; init; }
+    public required string GuestToken { get; init; }
+    public required DateTime JoinedAt { get; init; }
 }

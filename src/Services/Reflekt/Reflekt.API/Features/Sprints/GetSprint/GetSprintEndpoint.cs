@@ -27,6 +27,6 @@ public sealed class GetSprintEndpoint(TeamRepository teamRepository, SprintRepos
         var sprint = await sprintRepository.GetByIdAsync(request.SprintId, ct);
         if (sprint is null || sprint.TeamId != request.TeamId) { await SendNotFoundAsync(ct); return; }
 
-        await SendOkAsync(SprintMappings.ToResponse(sprint), ct);
+        await SendOkAsync(sprint.Adapt<SprintResponse>(), ct);
     }
 }

@@ -41,15 +41,7 @@ public sealed class UpdateGroupTitleEndpoint(
         var group = await cardGroupRepository.GetByIdAsync(req.GroupId, ct);
         if (group is null || group.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
 
-        try
-        {
-            group.SetTitle(req.Title);
-        }
-        catch (ArgumentException ex)
-        {
-            ThrowError(ex.Message);
-            return;
-        }
+        group.SetTitle(req.Title);
 
         await cardGroupRepository.SaveChangesAsync(ct);
 
@@ -58,6 +50,10 @@ public sealed class UpdateGroupTitleEndpoint(
             .OrderBy(c => c.CreatedAt)
             .ToList();
 
-        await SendOkAsync(CardGroupMappings.ToResponse(group, groupCards, isFocused: sprint.FocusedGroupId == group.Id), ct);
+        await SendOkAsync(group.Adapt<CardGroupResponse>() with
+        {
+            Cards = groupCards.Select(c => c.Adapt<CardGroupCardEntry>()).ToList(),
+            IsFocused = sprint.FocusedGroupId == group.Id
+        }, ct);
     }
 }

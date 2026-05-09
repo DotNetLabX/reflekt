@@ -71,17 +71,17 @@ public sealed class GetParticipantReportEndpoint(
 
         var wentWell = groupEntries
             .Where(x => x.Group.ColumnType == ColumnType.WentWell)
-            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(ReportMappings.ToCardEntry).ToList()))
+            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(c => c.Adapt<ReportCardEntry>()).ToList()))
             .ToList();
 
         var didntGoWell = groupEntries
             .Where(x => x.Group.ColumnType == ColumnType.DidntGoWell)
-            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(ReportMappings.ToCardEntry).ToList()))
+            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(c => c.Adapt<ReportCardEntry>()).ToList()))
             .ToList();
 
         var actionItems = cards
             .Where(c => c.CardType == CardType.ActionItem)
-            .Select(ReportMappings.ToActionItemEntry)
+            .Select(c => c.Adapt<ReportActionItemEntry>())
             .ToList();
 
         var response = new ReportResponse(

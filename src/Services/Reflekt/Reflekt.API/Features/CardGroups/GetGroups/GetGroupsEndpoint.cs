@@ -55,11 +55,12 @@ public sealed class GetGroupsEndpoint(
             : new Dictionary<int, int>();
 
         await SendOkAsync(
-            groups.Select(g => CardGroupMappings.ToResponse(
-                g,
-                cardsByGroup.GetValueOrDefault(g.Id, []),
-                voteCounts.GetValueOrDefault(g.Id, 0),
-                sprint.FocusedGroupId == g.Id)).ToList(),
+            groups.Select(g => g.Adapt<CardGroupResponse>() with
+            {
+                Cards = cardsByGroup.GetValueOrDefault(g.Id, []).Select(c => c.Adapt<CardGroupCardEntry>()).ToList(),
+                VoteCount = voteCounts.GetValueOrDefault(g.Id, 0),
+                IsFocused = sprint.FocusedGroupId == g.Id
+            }).ToList(),
             ct);
     }
 }

@@ -1,4 +1,4 @@
-using BuildingBlocks.Persistence;
+using Blocks.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;

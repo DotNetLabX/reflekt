@@ -5,5 +5,6 @@ global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Hosting;
 global using FastEndpoints;
+global using Mapster;
 global using Reflekt.API;
 global using Reflekt.Persistence;

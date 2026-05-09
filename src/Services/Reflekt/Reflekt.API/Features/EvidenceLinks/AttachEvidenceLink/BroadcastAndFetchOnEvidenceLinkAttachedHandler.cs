@@ -16,7 +16,7 @@ public sealed class BroadcastAndFetchOnEvidenceLinkAttachedHandler(
     public async Task HandleAsync(EvidenceLinkAttachedEvent ev, CancellationToken ct)
     {
         await hubContext.Clients.Group($"sprint:{ev.Card.SprintId}")
-            .SendAsync("CardUpdated", CardMappings.ToResponse(ev.Card), ct);
+            .SendAsync("CardUpdated", ev.Card.Adapt<CardResponse>(), ct);
 
         if (ev.EvidenceLink.FetchStatus == FetchStatus.Pending)
             await channel.WriteAsync(new FetchJob(ev.Card.Id, ev.EvidenceLink.Id, ev.EvidenceLink.Url, ev.Card.SprintId), ct);

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Blocks.Exceptions\Blocks.Exceptions.csproj" />
+  </ItemGroup>
+</Project>

@@ -59,6 +59,6 @@ public sealed class AttachEvidenceLinkEndpoint(
         var link = card.AttachEvidenceLink(command.Url, source, externalKey);
         await cardRepository.SaveChangesAsync(ct);
 
-        await SendAsync(CardMappings.ToResponse(link), 201, ct);
+        await SendAsync(link.Adapt<EvidenceLinkResponse>(), 201, ct);
     }
 }

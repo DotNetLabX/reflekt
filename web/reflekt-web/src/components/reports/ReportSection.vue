@@ -1,0 +1,56 @@
+<template>
+  <div class="bg-white rounded shadow">
+    <div class="px-4 py-3 border-b" :class="headerClass">
+      <h2 class="font-semibold text-sm" :class="titleClass">{{ title }}</h2>
+    </div>
+    <div class="p-4">
+      <div v-if="groups.length === 0" class="text-gray-400 text-sm text-center py-4">No items</div>
+      <div v-else class="flex flex-col gap-4">
+        <div v-for="(group, i) in groups" :key="i">
+          <div class="flex items-center gap-2 mb-1">
+            <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
+            <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
+          </div>
+          <ul v-if="group.cards.length > 1" class="flex flex-col gap-1 pl-3 border-l-2" :class="borderClass">
+            <li v-for="(card, j) in group.cards" :key="j">
+              <p class="text-sm text-gray-700">{{ card.text }}</p>
+              <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
+                <a v-for="(link, k) in card.evidenceLinks" :key="k" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 rounded text-xs" :class="linkClass">
+                  {{ link.title || truncateUrl(link.url) }}
+                </a>
+              </div>
+            </li>
+          </ul>
+          <div v-else-if="(group.cards[0]?.evidenceLinks?.length ?? 0) > 0" class="flex flex-wrap gap-1 mt-1">
+            <a v-for="(link, k) in group.cards[0]?.evidenceLinks" :key="k" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 rounded text-xs" :class="linkClass">
+              {{ link.title || truncateUrl(link.url) }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { ReportGroupEntry } from '../../stores/report'
+
+defineProps<{
+  title: string
+  headerClass: string
+  titleClass: string
+  borderClass: string
+  linkClass: string
+  groups: ReportGroupEntry[]
+}>()
+
+function truncateUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    const path = u.pathname.length > 20 ? u.pathname.slice(0, 20) + '...' : u.pathname
+    return u.hostname + path
+  } catch {
+    return url.length > 40 ? url.slice(0, 40) + '...' : url
+  }
+}
+</script>

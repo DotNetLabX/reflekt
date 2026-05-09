@@ -1,4 +1,4 @@
-using BuildingBlocks.Domain;
+using Blocks.Domain;
 
 namespace Reflekt.Domain.Cards;
 
@@ -6,9 +6,9 @@ public sealed class EvidenceLink : Entity
 {
     private EvidenceLink() { }
 
-    public int CardId { get; private set; }
-    public string Url { get; private set; } = default!;
-    public EvidenceLinkSource Source { get; private set; }
+    public required int CardId { get; init; }
+    public required string Url { get; init; }
+    public required EvidenceLinkSource Source { get; init; }
     public string? Title { get; private set; }
     public string? Description { get; private set; }
     public string? IconUrl { get; private set; }

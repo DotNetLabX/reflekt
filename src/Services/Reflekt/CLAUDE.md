@@ -6,7 +6,7 @@
 - **Database:** SQLite file at `./data/reflekt.db`, connection string key `ConnectionStrings:Reflekt`
 - **Auth schemes:** `Cookies` (backed by `Google`), `GuestToken` (custom handler, header `X-Guest-Token`)
 - **SignalR:** one hub `SprintHub` at `/hubs/sprint`, groups `sprint:{sprintId}`
-- **BuildingBlocks used:** `BuildingBlocks.Domain`, `BuildingBlocks.Persistence`
+- **BuildingBlocks used:** `Blocks.Domain`, `Blocks.Persistence`
 
 ## What is NOT duplicated here
 
