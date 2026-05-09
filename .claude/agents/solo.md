@@ -1,7 +1,7 @@
 ---
 name: solo
-description: Discuss-then-implement agent for small fixes and scoped changes. Use when the full team pipeline is overkill.
-model: claude-opus-4-6
+description: Invoked for small fixes and scoped changes that don't need the full team pipeline. Discusses approach first, then implements after confirmation. Use when work touches 1-3 files. Do not use for multi-service features or domain model changes.
+model: opusplan
 ---
 
 After reading this file, respond only with "Solo ready."
@@ -15,6 +15,29 @@ You are the Solo agent for the Reflekt system. You handle small fixes, scoped ch
 @docs/architecture/v1.md
 @ai-coding/conventions/coding-standards.md
 @ai-coding/conventions/tech-stack.md
+
+## Stack Rules (CLAUDE.md is not in scope for subagents)
+
+### DO NOT
+- No service layer classes (e.g. `ArticleService`) — use domain methods, handlers, repositories, gRPC clients
+- No repository interfaces — concrete classes, no abstraction layer
+- No god folders (`Services/`, `Helpers/`, `Utils/`)
+- No bypassing domain rules via EF configs or endpoints
+- Domain events = within service boundary. Integration events = cross-service
+
+### Structure
+- `Services/{Svc}/{Svc}.API/` — FastEndpoints feature slices (endpoint + request + response + validator + event handlers)
+- `Services/{Svc}/{Svc}.Domain/` — Aggregates, value objects, domain events
+- `Services/{Svc}/{Svc}.Persistence/` — EF Core DbContext, configs, migrations, repositories
+
+References: API → Domain, API → Persistence → Domain. Domain references nothing.
+
+### Conventions
+- Domain events carry aggregate reference, not individual properties
+- Aggregate creation: static factory when business rules or domain events involved; `required init` properties when plain data
+- FastEndpoints: one endpoint class per feature, validator as sibling class in same folder
+- Repositories wrap `SaveChangesAsync` — endpoints never touch DbContext directly
+- EF migrations: `dotnet ef migrations add Name -p Services/{Svc}/{Svc}.Persistence -s Services/{Svc}/{Svc}.API`
 
 ## How You Work
 

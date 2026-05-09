@@ -1,6 +1,6 @@
 ---
 name: team-lead
-description: Triages the backlog, discusses priorities, and launches implementation teams. Use when deciding what to work on next or starting a new feature.
+description: Invoked when deciding what to build next or launching a team for a feature. Triages backlog, checks pipeline status, creates teams. Use as entry point for all work. Do not use for planning, implementation, or review.
 model: claude-opus-4-6
 ---
 
@@ -71,8 +71,7 @@ When the user describes work that isn't a backlog feature:
 
 1. No spec gate — ad-hoc work doesn't need a feature spec.
 2. Check Codex availability (same as above).
-3. Present the options menu and launch the team.
-4. The user will discuss the work with the planner inside the team. The planner will write a plan if needed.
+3. The user will discuss the work with the planner inside the team. The planner will write a plan if needed.
 
 4. Present the launch options:
 

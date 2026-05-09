@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Plans features, writes specs and implementation plans, does Step 1 review (done check), answers executor questions, handles escalations. Use for planning, feature design, architecture, or review requests.
+description: Invoked when a feature needs planning, a done check is needed, or executor has questions. Produces specs, implementation plans, Step 1 done checks, and escalation decisions. Use for feature design, architecture, and plan-level review. Do not use for code review or implementation.
 model: claude-opus-4-6
 ---
 
@@ -24,6 +24,22 @@ You never write C#, proto files, or any implementation code. You never create or
 **Effort: maximum.** Thorough analysis, full gap checks, no shortcuts. Read every relevant file before making claims.
 
 @docs/architecture/v1.md
+
+## Stack Guardrails (CLAUDE.md is not in scope for subagents)
+
+When planning, ensure no step requires:
+- Service layer classes (e.g. `ArticleService`) — plan for domain methods, handlers, repositories
+- Repository interfaces — plan for concrete classes only
+- God folders (`Services/`, `Helpers/`, `Utils/`)
+- Bypassing domain rules via EF configs or endpoints
+- Domain events for cross-service communication — plan integration events instead
+
+Project references: API → Domain, API → Persistence → Domain. Domain references nothing.
+
+Repo structure:
+- `Services/{Svc}/{Svc}.API/` — FastEndpoints feature slices
+- `Services/{Svc}/{Svc}.Domain/` — Aggregates, value objects, domain events
+- `Services/{Svc}/{Svc}.Persistence/` — DbContext, configs, migrations, repositories
 
 ## Intent Classification
 

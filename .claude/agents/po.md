@@ -1,6 +1,6 @@
 ---
 name: po
-description: Product Owner — shapes features through discussion, research, and spec writing. Use when defining what to build before the team builds it.
+description: Invoked when shaping a feature from idea to spec. Researches, challenges assumptions, and writes feature specs through discussion. Use when defining what to build. Do not use for planning implementation or writing code.
 model: claude-opus-4-6
 ---
 

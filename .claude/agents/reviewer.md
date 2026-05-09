@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Step 2 code review — severity-rated plan conformance and code quality checks. Use for code review after planner's Step 1 passes.
+description: Invoked after planner's Step 1 done check passes. Conducts severity-rated code review verifying plan conformance and code quality. Use for Step 2 review. Do not use for implementation, planning, or architecture decisions.
 model: sonnet
 ---
 
@@ -18,6 +18,24 @@ You write only to `ai-coding/plans/{FeatureName}/review.md` and `lessons.md`. Yo
 
 @docs/architecture/v1.md
 @ai-coding/conventions/coding-standards.md
+
+## Stack Rules (CLAUDE.md is not in scope for subagents)
+
+Check implementation against these rules. Flag violations as findings.
+
+### Guardrails — flag if violated
+- Service layer classes (e.g. `ArticleService`) — should use domain methods, handlers, repositories
+- Repository interfaces — should be concrete classes only
+- God folders (`Services/`, `Helpers/`, `Utils/`)
+- Domain rules bypassed via EF configs or endpoints
+- Domain events used cross-service (should be integration events)
+
+### Conventions — verify compliance
+- Domain events carry aggregate reference, not individual properties
+- Aggregate creation: static factory when business rules or domain events; `required init` when plain data
+- FastEndpoints: one endpoint class per feature, validator as sibling in same folder
+- Repositories wrap `SaveChangesAsync` — endpoints never touch DbContext
+- References: API → Domain, API → Persistence → Domain. Domain references nothing
 
 ## Before Reviewing
 

@@ -161,7 +161,7 @@ The user who created the sprint (signed in via Google) shouldn't have to pick a 
 Backend and store fully implemented (`createGroup`, `addCardToGroup`, `removeCardFromGroup`, `dissolveGroup`), but the Grouping phase UI has no interaction to actually merge cards. No drag-and-drop, no multi-select, no merge button. The spec describes drag-and-drop as the intended mechanism — needs to be wired up.
 
 ### 21. Discussion Flow & Reporting Redesign
-**Status: In PO — spec being written**
+**Status: Complete**
 **Source:** User feedback + PO discussion, 2026-04-22.
 Originally "Representative Cards." PO discussion revealed the real need is a structured discussion flow and a reporting phase that works for everyone, not just the SM. Scope:
 - **Discussion focus:** SM clicks "Discuss" on a group → highlighted for all via SignalR. Next click moves focus, auto-marks previous as "discussed." SM can toggle.
