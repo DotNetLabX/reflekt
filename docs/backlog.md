@@ -171,9 +171,67 @@ Originally "Representative Cards." PO discussion revealed the real need is a str
 - **Markdown export:** The report serialized as markdown, including discussed/undiscussed distinction.
 
 ### 22. Phase revert — undo accidental phase advance
+**Status: Parked**
+**Source:** PO discussion, 2026-04-22. Revisited 2026-05-09.
+SM accidentally advancing a phase has no undo. Potential approach: snapshot sprint state at each phase boundary, revert = restore snapshot + discard changes made in the current phase.
+**Competitor research (2026-05-09):** No retro tool in the market offers phase revert. Forward-only is the universal standard (EasyRetro, Retrium, Parabol, Neatro, TeamRetro). Parabol has an open issue (#2948, since 2019) debating this — still unresolved. The industry consensus is that confirmation dialogs are sufficient.
+**Decision:** Park. Reflekt already has confirmation dialogs (#21) and the min-discussed gate — matching or exceeding best-in-class. V2 adds two more safety nets: participant readiness indicator ("4/6 done") and voting completion warning in the advance dialog (see v2.md §4.5). Revisit only if real usage surfaces complaints despite these safeguards.
+
+---
+
+## E. V2 Features
+
+Non-AI enhancements: proper identity model, multi-team support, and sprint UX improvements. All features build on v1's data model. Full spec at `docs/specs/v2.md`.
+
+**Migration dependency:** #23 must land first — it creates the `User` entity that #24, #25, and #26 depend on. Sprint UX features (#27–30) are independent of Identity and can be built in parallel. #29 depends on #28 (timer controls live in the same top bar as inline phase controls).
+
+### 23. User Entity & Team Ownership Migration
+**Status: Done** | **Feature Spec:** `docs/features/TeamManagement/spec.md`
+**Epic:** Identity | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.0
+**Dependencies:** None (prerequisite for #24, #25, #26)
+Create a `User` entity (Id, Email, Name, GivenName, CreatedAt). Migrate `Team.CreatorEmail` string to `CreatedByUserId` FK. Upsert User on Google sign-in. Update all SM authorization checks to use the FK relationship. Data migration: create User rows from existing `CreatorEmail` values.
+
+### 24. Multi-Team Support
+**Status: Done** | **Feature Spec:** `docs/features/TeamManagement/spec.md`
+**Epic:** Teams | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.1
+**Dependencies:** #23
+Up to 10 teams per user (configurable). Drop the unique-team-per-email constraint. Team names unique per user, not globally. SM dashboard shows all owned teams with sprint counts and last-activity timestamps.
+
+### 25. Team Deletion with Cascade
+**Status: Done** | **Feature Spec:** `docs/features/TeamManagement/spec.md`
+**Epic:** Teams | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.2
+**Dependencies:** #23
+Hard delete with full cascade (Team → Sprints → Participants, CardGroups → Cards → Votes, EvidenceLinks). Single transaction. Type-to-confirm dialog. Cannot delete a team with an active (non-closed) sprint.
+
+### 26. Google Auth for Participants (Dual Path)
+**Status: Done** | **Feature Spec:** `docs/features/GoogleAuthParticipants/spec.md`
+**Epic:** Identity | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.3
+**Dependencies:** #23
+Participants choose: Google sign-in (persistent identity, cross-device rejoin) or guest join (v1 behavior). `Participant` gains optional `UserId` FK to `User`. Google-authed participants are matched by `UserId + SprintId` across devices.
+
+### 27. Configurable Reflection Columns
+**Status: Done** | **Feature Spec:** `docs/features/ConfigurableColumns/spec.md`
+**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.4
+**Dependencies:** None
+3 configurable reflection columns + 1 fixed Action Items column. SM sets column names at sprint creation (max 30 chars, defaults: "Went Well" / "Didn't Go Well" / "Start Doing"). `ColumnType` enum migrates from semantic (`WentWell`, `DidntGoWell`) to positional (`Column1`, `Column2`, `Column3`). Per-sprint, not per-team.
+
+### 28. Inline Phase Controls
 **Status: Open**
-**Source:** PO discussion, 2026-04-22.
-SM accidentally advancing a phase has no undo. Potential approach: snapshot sprint state at each phase boundary, revert = restore snapshot + discard changes made in the current phase. Confirmation dialog + minimum-discussed gate (see #21) are the short-term safety net. Full revert is a separate feature — event-sourcing-style snapshots would work conceptually but may be overengineering for the problem size. Evaluate after #21 ships and real usage shows whether accidental advances are a real pain point.
+**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.5
+**Dependencies:** None
+Move phase advancement from the sprint manager page into the sprint board top bar. All participants see the current phase; only SM sees the "Next: {phase}" button. Close Sprint is a separate action (state transition, not phase advance), shown only during Reporting. Existing advance gates preserved.
+
+### 29. Timer per Phase
+**Status: Open**
+**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.6
+**Dependencies:** #28
+Optional countdown timer for Writing (5min default), Voting (3min), Discussing (10min). No timer for Grouping or Reporting. SM controls: start, pause, reset, +time. Timer state is ephemeral (SignalR group state, not persisted). Default durations stored as JSON on Sprint. Timer expiry alerts but does not auto-advance.
+
+### 30. Open Actions from Previous Retro
+**Status: Open**
+**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.7
+**Dependencies:** None
+During Writing phase, show action items from the most recently closed sprint in the same team. SM marks each as Done / Carried Over / Dropped. Status persisted on the original card (`ReviewStatus` enum + `ReviewedInSprintId` FK). No card duplication. Collapsible section, SM-only interaction.
 
 ---
 

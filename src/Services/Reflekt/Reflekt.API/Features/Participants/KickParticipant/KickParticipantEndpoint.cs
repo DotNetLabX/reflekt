@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -25,9 +25,9 @@ public sealed class KickParticipantEndpoint(
         if (sprint.State != SprintState.Active)
             ThrowError("Cannot kick participants from a non-active sprint.", StatusCodes.Status409Conflict);
 
-        var email = User.FindFirstValue(ClaimTypes.Email);
+        var userId = User.GetUserId();
         var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-        if (team is null || !string.Equals(team.CreatorEmail, email, StringComparison.OrdinalIgnoreCase))
+        if (team is null || team.OwnerId != userId)
         {
             await SendForbiddenAsync(ct);
             return;

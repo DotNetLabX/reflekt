@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
@@ -23,13 +23,13 @@ public sealed class ToggleDiscussedEndpoint(
 {
     public override async Task HandleAsync(ToggleDiscussedRequest req, CancellationToken ct)
     {
-        var email = User.FindFirstValue(ClaimTypes.Email);
+        var userId = User.GetUserId();
 
         var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
         if (sprint is null) { await SendNotFoundAsync(ct); return; }
 
         var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-        if (team is null || !string.Equals(team.CreatorEmail, email, StringComparison.OrdinalIgnoreCase))
+        if (team is null || team.OwnerId != userId)
         {
             await SendForbiddenAsync(ct);
             return;

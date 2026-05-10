@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.CardGroups;
 using Reflekt.Domain.Cards;
@@ -22,12 +22,12 @@ public sealed class AdvancePhaseEndpoint(
 {
     public override async Task HandleAsync(SprintRouteRequest request, CancellationToken ct)
     {
-        var email = User.FindFirstValue(ClaimTypes.Email);
+        var userId = User.GetUserId();
 
         var team = await teamRepository.GetByIdAsync(request.TeamId, ct);
         if (team is null) { await SendNotFoundAsync(ct); return; }
 
-        if (!string.Equals(team.CreatorEmail, email, StringComparison.OrdinalIgnoreCase))
+        if (team.OwnerId != userId)
         {
             await SendForbiddenAsync(ct);
             return;

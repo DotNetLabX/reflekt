@@ -5,6 +5,7 @@ using Reflekt.Domain.Cards;
 using Reflekt.Domain.Participants;
 using Reflekt.Domain.Sprints;
 using Reflekt.Domain.Teams;
+using Reflekt.Domain.Users;
 using Reflekt.Domain.Votes;
 
 namespace Reflekt.Persistence;
@@ -13,12 +14,29 @@ internal static class DbInitializer
 {
     public static async Task SeedAsync(ReflektDbContext db, IConfiguration config, CancellationToken ct = default)
     {
-        var creatorEmail = config["Seed:CreatorEmail"] ?? "dev@localhost";
+        var seedEmail = config["Seed:SeedUserEmail"] ?? "dev@localhost";
+
+        // Ensure seed user exists
+        User user;
+        var existingUser = await db.Users
+            .FirstOrDefaultAsync(u => EF.Functions.Collate(u.Email, "NOCASE") == seedEmail, ct);
+
+        if (existingUser is null)
+        {
+            user = User.Create(seedEmail, seedEmail, seedEmail);
+            user.ClearDomainEvents();
+            db.Users.Add(user);
+            await db.SaveChangesAsync(ct);
+        }
+        else
+        {
+            user = existingUser;
+        }
 
         Team team;
         if (!await db.Teams.AnyAsync(ct))
         {
-            team = Team.Create("Dev Team", creatorEmail);
+            team = Team.Create("Dev Team", user.Id);
             team.ClearDomainEvents();
             db.Teams.Add(team);
             await db.SaveChangesAsync(ct);
@@ -62,10 +80,10 @@ internal static class DbInitializer
 
             var cards = new[]
             {
-                Card.Create("Great team collaboration this sprint!", sprint.Id, participants[0].Id, ColumnType.WentWell, CardType.Note, null),
-                Card.Create("CI pipeline was reliable throughout.", sprint.Id, participants[1].Id, ColumnType.WentWell, CardType.Note, null),
-                Card.Create("Sprint planning took too long.", sprint.Id, participants[2].Id, ColumnType.DidntGoWell, CardType.Note, null),
-                Card.Create("Communication gaps between front and back.", sprint.Id, participants[0].Id, ColumnType.DidntGoWell, CardType.Note, null),
+                Card.Create("Great team collaboration this sprint!", sprint.Id, participants[0].Id, ColumnType.Column1, CardType.Note, null),
+                Card.Create("CI pipeline was reliable throughout.", sprint.Id, participants[1].Id, ColumnType.Column1, CardType.Note, null),
+                Card.Create("Sprint planning took too long.", sprint.Id, participants[2].Id, ColumnType.Column2, CardType.Note, null),
+                Card.Create("Communication gaps between front and back.", sprint.Id, participants[0].Id, ColumnType.Column2, CardType.Note, null),
                 Card.Create("Update onboarding docs.", sprint.Id, participants[1].Id, ColumnType.ActionItems, CardType.ActionItem, participants[2].DisplayName),
             };
 
@@ -96,7 +114,7 @@ internal static class DbInitializer
         }
 
         var firstWentWellCard = await db.Cards
-            .FirstOrDefaultAsync(c => c.SprintId == sprint.Id && c.ColumnType == ColumnType.WentWell, ct);
+            .FirstOrDefaultAsync(c => c.SprintId == sprint.Id && c.ColumnType == ColumnType.Column1, ct);
 
         if (firstWentWellCard is not null && !await db.EvidenceLinks.AnyAsync(e => e.CardId == firstWentWellCard.Id, ct))
         {
@@ -118,8 +136,8 @@ internal static class DbInitializer
                 .OrderBy(c => c.CreatedAt)
                 .ToListAsync(ct);
 
-            var wentWellCards = cards.Where(c => c.ColumnType == ColumnType.WentWell && c.GroupId.HasValue).ToList();
-            var didntGoWellCards = cards.Where(c => c.ColumnType == ColumnType.DidntGoWell && c.GroupId.HasValue).ToList();
+            var wentWellCards = cards.Where(c => c.ColumnType == ColumnType.Column1 && c.GroupId.HasValue).ToList();
+            var didntGoWellCards = cards.Where(c => c.ColumnType == ColumnType.Column2 && c.GroupId.HasValue).ToList();
 
             if (wentWellCards.Count > 0 && didntGoWellCards.Count > 0)
             {

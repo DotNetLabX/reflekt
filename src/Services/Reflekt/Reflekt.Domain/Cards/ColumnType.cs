@@ -1,3 +1,3 @@
 namespace Reflekt.Domain.Cards;
 
-public enum ColumnType { WentWell, DidntGoWell, ActionItems }
+public enum ColumnType { Column1, Column2, Column3, ActionItems }

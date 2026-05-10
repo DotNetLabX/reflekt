@@ -9,6 +9,12 @@ interface Sprint {
   votesPerParticipant: number
   createdAt: string
   closedAt: string | null
+  column1Name: string
+  column1Color: string
+  column2Name: string
+  column2Color: string
+  column3Name: string
+  column3Color: string
 }
 
 interface SprintSummary {
@@ -18,6 +24,32 @@ interface SprintSummary {
   votesPerParticipant: number
   isScrumMaster: boolean
   participants: { displayName: string }[]
+  column1Name: string
+  column1Color: string
+  column2Name: string
+  column2Color: string
+  column3Name: string
+  column3Color: string
+}
+
+interface ColumnConfigPayload {
+  column1Name: string
+  column1Color: string
+  column2Name: string
+  column2Color: string
+  column3Name: string
+  column3Color: string
+}
+
+interface CreateSprintPayload {
+  name: string
+  votesPerParticipant?: number
+  column1Name?: string
+  column1Color?: string
+  column2Name?: string
+  column2Color?: string
+  column3Name?: string
+  column3Color?: string
 }
 
 export const useSprintStore = defineStore('sprint', {
@@ -45,16 +77,36 @@ export const useSprintStore = defineStore('sprint', {
         this.currentSummary = (await res.json()) as SprintSummary
       }
     },
-    async createSprint(teamId: number, name: string, votesPerParticipant?: number): Promise<Sprint> {
+    async createSprint(teamId: number, payload: CreateSprintPayload): Promise<Sprint> {
       const res = await fetch(`/api/teams/${teamId}/sprints`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, votesPerParticipant }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw await res.json().catch(() => ({}))
       const sprint = (await res.json()) as Sprint
       this.sprints.unshift(sprint)
+      return sprint
+    },
+    async updateColumns(sprintId: number, payload: ColumnConfigPayload): Promise<Sprint> {
+      const res = await fetch(`/api/sprints/${sprintId}/columns`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw await res.json().catch(() => ({}))
+      const sprint = (await res.json()) as Sprint
+      this._replaceSprint(sprint)
+      if (this.currentSummary?.id === sprint.id) {
+        this.currentSummary.column1Name = sprint.column1Name
+        this.currentSummary.column1Color = sprint.column1Color
+        this.currentSummary.column2Name = sprint.column2Name
+        this.currentSummary.column2Color = sprint.column2Color
+        this.currentSummary.column3Name = sprint.column3Name
+        this.currentSummary.column3Color = sprint.column3Color
+      }
       return sprint
     },
     async startSprint(teamId: number, sprintId: number) {

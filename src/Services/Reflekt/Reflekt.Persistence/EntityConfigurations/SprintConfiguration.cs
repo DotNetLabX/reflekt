@@ -11,7 +11,7 @@ internal sealed class SprintConfiguration : EntityConfiguration<Sprint>
         base.Configure(builder);
         builder.ToTable("Sprints");
         builder.Property(s => s.TeamId).IsRequired();
-        builder.HasOne<Team>().WithMany().HasForeignKey(s => s.TeamId);
+        builder.HasOne<Team>().WithMany().HasForeignKey(s => s.TeamId).OnDelete(DeleteBehavior.Cascade);
         builder.Property(s => s.Name).IsRequired().HasMaxLength(100);
         builder.Property(s => s.State).IsRequired();
         builder.Property(s => s.CurrentPhase).IsRequired();
@@ -19,5 +19,27 @@ internal sealed class SprintConfiguration : EntityConfiguration<Sprint>
         builder.Property(s => s.CreatedAt).IsRequired();
         builder.Property(s => s.FocusedGroupId);
         builder.HasIndex(s => s.TeamId);
+
+        builder.Property(s => s.Column1Name).IsRequired().HasMaxLength(30).HasDefaultValue("Went Well");
+        builder.Property(s => s.Column2Name).IsRequired().HasMaxLength(30).HasDefaultValue("Didn't Go Well");
+        builder.Property(s => s.Column3Name).IsRequired().HasMaxLength(30).HasDefaultValue("Start Doing");
+
+        builder.Property(s => s.Column1Color)
+            .IsRequired()
+            .HasMaxLength(10)
+            .HasDefaultValue(ColumnColor.Create("green"))
+            .HasConversion(c => c.Value, s => ColumnColor.Create(s));
+
+        builder.Property(s => s.Column2Color)
+            .IsRequired()
+            .HasMaxLength(10)
+            .HasDefaultValue(ColumnColor.Create("red"))
+            .HasConversion(c => c.Value, s => ColumnColor.Create(s));
+
+        builder.Property(s => s.Column3Color)
+            .IsRequired()
+            .HasMaxLength(10)
+            .HasDefaultValue(ColumnColor.Create("amber"))
+            .HasConversion(c => c.Value, s => ColumnColor.Create(s));
     }
 }

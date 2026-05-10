@@ -34,7 +34,16 @@ defineProps<{
 
 defineEmits<{
   select: [sprintId: number]
-  'create-sprint': [payload: { name: string; votesPerParticipant: number | undefined }]
+  'create-sprint': [payload: {
+    name: string
+    votesPerParticipant: number | undefined
+    column1Name: string
+    column1Color: string
+    column2Name: string
+    column2Color: string
+    column3Name: string
+    column3Color: string
+  }]
 }>()
 
 function stateBadge(state: string) {

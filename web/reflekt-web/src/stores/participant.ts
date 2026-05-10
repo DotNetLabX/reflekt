@@ -10,6 +10,7 @@ interface Participant {
 
 interface JoinSprintResponse extends Participant {
   guestToken: string
+  userId?: number | null
 }
 
 export const useParticipantStore = defineStore('participant', {
@@ -23,6 +24,16 @@ export const useParticipantStore = defineStore('participant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ displayName }),
+      })
+      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
+      const data = (await res.json()) as JoinSprintResponse
+      this.currentParticipant = data
+      return data
+    },
+    async joinWithGoogle(sprintId: number): Promise<JoinSprintResponse> {
+      const res = await fetch(`/api/sprints/${sprintId}/join/google`, {
+        method: 'POST',
+        credentials: 'include',
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
       const data = (await res.json()) as JoinSprintResponse

@@ -7,10 +7,45 @@
     <!-- Column header -->
     <div
       class="px-4 py-3 border-b rounded-t-[--radius-md] flex items-center gap-2"
-      :class="`bg-${columnColor}-light`"
+      :class="`bg-col-${columnColor}-light`"
     >
-      <component :is="headerIcon" :size="18" :class="`text-${columnColor}`" />
-      <h2 class="font-semibold text-base flex-1" :class="`text-${columnColor}`">{{ title }}</h2>
+      <!-- Inline edit mode (SM only) -->
+      <template v-if="editing">
+        <input
+          ref="nameInput"
+          v-model="editName"
+          type="text"
+          maxlength="30"
+          class="flex-1 text-sm font-semibold bg-white border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          :class="`text-col-${columnColor}`"
+          @keydown.enter="confirmEdit"
+          @blur="confirmEdit"
+        />
+        <div class="flex gap-1">
+          <button
+            v-for="color in paletteColors"
+            :key="color"
+            type="button"
+            :title="color"
+            class="w-4 h-4 rounded-full border-2 transition-transform cursor-pointer"
+            :class="[
+              `bg-col-${color}`,
+              editColor === color ? 'border-gray-800 scale-110' : 'border-transparent',
+            ]"
+            @mousedown.prevent="selectColor(color)"
+          />
+        </div>
+      </template>
+
+      <!-- Display mode -->
+      <template v-else>
+        <h2
+          class="font-semibold text-base flex-1"
+          :class="[`text-col-${columnColor}`, isScrumMaster ? 'cursor-pointer hover:underline' : '']"
+          @click="isScrumMaster ? startEdit() : undefined"
+        >{{ title }}</h2>
+      </template>
+
       <BaseBadge :variant="badgeVariant">{{ count }}</BaseBadge>
     </div>
 
@@ -36,25 +71,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { Component } from 'vue'
+import { ref, nextTick } from 'vue'
 import BaseBadge from '../ui/BaseBadge.vue'
+
+const PALETTE_COLORS = ['green', 'red', 'amber', 'blue', 'purple', 'teal', 'pink', 'slate'] as const
+const paletteColors = PALETTE_COLORS
 
 const props = defineProps<{
   title: string
   columnColor: string
-  headerIcon: Component
   badgeVariant: 'success' | 'danger' | 'info' | 'primary'
   count: number
   visible: boolean
   extraClass?: string
+  isScrumMaster: boolean
 }>()
 
 const emit = defineEmits<{
   drop: [e: DragEvent]
+  'update-config': [name: string, color: string]
 }>()
 
 const dragOver = ref(false)
+const editing = ref(false)
+const editName = ref('')
+const editColor = ref('')
+const nameInput = ref<HTMLInputElement | null>(null)
+
+function startEdit() {
+  editName.value = props.title
+  editColor.value = props.columnColor
+  editing.value = true
+  nextTick(() => nameInput.value?.focus())
+}
+
+function confirmEdit() {
+  if (!editing.value) return
+  editing.value = false
+  const name = editName.value.trim()
+  if (!name || (name === props.title && editColor.value === props.columnColor)) return
+  emit('update-config', name || props.title, editColor.value)
+}
+
+function selectColor(color: string) {
+  editColor.value = color
+}
 
 function onDragOver(e: DragEvent) {
   try {

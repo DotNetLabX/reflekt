@@ -25,10 +25,12 @@ export const useCardGroupStore = defineStore('cardGroup', {
     groups: [] as CardGroup[],
   }),
   getters: {
-    wentWellGroups: (state): CardGroup[] =>
-      state.groups.filter((g) => g.columnType === 'WentWell'),
-    didntGoWellGroups: (state): CardGroup[] =>
-      state.groups.filter((g) => g.columnType === 'DidntGoWell'),
+    column1Groups: (state): CardGroup[] =>
+      state.groups.filter((g) => g.columnType === 'Column1'),
+    column2Groups: (state): CardGroup[] =>
+      state.groups.filter((g) => g.columnType === 'Column2'),
+    column3Groups: (state): CardGroup[] =>
+      state.groups.filter((g) => g.columnType === 'Column3'),
     focusedGroup: (state): CardGroup | undefined =>
       state.groups.find((g) => g.isFocused),
   },

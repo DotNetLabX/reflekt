@@ -4,7 +4,7 @@ public sealed record ReportResponse(
     ReportSprintInfo Sprint,
     ReportTeamInfo Team,
     List<ReportParticipantInfo> Participants,
-    ReportNotesSection Notes,
+    List<ReportColumnSection> Columns,
     List<ReportActionItemEntry> ActionItems);
 
 public sealed record ReportSprintInfo(int Id, string Name, DateTime CreatedAt, DateTime? ClosedAt);
@@ -13,9 +13,7 @@ public sealed record ReportTeamInfo(int Id, string Name);
 
 public sealed record ReportParticipantInfo(string DisplayName);
 
-public sealed record ReportNotesSection(
-    List<ReportGroupEntry> WentWell,
-    List<ReportGroupEntry> DidntGoWell);
+public sealed record ReportColumnSection(string ColumnName, string ColumnColor, List<ReportGroupEntry> Groups);
 
 public sealed record ReportGroupEntry(string GroupTitle, int VoteCount, bool IsDiscussed, List<ReportCardEntry> Cards);
 

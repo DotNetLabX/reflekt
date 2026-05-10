@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.Persistence.Repositories;
 
 namespace Reflekt.API.Features.Sprints.GetSprintSummary;
@@ -20,14 +21,26 @@ public sealed class GetSprintSummaryEndpoint(SprintRepository sprintRepository, 
         var participants = await participantRepository.GetBySprintIdAsync(request.SprintId, ct);
         var participantDtos = participants.Select(p => new SprintSummaryParticipant(p.DisplayName)).ToList();
 
-        var email = User.FindFirstValue(ClaimTypes.Email);
         var isScrumMaster = false;
-        if (email is not null)
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userIdClaim is not null && int.TryParse(userIdClaim, out var userId))
         {
             var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-            isScrumMaster = team is not null && string.Equals(team.CreatorEmail, email, StringComparison.OrdinalIgnoreCase);
+            isScrumMaster = team is not null && team.OwnerId == userId;
         }
 
-        await SendOkAsync(new SprintSummaryResponse(sprint.Id, sprint.Name, sprint.CurrentPhase.ToString(), sprint.VotesPerParticipant, isScrumMaster, participantDtos), ct);
+        await SendOkAsync(new SprintSummaryResponse(
+            sprint.Id,
+            sprint.Name,
+            sprint.CurrentPhase.ToString(),
+            sprint.VotesPerParticipant,
+            isScrumMaster,
+            participantDtos,
+            sprint.Column1Name,
+            sprint.Column1Color.Value,
+            sprint.Column2Name,
+            sprint.Column2Color.Value,
+            sprint.Column3Name,
+            sprint.Column3Color.Value), ct);
     }
 }

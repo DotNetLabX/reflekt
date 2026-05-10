@@ -129,6 +129,28 @@ export function useSprintHub(onKicked?: () => void) {
         if (group) group.isDiscussed = payload.isDiscussed
       },
     )
+
+    connection.on(
+      'ColumnConfigUpdated',
+      (payload: {
+        sprintId: number
+        column1Name: string
+        column1Color: string
+        column2Name: string
+        column2Color: string
+        column3Name: string
+        column3Color: string
+      }) => {
+        if (sprintStore.currentSummary?.id === payload.sprintId) {
+          sprintStore.currentSummary.column1Name = payload.column1Name
+          sprintStore.currentSummary.column1Color = payload.column1Color
+          sprintStore.currentSummary.column2Name = payload.column2Name
+          sprintStore.currentSummary.column2Color = payload.column2Color
+          sprintStore.currentSummary.column3Name = payload.column3Name
+          sprintStore.currentSummary.column3Color = payload.column3Color
+        }
+      },
+    )
   }
 
   async function connect(sprintId: number) {

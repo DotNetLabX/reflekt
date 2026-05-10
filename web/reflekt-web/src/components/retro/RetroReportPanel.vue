@@ -20,54 +20,27 @@
         <BaseButton size="sm" variant="secondary" @click="$emit('copy-markdown')">Copy as markdown</BaseButton>
       </div>
 
-      <!-- Went Well -->
-      <div class="bg-surface rounded-[--radius-md] shadow-card">
-        <div class="px-4 py-3 border-b bg-went-well-light rounded-t-[--radius-md]">
-          <h3 class="font-semibold text-went-well text-sm">Went Well</h3>
+      <!-- Dynamic column sections -->
+      <div v-for="col in reportStore.report.columns" :key="col.columnName" class="bg-surface rounded-[--radius-md] shadow-card">
+        <div class="px-4 py-3 border-b rounded-t-[--radius-md]" :class="`bg-col-${col.columnColor}-light`">
+          <h3 class="font-semibold text-sm" :class="`text-col-${col.columnColor}`">{{ col.columnName }}</h3>
         </div>
         <div class="p-4">
-          <div v-if="reportStore.report.notes.wentWell.length === 0" class="text-gray-400 text-sm text-center py-4">No items</div>
+          <div v-if="col.groups.length === 0" class="text-gray-400 text-sm text-center py-4">No items</div>
           <div v-else class="flex flex-col gap-4">
-            <div v-for="(group, i) in reportStore.report.notes.wentWell" :key="i">
+            <div v-for="(group, i) in col.groups" :key="i">
               <div class="flex items-center gap-2 mb-1">
                 <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
                 <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
                 <BaseBadge v-if="group.isDiscussed" variant="success">discussed</BaseBadge>
               </div>
-              <ul class="flex flex-col gap-1 pl-3 border-l-2 border-green-200">
+              <ul class="flex flex-col gap-1 pl-3 border-l-2" :class="`border-col-${col.columnColor}-light`">
                 <li v-for="(card, j) in group.cards" :key="j">
                   <p class="text-sm text-gray-700">{{ card.text }}</p>
                   <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
-                    <a v-for="(link, k) in card.evidenceLinks" :key="k" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">
-                      {{ link.title || truncateUrl(link.url) }}
-                    </a>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Didn't Go Well -->
-      <div class="bg-surface rounded-[--radius-md] shadow-card">
-        <div class="px-4 py-3 border-b bg-didnt-go-well-light rounded-t-[--radius-md]">
-          <h3 class="font-semibold text-didnt-go-well text-sm">Didn't Go Well</h3>
-        </div>
-        <div class="p-4">
-          <div v-if="reportStore.report.notes.didntGoWell.length === 0" class="text-gray-400 text-sm text-center py-4">No items</div>
-          <div v-else class="flex flex-col gap-4">
-            <div v-for="(group, i) in reportStore.report.notes.didntGoWell" :key="i">
-              <div class="flex items-center gap-2 mb-1">
-                <p class="text-sm font-medium text-gray-800">{{ group.groupTitle }}</p>
-                <span class="text-xs text-gray-500">({{ group.voteCount }} votes)</span>
-                <BaseBadge v-if="group.isDiscussed" variant="success">discussed</BaseBadge>
-              </div>
-              <ul class="flex flex-col gap-1 pl-3 border-l-2 border-red-200">
-                <li v-for="(card, j) in group.cards" :key="j">
-                  <p class="text-sm text-gray-700">{{ card.text }}</p>
-                  <div v-if="card.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
-                    <a v-for="(link, k) in card.evidenceLinks" :key="k" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                    <a v-for="(link, k) in card.evidenceLinks" :key="k" :href="link.url" target="_blank" rel="noopener"
+                      class="inline-block px-2 py-0.5 rounded text-xs hover:opacity-80"
+                      :class="`bg-col-${col.columnColor}-light text-col-${col.columnColor}`">
                       {{ link.title || truncateUrl(link.url) }}
                     </a>
                   </div>
@@ -92,7 +65,7 @@
                 <span v-if="item.assigneeName" class="text-primary-600 font-medium ml-1">@{{ item.assigneeName }}</span>
               </p>
               <div v-if="item.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
-                <a v-for="(link, j) in item.evidenceLinks" :key="j" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                <a v-for="(link, j) in item.evidenceLinks" :key="j" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-col-blue-light text-col-blue rounded text-xs hover:opacity-80">
                   {{ link.title || truncateUrl(link.url) }}
                 </a>
               </div>

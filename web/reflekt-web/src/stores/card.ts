@@ -47,9 +47,10 @@ export const useCardStore = defineStore('card', {
     cards: [] as Card[],
   }),
   getters: {
-    wentWell: (state) => state.cards.filter((c) => c.columnType === 'WentWell'),
-    didntGoWell: (state) => state.cards.filter((c) => c.columnType === 'DidntGoWell'),
-    actionItems: (state) => state.cards.filter((c) => c.columnType === 'ActionItems'),
+    column1Cards: (state) => state.cards.filter((c) => c.columnType === 'Column1'),
+    column2Cards: (state) => state.cards.filter((c) => c.columnType === 'Column2'),
+    column3Cards: (state) => state.cards.filter((c) => c.columnType === 'Column3'),
+    actionItemCards: (state) => state.cards.filter((c) => c.columnType === 'ActionItems'),
   },
   actions: {
     async fetchCards(sprintId: number): Promise<void> {

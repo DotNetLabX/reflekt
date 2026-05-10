@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Reflekt.Domain.Participants;
 using Reflekt.Domain.Sprints;
+using Reflekt.Domain.Users;
 
 namespace Reflekt.Persistence.EntityConfigurations;
 
@@ -19,5 +20,9 @@ internal sealed class ParticipantConfiguration : EntityConfiguration<Participant
         builder.HasIndex(p => p.GuestToken).IsUnique();
         builder.HasIndex(p => p.SprintId);
         builder.Property(p => p.JoinedAt).IsRequired();
+        builder.Property(p => p.UserId).IsRequired(false);
+        builder.HasOne<User>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(p => new { p.SprintId, p.UserId }).IsUnique().HasFilter("\"UserId\" IS NOT NULL");
+        builder.HasIndex(p => p.UserId);
     }
 }

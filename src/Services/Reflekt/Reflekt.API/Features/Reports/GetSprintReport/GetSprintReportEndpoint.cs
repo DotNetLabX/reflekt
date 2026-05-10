@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.Domain.Cards;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -36,9 +37,9 @@ public sealed class GetSprintReportEndpoint(
         }
         else
         {
-            var email = User.FindFirstValue(ClaimTypes.Email);
+            var userId = User.GetUserId();
             var team = await teamRepository.GetByIdAsync(req.TeamId, ct);
-            if (team is null || !string.Equals(team.CreatorEmail, email, StringComparison.OrdinalIgnoreCase))
+            if (team is null || team.OwnerId != userId)
             {
                 await SendForbiddenAsync(ct);
                 return;
@@ -69,15 +70,12 @@ public sealed class GetSprintReportEndpoint(
             .OrderByDescending(x => x.Votes)
             .ToList();
 
-        var wentWell = groupEntries
-            .Where(x => x.Group.ColumnType == ColumnType.WentWell)
-            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(c => c.Adapt<ReportCardEntry>()).ToList()))
-            .ToList();
-
-        var didntGoWell = groupEntries
-            .Where(x => x.Group.ColumnType == ColumnType.DidntGoWell)
-            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(c => c.Adapt<ReportCardEntry>()).ToList()))
-            .ToList();
+        var columnSections = new List<ReportColumnSection>
+        {
+            BuildColumnSection(sprint.Column1Name, sprint.Column1Color.Value, ColumnType.Column1, groupEntries),
+            BuildColumnSection(sprint.Column2Name, sprint.Column2Color.Value, ColumnType.Column2, groupEntries),
+            BuildColumnSection(sprint.Column3Name, sprint.Column3Color.Value, ColumnType.Column3, groupEntries),
+        };
 
         var actionItems = cards
             .Where(c => c.CardType == CardType.ActionItem)
@@ -88,9 +86,22 @@ public sealed class GetSprintReportEndpoint(
             new ReportSprintInfo(sprint.Id, sprint.Name, sprint.CreatedAt, sprint.ClosedAt),
             new ReportTeamInfo(teamInfo!.Id, teamInfo.Name),
             participants.Select(p => new ReportParticipantInfo(p.DisplayName)).ToList(),
-            new ReportNotesSection(wentWell, didntGoWell),
+            columnSections,
             actionItems);
 
         await SendOkAsync(response, ct);
+    }
+
+    private static ReportColumnSection BuildColumnSection(
+        string columnName,
+        string columnColor,
+        ColumnType columnType,
+        List<(Domain.CardGroups.CardGroup Group, string Title, int Votes, List<Domain.Cards.Card> Cards, bool IsDiscussed)> groupEntries)
+    {
+        var groups = groupEntries
+            .Where(x => x.Group.ColumnType == columnType)
+            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(c => c.Adapt<ReportCardEntry>()).ToList()))
+            .ToList();
+        return new ReportColumnSection(columnName, columnColor, groups);
     }
 }

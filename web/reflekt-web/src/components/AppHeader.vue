@@ -1,9 +1,19 @@
 <template>
   <header class="sticky top-0 z-10 flex items-center justify-between h-14 px-4 sm:px-6 bg-white border-b border-gray-200">
-    <RouterLink to="/" class="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors">
-      <RefreshCw :size="20" />
-      <span class="text-lg font-semibold">Reflekt</span>
-    </RouterLink>
+    <div class="flex items-center gap-2">
+      <RouterLink to="/" class="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors">
+        <RefreshCw :size="20" />
+        <span class="text-lg font-semibold">Reflekt</span>
+      </RouterLink>
+
+      <!-- Breadcrumb: Teams > Team Name -->
+      <template v-if="showBreadcrumb">
+        <span class="text-gray-300 mx-1">/</span>
+        <RouterLink to="/teams" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">Teams</RouterLink>
+        <span v-if="teamName" class="text-gray-300 mx-1">&gt;</span>
+        <span v-if="teamName" class="text-sm text-gray-700 font-medium">{{ teamName }}</span>
+      </template>
+    </div>
 
     <div v-if="authStore.isSignedIn" ref="menuRef" class="relative">
       <button
@@ -35,11 +45,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import { RefreshCw } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/auth';
+import { useTeamsStore } from '../stores/teams';
 
 const authStore = useAuthStore();
+const teamsStore = useTeamsStore();
+const route = useRoute();
 const menuOpen = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
 
@@ -48,6 +61,15 @@ const userInitial = computed(() => {
   if (!user) return '';
   const name = user.givenName || user.displayName || user.email;
   return name.charAt(0).toUpperCase();
+});
+
+const showBreadcrumb = computed(() => {
+  return route.name === 'team-sprints' || route.name === 'sprint' || route.name === 'report';
+});
+
+const teamName = computed(() => {
+  const teamId = Number(route.params.teamId);
+  return teamId ? (teamsStore.teamById(teamId)?.name ?? '') : '';
 });
 
 function handleSignOut() {

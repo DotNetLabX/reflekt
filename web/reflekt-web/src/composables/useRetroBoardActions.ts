@@ -19,9 +19,10 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
   // --- Board state ---
 
   const participants = computed(() => participantStore.participants)
-  const wentWell = computed(() => cardStore.wentWell)
-  const didntGoWell = computed(() => cardStore.didntGoWell)
-  const actionItems = computed(() => cardStore.actionItems)
+  const column1Cards = computed(() => cardStore.column1Cards)
+  const column2Cards = computed(() => cardStore.column2Cards)
+  const column3Cards = computed(() => cardStore.column3Cards)
+  const actionItems = computed(() => cardStore.actionItemCards)
   const currentPhase = computed(() => sprintStore.currentSummary?.currentPhase ?? '')
   const currentParticipantId = computed(() => participantStore.currentParticipant?.id ?? 0)
   const isWritingPhase = computed(() => currentPhase.value === 'Writing')
@@ -30,12 +31,13 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
   const isScrumMaster = computed(() => sprintStore.currentSummary?.isScrumMaster ?? false)
   const canGroup = computed(() => policyStore.isAllowed(currentPhase.value, 'GroupCards'))
   const canUngroup = computed(() => policyStore.isAllowed(currentPhase.value, 'UngroupCards'))
-  const wentWellGroups = computed(() => [...cardGroupStore.wentWellGroups].sort((a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)))
-  const didntGoWellGroups = computed(() => [...cardGroupStore.didntGoWellGroups].sort((a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)))
+  const column1Groups = computed(() => [...cardGroupStore.column1Groups].sort((a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)))
+  const column2Groups = computed(() => [...cardGroupStore.column2Groups].sort((a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)))
+  const column3Groups = computed(() => [...cardGroupStore.column3Groups].sort((a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)))
   const showActionItems = computed(() => policyStore.isAllowed(currentPhase.value, 'CreateActionItem') || currentPhase.value === 'Reporting')
   const boardGridClasses = computed(() => showActionItems.value
-    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-h-0 grid-rows-[1fr]'
-    : 'grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 min-h-0 grid-rows-[1fr]')
+    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-h-0 grid-rows-[1fr]'
+    : 'grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 min-h-0 grid-rows-[1fr]')
 
   // --- Prop builders ---
 
@@ -46,7 +48,7 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
     return policyStore.isAllowed(currentPhase.value, editAction)
   }
 
-  function cardItemProps(card: Card, color: 'went-well' | 'didnt-go-well') {
+  function cardItemProps(card: Card, color: string) {
     return {
       card,
       canEdit: canMutateCard(card),
@@ -73,7 +75,7 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
 
   // --- Mutation handlers ---
 
-  async function addNote(column: 'WentWell' | 'DidntGoWell', text: string) {
+  async function addNote(column: 'Column1' | 'Column2' | 'Column3', text: string) {
     try { await cardStore.createCard(sprintId, { text, columnType: column, cardType: 'Note' }) }
     catch { onError('Failed to add card.') }
   }
@@ -179,11 +181,21 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
     catch { onError('Failed to remove card from group.') }
   }
 
+  async function updateColumnConfig(
+    column1Name: string, column1Color: string,
+    column2Name: string, column2Color: string,
+    column3Name: string, column3Color: string,
+  ) {
+    try {
+      await sprintStore.updateColumns(sprintId, { column1Name, column1Color, column2Name, column2Color, column3Name, column3Color })
+    } catch { onError('Failed to update column configuration.') }
+  }
+
   return {
     // state
-    participants, wentWell, didntGoWell, actionItems,
-    currentPhase, isWritingPhase, showGroups,
-    wentWellGroups, didntGoWellGroups, showActionItems, boardGridClasses,
+    participants, column1Cards, column2Cards, column3Cards, actionItems,
+    currentPhase, isWritingPhase, showGroups, isScrumMaster,
+    column1Groups, column2Groups, column3Groups, showActionItems, boardGridClasses,
     // prop builders
     cardItemProps, groupItemProps, canMutateCard,
     // handlers
@@ -191,5 +203,6 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
     castVote, retractVote, castGroupVote, retractGroupVote,
     attachEvidenceLink, detachEvidenceLink,
     focusGroup, toggleDiscussed, dissolveGroup, updateGroupTitle, mergeGroups, removeCardFromGroup,
+    updateColumnConfig,
   }
 }

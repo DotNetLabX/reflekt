@@ -26,9 +26,10 @@ export interface ReportActionItemEntry {
   evidenceLinks: ReportEvidenceLinkEntry[]
 }
 
-export interface ReportNotesSection {
-  wentWell: ReportGroupEntry[]
-  didntGoWell: ReportGroupEntry[]
+export interface ReportColumnSection {
+  columnName: string
+  columnColor: string
+  groups: ReportGroupEntry[]
 }
 
 export interface ReportSprintInfo {
@@ -51,7 +52,7 @@ export interface ReportResponse {
   sprint: ReportSprintInfo
   team: ReportTeamInfo
   participants: ReportParticipantInfo[]
-  notes: ReportNotesSection
+  columns: ReportColumnSection[]
   actionItems: ReportActionItemEntry[]
 }
 
@@ -133,34 +134,22 @@ export const useReportStore = defineStore('report', {
       lines.push(`**Date:** ${date}`)
       lines.push(`**Participants:** ${participants}`)
       lines.push('')
-      lines.push('## Went Well')
-      lines.push('')
-      for (const group of r.notes.wentWell) {
-        const discussed = group.isDiscussed ? ' [discussed]' : ''
-        lines.push(`### ${group.groupTitle} (${group.voteCount} votes)${discussed}`)
-        for (const card of group.cards) {
-          lines.push(`- ${card.text}`)
-          for (const link of card.evidenceLinks) {
-            const label = link.title || link.url
-            lines.push(`  - [${label}](${link.url})`)
+      for (const column of r.columns) {
+        lines.push(`## ${column.columnName}`)
+        lines.push('')
+        for (const group of column.groups) {
+          const discussed = group.isDiscussed ? ' [discussed]' : ''
+          lines.push(`### ${group.groupTitle} (${group.voteCount} votes)${discussed}`)
+          for (const card of group.cards) {
+            lines.push(`- ${card.text}`)
+            for (const link of card.evidenceLinks) {
+              const label = link.title || link.url
+              lines.push(`  - [${label}](${link.url})`)
+            }
           }
         }
+        lines.push('')
       }
-      lines.push('')
-      lines.push("## Didn't Go Well")
-      lines.push('')
-      for (const group of r.notes.didntGoWell) {
-        const discussed = group.isDiscussed ? ' [discussed]' : ''
-        lines.push(`### ${group.groupTitle} (${group.voteCount} votes)${discussed}`)
-        for (const card of group.cards) {
-          lines.push(`- ${card.text}`)
-          for (const link of card.evidenceLinks) {
-            const label = link.title || link.url
-            lines.push(`  - [${label}](${link.url})`)
-          }
-        }
-      }
-      lines.push('')
       lines.push('## Action Items')
       lines.push('')
       for (const item of r.actionItems) {

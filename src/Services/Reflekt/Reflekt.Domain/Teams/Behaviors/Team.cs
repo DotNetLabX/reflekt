@@ -2,15 +2,14 @@ namespace Reflekt.Domain.Teams;
 
 public sealed partial class Team
 {
-    public static Team Create(string name, string creatorEmail)
+    public static Team Create(string name, int ownerId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentException.ThrowIfNullOrWhiteSpace(creatorEmail);
 
         var team = new Team
         {
             Name = name,
-            CreatorEmail = creatorEmail,
+            OwnerId = ownerId,
             CreatedAt = DateTime.UtcNow,
         };
 

@@ -71,7 +71,7 @@ const props = defineProps<{
   canEdit: boolean
   blurred?: boolean
   canAttachLink?: boolean
-  columnColor?: 'went-well' | 'didnt-go-well' | 'action-items'
+  columnColor?: string
   participants?: { displayName: string }[]
 }>()
 
@@ -88,12 +88,12 @@ const editAssignee = ref('')
 const addingLink = ref(false)
 const linkUrl = ref('')
 
-const cardBgClasses: Record<string, string> = {
-  'went-well': 'bg-went-well-light/30',
-  'didnt-go-well': 'bg-didnt-go-well-light/30',
-  'action-items': 'bg-action-items-light/30',
-}
-const cardBgClass = computed(() => props.columnColor ? cardBgClasses[props.columnColor] ?? 'bg-white' : 'bg-white')
+const cardBgClass = computed(() => {
+  if (!props.columnColor) return 'bg-white'
+  // action-items uses a fixed semantic token; palette colors use col-{color}-light
+  if (props.columnColor === 'action-items') return 'bg-action-items-light/30'
+  return `bg-col-${props.columnColor}-light/30`
+})
 
 function startEdit() {
   editText.value = props.card.text

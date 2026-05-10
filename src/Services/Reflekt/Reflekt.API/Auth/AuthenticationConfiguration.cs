@@ -1,6 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Reflekt.Domain.Users;
+using Reflekt.Persistence.Repositories;
 
 namespace Reflekt.API.Auth;
 
@@ -45,8 +48,32 @@ public static class AuthenticationConfiguration
         return services;
     }
 
-    private static Task OnGoogleTicketReceived(TicketReceivedContext ctx)
+    private static async Task OnGoogleTicketReceived(TicketReceivedContext ctx)
     {
-        return Task.CompletedTask;
+        var principal = ctx.Principal!;
+        var email = principal.FindFirstValue(ClaimTypes.Email)!;
+        var name = principal.FindFirstValue(ClaimTypes.Name) ?? email;
+        var givenName = principal.FindFirstValue(ClaimTypes.GivenName) ?? name;
+
+        var userRepository = ctx.HttpContext.RequestServices.GetRequiredService<UserRepository>();
+
+        var user = await userRepository.GetByEmailAsync(email, ctx.HttpContext.RequestAborted);
+        if (user is null)
+        {
+            user = User.Create(email, name, givenName);
+            await userRepository.AddAsync(user, ctx.HttpContext.RequestAborted);
+        }
+        else
+        {
+            user.UpdateProfile(name, givenName);
+        }
+
+        await userRepository.SaveChangesAsync(ctx.HttpContext.RequestAborted);
+
+        var identity = (ClaimsIdentity)principal.Identity!;
+        var existing = identity.FindFirst(ClaimTypes.NameIdentifier);
+        if (existing is not null)
+            identity.RemoveClaim(existing);
+        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
     }
 }

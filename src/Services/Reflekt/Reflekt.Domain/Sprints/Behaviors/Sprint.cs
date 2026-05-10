@@ -2,7 +2,16 @@ namespace Reflekt.Domain.Sprints;
 
 public sealed partial class Sprint
 {
-    public static Sprint Create(string name, int teamId, int votesPerParticipant = 3)
+    public static Sprint Create(
+        string name,
+        int teamId,
+        int votesPerParticipant = 3,
+        string? column1Name = null,
+        string? column1Color = null,
+        string? column2Name = null,
+        string? column2Color = null,
+        string? column3Name = null,
+        string? column3Color = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentOutOfRangeException.ThrowIfLessThan(votesPerParticipant, 1);
@@ -16,8 +25,40 @@ public sealed partial class Sprint
         };
         sprint.State = SprintState.Draft;
         sprint.CurrentPhase = SprintPhase.Writing;
+
+        if (column1Name is not null) sprint.Column1Name = ValidateColumnName(column1Name, nameof(column1Name));
+        if (column1Color is not null) sprint.Column1Color = ColumnColor.Create(column1Color);
+        if (column2Name is not null) sprint.Column2Name = ValidateColumnName(column2Name, nameof(column2Name));
+        if (column2Color is not null) sprint.Column2Color = ColumnColor.Create(column2Color);
+        if (column3Name is not null) sprint.Column3Name = ValidateColumnName(column3Name, nameof(column3Name));
+        if (column3Color is not null) sprint.Column3Color = ColumnColor.Create(column3Color);
+
         sprint.AddDomainEvent(new Events.SprintCreatedEvent(sprint));
         return sprint;
+    }
+
+    public void UpdateColumnConfig(
+        string column1Name, string column1Color,
+        string column2Name, string column2Color,
+        string column3Name, string column3Color)
+    {
+        Column1Name = ValidateColumnName(column1Name, nameof(column1Name));
+        Column1Color = ColumnColor.Create(column1Color);
+        Column2Name = ValidateColumnName(column2Name, nameof(column2Name));
+        Column2Color = ColumnColor.Create(column2Color);
+        Column3Name = ValidateColumnName(column3Name, nameof(column3Name));
+        Column3Color = ColumnColor.Create(column3Color);
+        AddDomainEvent(new Events.ColumnConfigUpdatedEvent(this));
+    }
+
+    private static string ValidateColumnName(string name, string paramName)
+    {
+        var trimmed = name?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+            throw new ArgumentException("Column name cannot be empty or whitespace.", paramName);
+        if (trimmed.Length > 30)
+            throw new ArgumentException("Column name cannot exceed 30 characters.", paramName);
+        return trimmed;
     }
 
     public void Start()

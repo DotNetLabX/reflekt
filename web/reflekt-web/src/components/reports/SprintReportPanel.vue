@@ -26,16 +26,19 @@
       </button>
     </div>
 
-    <!-- Went Well -->
-    <ReportSection title="Went Well" header-class="bg-green-50 rounded-t" title-class="text-green-800" border-class="border-green-200" link-class="bg-green-100 text-green-700 hover:bg-green-200" :groups="report.notes.wentWell" />
-
-    <!-- Didn't Go Well -->
-    <ReportSection title="Didn't Go Well" header-class="bg-red-50 rounded-t" title-class="text-red-800" border-class="border-red-200" link-class="bg-red-100 text-red-700 hover:bg-red-200" :groups="report.notes.didntGoWell" />
+    <!-- Dynamic column sections -->
+    <ReportSection
+      v-for="col in report.columns"
+      :key="col.columnName"
+      :column-name="col.columnName"
+      :column-color="col.columnColor"
+      :groups="col.groups"
+    />
 
     <!-- Action Items -->
     <div class="bg-white rounded shadow">
-      <div class="px-4 py-3 border-b bg-blue-50 rounded-t">
-        <h2 class="font-semibold text-blue-800 text-sm">Action Items</h2>
+      <div class="px-4 py-3 border-b bg-col-blue-light rounded-t">
+        <h2 class="font-semibold text-col-blue text-sm">Action Items</h2>
       </div>
       <div class="p-4">
         <div v-if="report.actionItems.length === 0" class="text-gray-400 text-sm text-center py-4">No action items</div>
@@ -46,7 +49,7 @@
               <span v-if="item.assigneeName" class="text-blue-600 font-medium ml-1">@{{ item.assigneeName }}</span>
             </p>
             <div v-if="item.evidenceLinks.length > 0" class="flex flex-wrap gap-1 mt-1">
-              <a v-for="(link, j) in item.evidenceLinks" :key="j" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+              <a v-for="(link, j) in item.evidenceLinks" :key="j" :href="link.url" target="_blank" rel="noopener" class="inline-block px-2 py-0.5 bg-col-blue-light text-col-blue rounded text-xs hover:opacity-80">
                 {{ link.title || truncateUrl(link.url) }}
               </a>
             </div>

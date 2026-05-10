@@ -1,6 +1,7 @@
 using FastEndpoints;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
+using Reflekt.API.Features.Teams;
 using Reflekt.API.Hubs;
 using Reflekt.API.OpenGraph;
 using Scalar.AspNetCore;
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.AddOpenApi();
 
         services.Configure<SeedOptions>(configuration.GetSection("Seed"));
+        services.Configure<TeamSettings>(configuration.GetSection("TeamSettings"));
 
         services.AddReflektAuthentication(configuration);
         services.AddReflektAuthorization();

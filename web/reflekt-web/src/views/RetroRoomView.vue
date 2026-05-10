@@ -12,9 +12,11 @@
     <RetroJoinForm
       v-else-if="!joined"
       :sprint-name="sprintName || `Sprint #${sprintId}`"
+      :sprint-id="sprintId"
       :participants="summaryParticipants"
       :error-message="errorMessage"
       :busy="busy"
+      :show-google-sign-in="showGoogleOption"
       @join="handleJoin"
     />
 
@@ -64,7 +66,7 @@ const reportingView = ref<'report' | 'board'>('report')
 const {
   kicked, busy, errorMessage, joined, loading,
   sprintName, currentPhase, summaryParticipants, isReportingPhase,
-  handleJoin, reportStore,
+  handleJoin, reportStore, showGoogleOption,
 } = useRetroRoom(sprintId)
 
 const participants = computed(() => participantStore.participants)

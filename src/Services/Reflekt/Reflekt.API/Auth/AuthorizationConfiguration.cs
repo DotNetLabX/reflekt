@@ -17,6 +17,9 @@ public static class AuthorizationConfiguration
                 .AddAuthenticationSchemes(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     GuestTokenDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser())
+            .AddPolicy(Policies.GoogleUser, policy => policy
+                .AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme)
                 .RequireAuthenticatedUser());
 
         return services;

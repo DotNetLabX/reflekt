@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -14,12 +14,12 @@ public sealed class StartSprintEndpoint(TeamRepository teamRepository, SprintRep
 {
     public override async Task HandleAsync(SprintRouteRequest request, CancellationToken ct)
     {
-        var email = User.FindFirstValue(ClaimTypes.Email);
+        var userId = User.GetUserId();
 
         var team = await teamRepository.GetByIdAsync(request.TeamId, ct);
         if (team is null) { await SendNotFoundAsync(ct); return; }
 
-        if (!string.Equals(team.CreatorEmail, email, StringComparison.OrdinalIgnoreCase))
+        if (team.OwnerId != userId)
         {
             await SendForbiddenAsync(ct);
             return;

@@ -13,11 +13,25 @@
   --color-primary-800: #3730a3;
   --color-primary-900: #312e81;
 
-  /* Semantic — retro column colors */
-  --color-went-well: #10b981;
-  --color-went-well-light: #d1fae5;
-  --color-didnt-go-well: #f43f5e;
-  --color-didnt-go-well-light: #ffe4e6;
+  /* Column color palette */
+  --color-col-green: #10b981;
+  --color-col-green-light: #d1fae5;
+  --color-col-red: #f43f5e;
+  --color-col-red-light: #ffe4e6;
+  --color-col-amber: #f59e0b;
+  --color-col-amber-light: #fef3c7;
+  --color-col-blue: #3b82f6;
+  --color-col-blue-light: #dbeafe;
+  --color-col-purple: #8b5cf6;
+  --color-col-purple-light: #ede9fe;
+  --color-col-teal: #14b8a6;
+  --color-col-teal-light: #ccfbf1;
+  --color-col-pink: #ec4899;
+  --color-col-pink-light: #fce7f3;
+  --color-col-slate: #64748b;
+  --color-col-slate-light: #f1f5f9;
+
+  /* Action Items (fixed blue) */
   --color-action-items: #3b82f6;
   --color-action-items-light: #dbeafe;
 

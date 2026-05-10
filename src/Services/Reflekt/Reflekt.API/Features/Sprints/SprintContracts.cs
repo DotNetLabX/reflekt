@@ -8,11 +8,29 @@ public sealed record SprintResponse(
     string CurrentPhase,
     int VotesPerParticipant,
     DateTime CreatedAt,
-    DateTime? ClosedAt);
+    DateTime? ClosedAt,
+    string Column1Name,
+    string Column1Color,
+    string Column2Name,
+    string Column2Color,
+    string Column3Name,
+    string Column3Color);
 
 public sealed record SprintSummaryParticipant(string DisplayName);
 
-public sealed record SprintSummaryResponse(int Id, string Name, string CurrentPhase, int VotesPerParticipant, bool IsScrumMaster, List<SprintSummaryParticipant> Participants);
+public sealed record SprintSummaryResponse(
+    int Id,
+    string Name,
+    string CurrentPhase,
+    int VotesPerParticipant,
+    bool IsScrumMaster,
+    List<SprintSummaryParticipant> Participants,
+    string Column1Name,
+    string Column1Color,
+    string Column2Name,
+    string Column2Color,
+    string Column3Name,
+    string Column3Color);
 
 public sealed record SprintRouteRequest(int TeamId, int SprintId);
 

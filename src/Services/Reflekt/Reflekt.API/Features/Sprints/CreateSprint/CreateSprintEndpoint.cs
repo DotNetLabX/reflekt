@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -14,18 +14,48 @@ public sealed class CreateSprintEndpoint(TeamRepository teamRepository, SprintRe
 {
     public override async Task HandleAsync(CreateSprintCommand command, CancellationToken ct)
     {
-        var email = User.FindFirstValue(ClaimTypes.Email);
+        var userId = User.GetUserId();
 
         var team = await teamRepository.GetByIdAsync(command.TeamId, ct);
         if (team is null) { await SendNotFoundAsync(ct); return; }
 
-        if (!string.Equals(team.CreatorEmail, email, StringComparison.OrdinalIgnoreCase))
+        if (team.OwnerId != userId)
         {
             await SendForbiddenAsync(ct);
             return;
         }
 
-        var sprint = Sprint.Create(command.Name, command.TeamId, command.VotesPerParticipant ?? 3);
+        // Resolve column config: explicit values take precedence; fallback to most recent sprint in team
+        string? col1Name = command.Column1Name;
+        string? col1Color = command.Column1Color;
+        string? col2Name = command.Column2Name;
+        string? col2Color = command.Column2Color;
+        string? col3Name = command.Column3Name;
+        string? col3Color = command.Column3Color;
+
+        if (col1Name is null && col1Color is null && col2Name is null && col2Color is null && col3Name is null && col3Color is null)
+        {
+            var previousSprints = await sprintRepository.GetByTeamIdAsync(command.TeamId, ct);
+            var mostRecent = previousSprints.FirstOrDefault();
+            if (mostRecent is not null)
+            {
+                col1Name = mostRecent.Column1Name;
+                col1Color = mostRecent.Column1Color.Value;
+                col2Name = mostRecent.Column2Name;
+                col2Color = mostRecent.Column2Color.Value;
+                col3Name = mostRecent.Column3Name;
+                col3Color = mostRecent.Column3Color.Value;
+            }
+        }
+
+        var sprint = Sprint.Create(
+            command.Name,
+            command.TeamId,
+            command.VotesPerParticipant ?? 3,
+            col1Name, col1Color,
+            col2Name, col2Color,
+            col3Name, col3Color);
+
         await sprintRepository.AddAsync(sprint, ct);
         await sprintRepository.SaveChangesAsync(ct);
 

@@ -23,6 +23,7 @@ public static class DependencyInjection
             options.AddInterceptors(sp.GetRequiredService<DomainEventPublishingInterceptor>());
         });
 
+        services.AddScoped<UserRepository>();
         services.AddScoped<TeamRepository>();
         services.AddScoped<SprintRepository>();
         services.AddScoped<ParticipantRepository>();

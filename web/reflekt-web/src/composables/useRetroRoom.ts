@@ -79,22 +79,24 @@ export function useRetroRoom(sprintId: number) {
       catch (err: unknown) { if ((err as { status?: number })?.status === 401) guestStore.clearToken(sprintId) }
     }
     if (!authStore.loaded) await authStore.fetchMe()
-    if (authStore.isSignedIn && authStore.user?.givenName) {
+    if (authStore.isSignedIn) {
       try {
-        const response = await participantStore.join(sprintId, authStore.user.givenName)
+        const response = await participantStore.joinWithGoogle(sprintId)
         guestStore.saveToken(sprintId, response.guestToken, response.displayName)
         await enterRoom(); return
       } catch (err: unknown) {
         const status = (err as { status?: number })?.status
-        errorMessage.value = status === 409
-          ? `${authStore.user!.givenName} is already taken. Choose another.`
-          : 'Failed to join. Please try again.'
+        if (status === 409) errorMessage.value = 'Sprint is not accepting participants.'
+        else if (status === 404) errorMessage.value = 'Sprint not found.'
+        // other errors: fall through to show join form
       }
     }
     loading.value = false
   })
 
   onUnmounted(() => disconnect())
+
+  const showGoogleOption = computed(() => !authStore.isSignedIn)
 
   return {
     kicked,
@@ -108,5 +110,6 @@ export function useRetroRoom(sprintId: number) {
     isReportingPhase,
     handleJoin,
     reportStore,
+    showGoogleOption,
   }
 }

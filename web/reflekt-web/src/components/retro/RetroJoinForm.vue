@@ -25,6 +25,21 @@
 
         <p v-if="errorMessage" class="text-sm text-danger">{{ errorMessage }}</p>
 
+        <template v-if="showGoogleSignIn">
+          <a
+            :href="googleLoginUrl"
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 rounded-[--radius-sm] text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          >
+            Sign in with Google
+          </a>
+
+          <div class="flex items-center gap-3">
+            <div class="flex-1 h-px bg-gray-200" />
+            <span class="text-xs text-gray-400">or</span>
+            <div class="flex-1 h-px bg-gray-200" />
+          </div>
+        </template>
+
         <form class="flex flex-col gap-3" @submit.prevent="$emit('join', displayName)">
           <BaseInput
             v-model="displayName"
@@ -40,7 +55,7 @@
             :disabled="busy || !displayName.trim()"
             :loading="busy"
           >
-            Join
+            Join as Guest
           </BaseButton>
         </form>
       </div>
@@ -49,17 +64,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { RefreshCw } from 'lucide-vue-next'
 import BaseCard from '../ui/BaseCard.vue'
 import BaseInput from '../ui/BaseInput.vue'
 import BaseButton from '../ui/BaseButton.vue'
 
-defineProps<{
+const props = defineProps<{
   sprintName: string
+  sprintId: number
   participants: { displayName: string }[]
   errorMessage: string
   busy: boolean
+  showGoogleSignIn: boolean
 }>()
 
 defineEmits<{
@@ -67,4 +84,6 @@ defineEmits<{
 }>()
 
 const displayName = ref('')
+
+const googleLoginUrl = computed(() => `/auth/google/login?returnUrl=/sprint/${props.sprintId}`)
 </script>
