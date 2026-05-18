@@ -20,7 +20,9 @@ public sealed record SprintSummaryParticipant(string DisplayName);
 
 public sealed record SprintSummaryResponse(
     int Id,
+    int TeamId,
     string Name,
+    string State,
     string CurrentPhase,
     int VotesPerParticipant,
     bool IsScrumMaster,

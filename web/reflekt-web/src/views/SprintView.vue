@@ -10,8 +10,6 @@
       :copied="copied"
       :error-message="errorMessage"
       @start="handleStart"
-      @advance-phase="handleAdvancePhase"
-      @close="handleClose"
       @copy-invite="copyInviteLink"
       @kick="confirmKick"
     />
@@ -52,22 +50,6 @@ async function handleStart() {
   busy.value = true
   try { await sprintStore.startSprint(teamId, sprintId) }
   catch { errorMessage.value = 'Failed to start sprint.' }
-  finally { busy.value = false }
-}
-
-async function handleAdvancePhase() {
-  errorMessage.value = ''
-  busy.value = true
-  try { await sprintStore.advancePhase(teamId, sprintId) }
-  catch { errorMessage.value = 'Failed to advance phase.' }
-  finally { busy.value = false }
-}
-
-async function handleClose() {
-  errorMessage.value = ''
-  busy.value = true
-  try { await sprintStore.closeSprint(teamId, sprintId) }
-  catch { errorMessage.value = 'Failed to close sprint.' }
   finally { busy.value = false }
 }
 

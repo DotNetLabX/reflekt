@@ -5,8 +5,13 @@ import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
 import { useVoteStore } from '../stores/vote'
 import { useSprintStore } from '../stores/sprint'
 import { useCardGroupStore } from '../stores/cardGroup'
+import { useReadinessStore } from '../stores/readiness'
 
 let connection: signalR.HubConnection | null = null
+
+export function getHubConnection(): signalR.HubConnection | null {
+  return connection
+}
 
 export function useSprintHub(onKicked?: () => void) {
   const guestStore = useGuestStore()
@@ -15,6 +20,7 @@ export function useSprintHub(onKicked?: () => void) {
   const voteStore = useVoteStore()
   const sprintStore = useSprintStore()
   const cardGroupStore = useCardGroupStore()
+  const readinessStore = useReadinessStore()
 
   function build(sprintId: number) {
     connection = new signalR.HubConnectionBuilder()
@@ -149,6 +155,36 @@ export function useSprintHub(onKicked?: () => void) {
           sprintStore.currentSummary.column3Name = payload.column3Name
           sprintStore.currentSummary.column3Color = payload.column3Color
         }
+      },
+    )
+
+    connection.on('SprintClosed', (_payload: { sprintId: number }) => {
+      if (sprintStore.currentSummary) {
+        sprintStore.currentSummary.state = 'Closed'
+      }
+    })
+
+    connection.on(
+      'ReadinessChanged',
+      (payload: {
+        participantId: number
+        displayName: string | null
+        isReady: boolean
+        readyCount: number
+        totalCount: number
+      }) => {
+        readinessStore.applyChange(payload)
+      },
+    )
+
+    connection.on('ReadinessReset', (_payload: object) => {
+      readinessStore.reset()
+    })
+
+    connection.on(
+      'ReadinessSnapshot',
+      (payload: { readyParticipantIds: number[]; readyCount: number; totalCount: number }) => {
+        readinessStore.setFromSnapshot(payload)
       },
     )
   }

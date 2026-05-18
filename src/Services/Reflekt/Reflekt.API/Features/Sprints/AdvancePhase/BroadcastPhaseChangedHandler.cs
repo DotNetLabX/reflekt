@@ -7,7 +7,14 @@ namespace Reflekt.API.Features.Sprints.AdvancePhase;
 public sealed class BroadcastPhaseChangedHandler(IHubContext<SprintHub> hubContext)
     : IEventHandler<PhaseAdvancedEvent>
 {
-    public Task HandleAsync(PhaseAdvancedEvent ev, CancellationToken ct)
-        => hubContext.Clients.Group($"sprint:{ev.Sprint.Id}")
+    public async Task HandleAsync(PhaseAdvancedEvent ev, CancellationToken ct)
+    {
+        var sprintId = ev.Sprint.Id;
+        await hubContext.Clients.Group($"sprint:{sprintId}")
             .SendAsync("PhaseChanged", ev.Sprint.CurrentPhase.ToString(), ct);
+
+        SprintHub.ClearReadiness(sprintId);
+        await hubContext.Clients.Group($"sprint:{sprintId}")
+            .SendAsync("ReadinessReset", new { }, ct);
+    }
 }

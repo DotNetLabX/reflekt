@@ -9,6 +9,7 @@ import { useSprintStore } from '../stores/sprint'
 import { usePolicyStore } from '../stores/policy'
 import { useCardGroupStore } from '../stores/cardGroup'
 import { useReportStore } from '../stores/report'
+import { useReadinessStore } from '../stores/readiness'
 
 export function useRetroRoom(sprintId: number) {
   const guestStore = useGuestStore()
@@ -20,6 +21,7 @@ export function useRetroRoom(sprintId: number) {
   const policyStore = usePolicyStore()
   const cardGroupStore = useCardGroupStore()
   const reportStore = useReportStore()
+  const readinessStore = useReadinessStore()
 
   const kicked = ref(false)
   const busy = ref(false)
@@ -37,6 +39,9 @@ export function useRetroRoom(sprintId: number) {
   const currentPhase = computed(() => sprintStore.currentSummary?.currentPhase ?? '')
   const summaryParticipants = computed(() => sprintStore.currentSummary?.participants ?? [])
   const isReportingPhase = computed(() => currentPhase.value === 'Reporting')
+  const isClosed = computed(() => sprintStore.currentSummary?.state === 'Closed')
+  const teamId = computed(() => sprintStore.currentSummary?.teamId ?? null)
+  const isScrumMaster = computed(() => sprintStore.currentSummary?.isScrumMaster ?? false)
 
   async function enterRoom() {
     await Promise.all([
@@ -47,6 +52,7 @@ export function useRetroRoom(sprintId: number) {
     ])
     if (sprintStore.currentSummary) voteStore.votesPerParticipant = sprintStore.currentSummary.votesPerParticipant
     await voteStore.fetchMyVotes(sprintId)
+    readinessStore.reset()
     await connect(sprintId)
     joined.value = true
     loading.value = false
@@ -108,6 +114,9 @@ export function useRetroRoom(sprintId: number) {
     currentPhase,
     summaryParticipants,
     isReportingPhase,
+    isClosed,
+    teamId,
+    isScrumMaster,
     handleJoin,
     reportStore,
     showGoogleOption,

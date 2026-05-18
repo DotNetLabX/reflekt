@@ -28,12 +28,6 @@
       <button v-if="sprint.state === 'Active'" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm" @click="$emit('copy-invite')">
         {{ copied ? 'Invite link copied!' : 'Copy invite link' }}
       </button>
-      <button v-if="sprint.state === 'Active' && sprint.currentPhase !== 'Reporting'" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm disabled:opacity-50" :disabled="busy" @click="$emit('advance-phase')">
-        Advance to {{ nextPhaseLabel }}
-      </button>
-      <button v-if="sprint.state === 'Active'" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm disabled:opacity-50" :disabled="busy" @click="$emit('close')">
-        Close Sprint
-      </button>
       <router-link v-if="sprint.state === 'Closed'" :to="{ name: 'report', params: { teamId, sprintId: sprint.id } }" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm text-center">
         View Report
       </router-link>
@@ -76,17 +70,9 @@ const props = defineProps<{
 
 defineEmits<{
   start: []
-  'advance-phase': []
-  close: []
   'copy-invite': []
   kick: [p: { id: number; displayName: string }]
 }>()
-
-const phaseOrder = ['Writing', 'Voting', 'Discussing', 'Reporting']
-const nextPhaseLabel = computed(() => {
-  const idx = phaseOrder.indexOf(props.sprint.currentPhase)
-  return phaseOrder[idx + 1] ?? ''
-})
 
 const stateBadgeClass = computed(() => {
   const base = 'px-2 py-1 rounded text-xs font-semibold'

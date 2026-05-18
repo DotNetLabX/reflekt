@@ -39,6 +39,13 @@ public sealed class VoteRepository(ReflektDbContext db) : Repository<Vote>(db)
             .ToDictionaryAsync(x => x.GroupId, x => x.Count, ct);
     }
 
+    public Task<List<int>> GetParticipantIdsWithVotesInSprintAsync(int sprintId, CancellationToken ct)
+        => Db.Votes
+            .Where(v => Db.CardGroups.Any(g => g.Id == v.GroupId && g.SprintId == sprintId))
+            .Select(v => v.ParticipantId)
+            .Distinct()
+            .ToListAsync(ct);
+
     public void Remove(Vote vote) => Db.Votes.Remove(vote);
 }
 

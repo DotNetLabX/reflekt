@@ -19,7 +19,9 @@ interface Sprint {
 
 interface SprintSummary {
   id: number
+  teamId: number
   name: string
+  state: string
   currentPhase: string
   votesPerParticipant: number
   isScrumMaster: boolean
@@ -30,6 +32,14 @@ interface SprintSummary {
   column2Color: string
   column3Name: string
   column3Color: string
+}
+
+export interface AdvancePhaseCheckResponse {
+  currentPhase: string
+  nonVotingParticipantCount?: number
+  totalParticipantCount?: number
+  discussedGroupCount?: number
+  focusedGroupId?: number | null
 }
 
 interface ColumnConfigPayload {
@@ -119,6 +129,16 @@ export const useSprintStore = defineStore('sprint', {
       if (!res.ok) throw await res.json().catch(() => ({}))
       const sprint = (await res.json()) as Sprint
       this._replaceSprint(sprint)
+    },
+    async advancePhaseCheck(teamId: number, sprintId: number): Promise<AdvancePhaseCheckResponse> {
+      const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}/advance-phase/check`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      })
+      if (!res.ok) throw await res.json().catch(() => ({}))
+      return (await res.json()) as AdvancePhaseCheckResponse
     },
     async advancePhase(teamId: number, sprintId: number) {
       const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}/advance-phase`, {

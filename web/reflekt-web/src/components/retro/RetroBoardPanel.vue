@@ -1,5 +1,20 @@
 <template>
   <div class="flex flex-col gap-5 flex-1 min-h-0">
+    <!-- "I'm done" readiness toggle -->
+    <div v-if="showReadinessButton" class="flex justify-end">
+      <button
+        :class="[
+          'px-3 py-1.5 text-sm font-medium rounded-[--radius-sm] border transition-colors cursor-pointer',
+          isReady
+            ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'
+            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
+        ]"
+        @click="$emit('toggle-ready')"
+      >
+        {{ isReady ? "Done!" : "I'm done" }}
+      </button>
+    </div>
+
     <RetroMobileTabBar
       v-model="activeTab"
       :show-action-items="showActionItems"
@@ -177,7 +192,15 @@ import BaseInput from '../ui/BaseInput.vue'
 import BaseButton from '../ui/BaseButton.vue'
 import BaseModal from '../ui/BaseModal.vue'
 
-const props = defineProps<{ sprintId: number }>()
+const props = defineProps<{
+  sprintId: number
+  isReady?: boolean
+  showReadinessButton?: boolean
+}>()
+
+defineEmits<{
+  'toggle-ready': []
+}>()
 
 const participantStore = useParticipantStore()
 const policyStore = usePolicyStore()

@@ -31,7 +31,9 @@ public sealed class GetSprintSummaryEndpoint(SprintRepository sprintRepository, 
 
         await SendOkAsync(new SprintSummaryResponse(
             sprint.Id,
+            sprint.TeamId,
             sprint.Name,
+            sprint.State.ToString(),
             sprint.CurrentPhase.ToString(),
             sprint.VotesPerParticipant,
             isScrumMaster,

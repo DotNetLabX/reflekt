@@ -23,11 +23,29 @@
     <div v-else class="w-full flex-1 min-h-0 px-4 sm:px-8 lg:px-12 py-6 flex flex-col gap-5">
       <RetroPhaseHeader
         :sprint-name="sprintName || `Sprint #${sprintId}`"
+        :current-phase="currentPhase"
+        :is-scrum-master="isScrumMaster"
+        :next-phase-name="nextPhaseName"
+        :is-reporting-phase="isReportingPhase"
+        :is-closed="isClosed"
+        :participants="participants"
+        :ready-count="readyCount"
+        :total-count="totalCount"
+        :ready-participants="readyParticipants"
+        :not-ready-participants="notReadyParticipants"
+        :is-current-participant-ready="isCurrentParticipantReady"
+        :show-readiness="showReadiness"
         :remaining-budget="voteStore.remainingBudget"
         :votes-per-participant="voteStore.votesPerParticipant"
+        :show-votes-badge="showVotesBadge"
+        @advance-phase="onAdvanceClick"
+        @close-sprint="onCloseClick"
+        @toggle-ready="onToggleReady"
       />
-      <PhaseIndicator :current-phase="currentPhase" />
-      <RetroParticipantList :participants="participants" />
+
+      <div v-if="isClosed" class="bg-amber-50 border border-amber-200 rounded-[--radius-sm] px-4 py-2 text-sm text-amber-800">
+        This retro has been closed. The board is now read-only.
+      </div>
 
       <div v-if="isReportingPhase" class="flex items-center gap-2">
         <button class="px-4 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer" :class="reportingView === 'report' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'" @click="reportingView = 'report'">Report</button>
@@ -35,8 +53,37 @@
       </div>
 
       <RetroReportPanel v-if="isReportingPhase && reportingView === 'report'" @copy-markdown="handleCopyMarkdown" />
-      <RetroBoardPanel v-if="!isReportingPhase || reportingView === 'board'" :sprint-id="sprintId" />
+      <RetroBoardPanel
+        v-if="!isReportingPhase || reportingView === 'board'"
+        :sprint-id="sprintId"
+        :is-ready="isCurrentParticipantReady"
+        :show-readiness-button="showReadiness"
+        @toggle-ready="onToggleReady"
+      />
     </div>
+
+    <!-- Advance phase confirmation dialog -->
+    <BaseModal :open="showAdvanceDialog" :title="advanceDialogTitle" @close="showAdvanceDialog = false">
+      <p v-if="advanceError" class="text-sm text-danger">{{ advanceError }}</p>
+      <p v-else class="text-sm text-gray-600">{{ advanceDialogMessage }}</p>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="showAdvanceDialog = false">Cancel</BaseButton>
+          <BaseButton v-if="!advanceError" variant="primary" @click="confirmAdvance">Advance</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- Close sprint confirmation dialog -->
+    <BaseModal :open="showCloseDialog" title="Close Sprint" @close="showCloseDialog = false">
+      <p class="text-sm text-gray-600">Close this sprint? No more changes will be allowed.</p>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="showCloseDialog = false">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="confirmClose">Close Sprint</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -45,19 +92,22 @@ import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useParticipantStore } from '../stores/participant'
 import { useVoteStore } from '../stores/vote'
+import { useSprintStore } from '../stores/sprint'
 import { useToast } from '../composables/useToast'
 import { useRetroRoom } from '../composables/useRetroRoom'
-import PhaseIndicator from '../components/PhaseIndicator.vue'
+import { useReadiness } from '../composables/useReadiness'
 import LoadingSpinner from '../components/ui/LoadingSpinner.vue'
+import BaseButton from '../components/ui/BaseButton.vue'
+import BaseModal from '../components/ui/BaseModal.vue'
 import RetroJoinForm from '../components/retro/RetroJoinForm.vue'
 import RetroPhaseHeader from '../components/retro/RetroPhaseHeader.vue'
-import RetroParticipantList from '../components/retro/RetroParticipantList.vue'
 import RetroReportPanel from '../components/retro/RetroReportPanel.vue'
 import RetroBoardPanel from '../components/retro/RetroBoardPanel.vue'
 
 const route = useRoute()
 const participantStore = useParticipantStore()
 const voteStore = useVoteStore()
+const sprintStore = useSprintStore()
 const { addToast } = useToast()
 
 const sprintId = Number(route.params.sprintId)
@@ -67,12 +117,120 @@ const {
   kicked, busy, errorMessage, joined, loading,
   sprintName, currentPhase, summaryParticipants, isReportingPhase,
   handleJoin, reportStore, showGoogleOption,
+  isClosed, teamId, isScrumMaster,
 } = useRetroRoom(sprintId)
+
+const {
+  toggleReady,
+  isCurrentParticipantReady,
+  readyCount,
+  totalCount,
+  readyParticipants,
+  notReadyParticipants,
+} = useReadiness()
 
 const participants = computed(() => participantStore.participants)
 
+// Phase name map
+const phaseNextMap: Record<string, string> = {
+  Writing: 'Grouping',
+  Grouping: 'Voting',
+  Voting: 'Discussing',
+  Discussing: 'Reporting',
+}
+
+const nextPhaseName = computed(() => phaseNextMap[currentPhase.value] ?? '')
+
+// Readiness is shown during Writing and Voting when participant count > 1
+const showReadiness = computed(() =>
+  (currentPhase.value === 'Writing' || currentPhase.value === 'Voting') &&
+  participants.value.length > 1,
+)
+
+// Votes badge only during Voting
+const showVotesBadge = computed(() => currentPhase.value === 'Voting')
+
+// Dialog state
+const showAdvanceDialog = ref(false)
+const showCloseDialog = ref(false)
+const advanceDialogTitle = ref('Advance Phase')
+const advanceDialogMessage = ref('')
+const advanceError = ref('')
+
+async function onAdvanceClick() {
+  advanceError.value = ''
+  advanceDialogTitle.value = `Advance to ${nextPhaseName.value}`
+
+  if (!teamId.value) return
+
+  try {
+    const check = await sprintStore.advancePhaseCheck(teamId.value, sprintId)
+
+    if (check.currentPhase === 'Voting') {
+      const n = check.nonVotingParticipantCount ?? 0
+      advanceDialogMessage.value = n > 0
+        ? `${n} participant${n === 1 ? '' : 's'} haven't voted yet. Advance to Discussing anyway?`
+        : `All participants have voted. Advance to Discussing?`
+      advanceError.value = ''
+      showAdvanceDialog.value = true
+    } else if (check.currentPhase === 'Discussing') {
+      const discussed = check.discussedGroupCount ?? 0
+      if (discussed < 2) {
+        advanceDialogTitle.value = 'Cannot Advance'
+        advanceError.value = `At least 2 groups must be discussed before advancing to Reporting. Currently discussed: ${discussed}.`
+        advanceDialogMessage.value = ''
+        showAdvanceDialog.value = true
+      } else {
+        advanceDialogMessage.value = `Advance to Reporting? ${discussed} group${discussed === 1 ? '' : 's'} have been discussed.`
+        advanceError.value = ''
+        showAdvanceDialog.value = true
+      }
+    } else {
+      advanceDialogMessage.value = `Advance to ${nextPhaseName.value}? This cannot be undone.`
+      advanceError.value = ''
+      showAdvanceDialog.value = true
+    }
+  } catch {
+    addToast('Failed to check phase status.', 'error')
+  }
+}
+
+function onCloseClick() {
+  showCloseDialog.value = true
+}
+
+async function confirmAdvance() {
+  showAdvanceDialog.value = false
+  if (!teamId.value) return
+  try {
+    await sprintStore.advancePhase(teamId.value, sprintId)
+  } catch {
+    addToast('Failed to advance phase.', 'error')
+  }
+}
+
+async function confirmClose() {
+  showCloseDialog.value = false
+  if (!teamId.value) return
+  try {
+    await sprintStore.closeSprint(teamId.value, sprintId)
+  } catch {
+    addToast('Failed to close sprint.', 'error')
+  }
+}
+
+async function onToggleReady() {
+  await toggleReady(sprintId)
+}
+
 watch(isReportingPhase, (reporting) => {
   if (reporting && joined.value) { reportingView.value = 'report'; reportStore.fetchParticipantReport(sprintId) }
+})
+
+watch(isClosed, (closed) => {
+  if (closed && joined.value) {
+    addToast('This retro has been closed by the Scrum Master.', 'info')
+  }
 })
 
 async function handleCopyMarkdown() {
