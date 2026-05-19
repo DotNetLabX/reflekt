@@ -15,6 +15,8 @@ public sealed partial class Card : AggregateRoot
     public required DateTime CreatedAt { get; init; }
     public int? GroupId { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+    public ReviewStatus ReviewStatus { get; private set; } = ReviewStatus.None;
+    public int? ReviewedInSprintId { get; private set; }
 
     private readonly List<EvidenceLink> _evidenceLinks = [];
     public IReadOnlyList<EvidenceLink> EvidenceLinks => _evidenceLinks.AsReadOnly();

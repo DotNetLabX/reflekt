@@ -2,6 +2,7 @@ using Reflekt.Domain.Cards.Events;
 
 namespace Reflekt.Domain.Cards;
 
+
 public sealed partial class Card
 {
     public static Card Create(
@@ -97,5 +98,21 @@ public sealed partial class Card
 
         _evidenceLinks.Remove(link);
         AddDomainEvent(new EvidenceLinkDetachedEvent(this, evidenceLinkId));
+    }
+
+    public void SetReviewStatus(ReviewStatus status, int reviewingSprintId)
+    {
+        if (status == ReviewStatus.None)
+            throw new ArgumentException("Cannot set review status to None. Use Done, CarriedOver, or Dropped.", nameof(status));
+
+        if (CardType != CardType.ActionItem)
+            throw new InvalidOperationException("Only ActionItem cards can have a review status.");
+
+        if (ReviewStatus == status && ReviewedInSprintId == reviewingSprintId)
+            return;
+
+        ReviewStatus = status;
+        ReviewedInSprintId = reviewingSprintId;
+        AddDomainEvent(new ReviewStatusChangedEvent(this));
     }
 }

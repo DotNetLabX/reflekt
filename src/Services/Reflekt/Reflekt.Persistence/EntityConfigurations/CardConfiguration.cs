@@ -28,6 +28,10 @@ internal sealed class CardConfiguration : EntityConfiguration<Card>
         builder.Property(c => c.CreatedAt).IsRequired();
         builder.Property(c => c.UpdatedAt).IsRequired();
 
+        builder.Property(c => c.ReviewStatus).IsRequired().HasDefaultValue(ReviewStatus.None);
+        builder.HasOne<Sprint>().WithMany().HasForeignKey(c => c.ReviewedInSprintId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(c => c.ReviewedInSprintId);
+
         builder.HasMany(c => c.EvidenceLinks)
             .WithOne()
             .HasForeignKey(e => e.CardId)

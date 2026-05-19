@@ -15,6 +15,14 @@
       </button>
     </div>
 
+    <!-- Previous actions review panel (Writing phase only) -->
+    <PreviousActionsPanel
+      v-if="isWritingPhase && previousActionsStore.items.length > 0"
+      :sprint-id="sprintId"
+      :team-id="sprintStore.currentSummary?.teamId ?? 0"
+      :is-scrum-master="isScrumMaster"
+    />
+
     <RetroMobileTabBar
       v-model="activeTab"
       :show-action-items="showActionItems"
@@ -188,9 +196,11 @@ import RetroCardItem from './RetroCardItem.vue'
 import RetroGroupItem from './RetroGroupItem.vue'
 import RetroColumnBody from './RetroColumnBody.vue'
 import RetroMobileTabBar from './RetroMobileTabBar.vue'
+import PreviousActionsPanel from './PreviousActionsPanel.vue'
 import BaseInput from '../ui/BaseInput.vue'
 import BaseButton from '../ui/BaseButton.vue'
 import BaseModal from '../ui/BaseModal.vue'
+import { usePreviousActionsStore } from '../../stores/previousActions'
 
 const props = defineProps<{
   sprintId: number
@@ -205,6 +215,7 @@ defineEmits<{
 const participantStore = useParticipantStore()
 const policyStore = usePolicyStore()
 const sprintStore = useSprintStore()
+const previousActionsStore = usePreviousActionsStore()
 const { addToast } = useToast()
 
 const newCardText = ref({ Column1: '', Column2: '', Column3: '' })

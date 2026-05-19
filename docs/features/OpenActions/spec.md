@@ -4,7 +4,7 @@
 **Source:** Scratch
 **Dependencies:** Coordination: extends the AdvancePhaseCheck endpoint introduced by Inline Phase Controls (#28) for the Writing phase advance dialog. No build-time dependency.
 **Status:** Ready
-**Plan:** None
+**Plan:** `docs/specs/F30-OpenActions/delivery/plan.md`
 
 ---
 

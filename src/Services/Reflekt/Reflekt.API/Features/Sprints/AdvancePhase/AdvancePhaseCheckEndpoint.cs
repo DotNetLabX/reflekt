@@ -11,7 +11,9 @@ public sealed record AdvancePhaseCheckResponse(
     int? NonVotingParticipantCount = null,
     int? TotalParticipantCount = null,
     int? DiscussedGroupCount = null,
-    int? FocusedGroupId = null);
+    int? FocusedGroupId = null,
+    int? UnreviewedActionCount = null,
+    int? TotalPreviousActionCount = null);
 
 [Authorize(Policy = AuthPolicies.ScrumMaster)]
 [HttpPost("/api/teams/{teamId}/sprints/{sprintId}/advance-phase/check")]
@@ -21,7 +23,8 @@ public sealed class AdvancePhaseCheckEndpoint(
     SprintRepository sprintRepository,
     ParticipantRepository participantRepository,
     CardGroupRepository cardGroupRepository,
-    VoteRepository voteRepository)
+    VoteRepository voteRepository,
+    CardRepository cardRepository)
     : Endpoint<SprintRouteRequest, AdvancePhaseCheckResponse>
 {
     public override async Task HandleAsync(SprintRouteRequest request, CancellationToken ct)
@@ -51,6 +54,29 @@ public sealed class AdvancePhaseCheckEndpoint(
         {
             AddError("Cannot advance from Reporting phase.");
             await SendErrorsAsync(409, ct);
+            return;
+        }
+
+        if (sprint.CurrentPhase == SprintPhase.Writing)
+        {
+            var previousSprint = await sprintRepository.GetMostRecentClosedByTeamIdAsync(sprint.TeamId, ct);
+            if (previousSprint is not null)
+            {
+                var unreviewedItems = await cardRepository.GetUnreviewedActionItemsBySprintIdAsync(previousSprint.Id, ct);
+                var reviewedItems = await cardRepository.GetActionItemsReviewedInSprintAsync(previousSprint.Id, ct);
+                var totalCount = unreviewedItems.Count + reviewedItems.Count;
+
+                if (totalCount > 0)
+                {
+                    await SendOkAsync(new AdvancePhaseCheckResponse(
+                        sprint.CurrentPhase.ToString(),
+                        UnreviewedActionCount: unreviewedItems.Count,
+                        TotalPreviousActionCount: totalCount), ct);
+                    return;
+                }
+            }
+
+            await SendOkAsync(new AdvancePhaseCheckResponse(sprint.CurrentPhase.ToString()), ct);
             return;
         }
 

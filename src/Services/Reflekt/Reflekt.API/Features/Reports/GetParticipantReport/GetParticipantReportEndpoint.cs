@@ -82,12 +82,15 @@ public sealed class GetParticipantReportEndpoint(
             .Select(c => c.Adapt<ReportActionItemEntry>())
             .ToList();
 
+        var previousActionsSection = await BuildPreviousActionsSectionAsync(req.SprintId, sprint.TeamId, ct);
+
         var response = new ReportResponse(
             new ReportSprintInfo(sprint.Id, sprint.Name, sprint.CreatedAt, sprint.ClosedAt),
             new ReportTeamInfo(teamInfo!.Id, teamInfo.Name),
             participants.Select(p => new ReportParticipantInfo(p.DisplayName)).ToList(),
             columnSections,
-            actionItems);
+            actionItems,
+            previousActionsSection);
 
         await SendOkAsync(response, ct);
     }
@@ -103,5 +106,26 @@ public sealed class GetParticipantReportEndpoint(
             .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(c => c.Adapt<ReportCardEntry>()).ToList()))
             .ToList();
         return new ReportColumnSection(columnName, columnColor, groups);
+    }
+
+    private async Task<ReportPreviousActionsSection?> BuildPreviousActionsSectionAsync(int sprintId, int teamId, CancellationToken ct)
+    {
+        var previousSprint = await sprintRepository.GetMostRecentClosedByTeamIdAsync(teamId, ct);
+        if (previousSprint is null) return null;
+
+        var reviewedItems = await cardRepository.GetActionItemsReviewedInSprintAsync(sprintId, ct);
+        var unreviewedEligible = await cardRepository.GetUnreviewedActionItemsBySprintIdAsync(previousSprint.Id, ct);
+
+        if (reviewedItems.Count == 0 && unreviewedEligible.Count == 0) return null;
+
+        var entries = new List<ReportPreviousActionEntry>();
+
+        foreach (var card in reviewedItems)
+            entries.Add(new ReportPreviousActionEntry(card.Text, card.AssigneeName, card.ReviewStatus.ToString()));
+
+        foreach (var card in unreviewedEligible)
+            entries.Add(new ReportPreviousActionEntry(card.Text, card.AssigneeName, "Not reviewed"));
+
+        return new ReportPreviousActionsSection(previousSprint.Name, entries);
     }
 }

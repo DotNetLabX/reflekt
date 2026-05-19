@@ -46,6 +46,8 @@ export interface AdvancePhaseCheckResponse {
   totalParticipantCount?: number
   discussedGroupCount?: number
   focusedGroupId?: number | null
+  unreviewedActionCount?: number
+  totalPreviousActionCount?: number
 }
 
 interface ColumnConfigPayload {

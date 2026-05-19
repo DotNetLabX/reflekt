@@ -7,6 +7,7 @@ import { useSprintStore } from '../stores/sprint'
 import { useCardGroupStore } from '../stores/cardGroup'
 import { useReadinessStore } from '../stores/readiness'
 import { useTimerStore } from '../stores/timer'
+import { usePreviousActionsStore } from '../stores/previousActions'
 import type { TimerPayload } from './useTimer'
 
 let connection: signalR.HubConnection | null = null
@@ -24,6 +25,7 @@ export function useSprintHub(onKicked?: () => void) {
   const cardGroupStore = useCardGroupStore()
   const readinessStore = useReadinessStore()
   const timerStore = useTimerStore()
+  const previousActionsStore = usePreviousActionsStore()
 
   function build(sprintId: number) {
     connection = new signalR.HubConnectionBuilder()
@@ -198,6 +200,13 @@ export function useSprintHub(onKicked?: () => void) {
     connection.on('TimerSnapshot', (payload: TimerPayload) => {
       timerStore.applyTimerSnapshot(payload)
     })
+
+    connection.on(
+      'ReviewStatusChanged',
+      (payload: { cardId: number; reviewStatus: string; reviewedCount: number; totalCount: number }) => {
+        previousActionsStore.applyReviewStatusChanged(payload)
+      },
+    )
   }
 
   async function connect(sprintId: number) {

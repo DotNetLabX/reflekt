@@ -48,12 +48,24 @@ export interface ReportParticipantInfo {
   displayName: string
 }
 
+export interface ReportPreviousActionEntry {
+  text: string
+  assigneeName: string | null
+  reviewStatus: string
+}
+
+export interface ReportPreviousActionsSection {
+  previousSprintName: string
+  items: ReportPreviousActionEntry[]
+}
+
 export interface ReportResponse {
   sprint: ReportSprintInfo
   team: ReportTeamInfo
   participants: ReportParticipantInfo[]
   columns: ReportColumnSection[]
   actionItems: ReportActionItemEntry[]
+  previousActionsReview?: ReportPreviousActionsSection | null
 }
 
 export const useReportStore = defineStore('report', {
@@ -158,6 +170,17 @@ export const useReportStore = defineStore('report', {
         for (const link of item.evidenceLinks) {
           const label = link.title || link.url
           lines.push(`  - [${label}](${link.url})`)
+        }
+      }
+
+      if (r.previousActionsReview) {
+        lines.push('')
+        lines.push(`## Previous Actions Review (from: ${r.previousActionsReview.previousSprintName})`)
+        lines.push('')
+        for (const entry of r.previousActionsReview.items) {
+          const assignee = entry.assigneeName ? ` — @${entry.assigneeName}` : ''
+          const status = entry.reviewStatus === 'CarriedOver' ? 'Carried Over' : entry.reviewStatus
+          lines.push(`- [${status}] ${entry.text}${assignee}`)
         }
       }
 

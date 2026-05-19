@@ -17,5 +17,23 @@ public sealed class CardRepository(ReflektDbContext db) : Repository<Card>(db)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync(ct);
 
+    public Task<List<Card>> GetUnreviewedActionItemsBySprintIdAsync(int sprintId, CancellationToken ct)
+        => Db.Cards
+            .Where(c => c.SprintId == sprintId
+                && c.CardType == CardType.ActionItem
+                && c.ReviewedInSprintId == null)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync(ct);
+
+    public Task<List<Card>> GetActionItemsReviewedInSprintAsync(int reviewingSprintId, CancellationToken ct)
+        => Db.Cards
+            .Where(c => c.ReviewedInSprintId == reviewingSprintId)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync(ct);
+
+    public Task<int> CountActionItemsBySprintIdAsync(int sprintId, CancellationToken ct)
+        => Db.Cards
+            .CountAsync(c => c.SprintId == sprintId && c.CardType == CardType.ActionItem, ct);
+
     public void Remove(Card card) => Db.Cards.Remove(card);
 }

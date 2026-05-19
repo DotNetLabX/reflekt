@@ -69,7 +69,11 @@
     <!-- Advance phase confirmation dialog -->
     <BaseModal :open="showAdvanceDialog" :title="advanceDialogTitle" @close="showAdvanceDialog = false">
       <p v-if="advanceError" class="text-sm text-danger">{{ advanceError }}</p>
-      <p v-else class="text-sm text-gray-600">{{ advanceDialogMessage }}</p>
+      <p
+        v-else
+        class="text-sm text-gray-600"
+        :title="advanceIsWritingWarning ? advanceWarningTooltip : undefined"
+      >{{ advanceDialogMessage }}</p>
       <template #footer>
         <div class="flex justify-end gap-3">
           <BaseButton variant="secondary" @click="showAdvanceDialog = false">Cancel</BaseButton>
@@ -160,6 +164,9 @@ const showCloseDialog = ref(false)
 const advanceDialogTitle = ref('Advance Phase')
 const advanceDialogMessage = ref('')
 const advanceError = ref('')
+const advanceIsWritingWarning = ref(false)
+
+const advanceWarningTooltip = "Some action items from the last retro haven't been reviewed yet. You can still advance if needed."
 
 async function onAdvanceClick() {
   advanceError.value = ''
@@ -170,7 +177,19 @@ async function onAdvanceClick() {
   try {
     const check = await sprintStore.advancePhaseCheck(teamId.value, sprintId)
 
-    if (check.currentPhase === 'Voting') {
+    if (check.currentPhase === 'Writing') {
+      const unreviewed = check.unreviewedActionCount ?? 0
+      const total = check.totalPreviousActionCount ?? 0
+      if (unreviewed > 0 && total > 0) {
+        advanceDialogMessage.value = `${unreviewed} of ${total} previous action item${total === 1 ? '' : 's'} haven't been reviewed yet. Advance anyway?`
+        advanceIsWritingWarning.value = true
+      } else {
+        advanceDialogMessage.value = `Advance to ${nextPhaseName.value}? This cannot be undone.`
+        advanceIsWritingWarning.value = false
+      }
+      advanceError.value = ''
+      showAdvanceDialog.value = true
+    } else if (check.currentPhase === 'Voting') {
       const n = check.nonVotingParticipantCount ?? 0
       advanceDialogMessage.value = n > 0
         ? `${n} participant${n === 1 ? '' : 's'} haven't voted yet. Advance to Discussing anyway?`

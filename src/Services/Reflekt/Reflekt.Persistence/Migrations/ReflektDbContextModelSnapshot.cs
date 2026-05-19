@@ -71,6 +71,14 @@ namespace Reflekt.Persistence.Migrations
                     b.Property<int>("ParticipantId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("ReviewStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
+                    b.Property<int?>("ReviewedInSprintId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("SprintId")
                         .HasColumnType("INTEGER");
 
@@ -87,6 +95,8 @@ namespace Reflekt.Persistence.Migrations
                     b.HasIndex("GroupId");
 
                     b.HasIndex("ParticipantId");
+
+                    b.HasIndex("ReviewedInSprintId");
 
                     b.HasIndex("SprintId");
 
@@ -394,6 +404,8 @@ namespace Reflekt.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClosedAt");
+
                     b.HasIndex("TeamId");
 
                     b.ToTable("Sprints", (string)null);
@@ -504,6 +516,11 @@ namespace Reflekt.Persistence.Migrations
                         .HasForeignKey("ParticipantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Reflekt.Domain.Sprints.Sprint", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedInSprintId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Reflekt.Domain.Sprints.Sprint", null)
                         .WithMany()

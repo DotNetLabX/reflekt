@@ -57,6 +57,29 @@
         </ul>
       </div>
     </div>
+
+    <!-- Previous Actions Review -->
+    <div v-if="report.previousActionsReview" class="bg-white rounded shadow">
+      <div class="px-4 py-3 border-b bg-amber-50 rounded-t">
+        <h2 class="font-semibold text-amber-800 text-sm">
+          Previous Actions Review
+          <span class="font-normal text-amber-600 ml-1">— Actions from: {{ report.previousActionsReview.previousSprintName }}</span>
+        </h2>
+      </div>
+      <div class="p-4">
+        <ul class="flex flex-col gap-3">
+          <li v-for="(entry, i) in report.previousActionsReview.items" :key="i" class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-800">{{ entry.text }}</p>
+              <p v-if="entry.assigneeName" class="text-xs text-gray-500 mt-0.5">@{{ entry.assigneeName }}</p>
+            </div>
+            <span :class="reviewStatusBadgeClass(entry.reviewStatus)" class="px-2 py-0.5 rounded text-xs font-medium shrink-0">
+              {{ formatReviewStatus(entry.reviewStatus) }}
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -84,5 +107,18 @@ function truncateUrl(url: string): string {
   } catch {
     return url.length > 40 ? url.slice(0, 40) + '...' : url
   }
+}
+
+function reviewStatusBadgeClass(status: string): string {
+  if (status === 'Done') return 'bg-emerald-100 text-emerald-700'
+  if (status === 'CarriedOver') return 'bg-amber-100 text-amber-700'
+  if (status === 'Dropped') return 'bg-gray-100 text-gray-600'
+  return 'bg-red-50 text-red-600'
+}
+
+function formatReviewStatus(status: string): string {
+  if (status === 'CarriedOver') return 'Carried Over'
+  if (status === 'Not reviewed') return 'Not reviewed'
+  return status
 }
 </script>

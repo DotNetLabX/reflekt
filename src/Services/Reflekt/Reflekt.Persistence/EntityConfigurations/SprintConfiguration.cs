@@ -45,5 +45,7 @@ internal sealed class SprintConfiguration : EntityConfiguration<Sprint>
         builder.Property(s => s.WritingTimerDefault).IsRequired().HasDefaultValue(5);
         builder.Property(s => s.VotingTimerDefault).IsRequired().HasDefaultValue(3);
         builder.Property(s => s.DiscussingTimerDefault).IsRequired().HasDefaultValue(10);
+
+        builder.HasIndex(s => s.ClosedAt);
     }
 }
