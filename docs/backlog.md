@@ -228,7 +228,7 @@ Move phase advancement from the sprint manager page into the sprint board top ba
 Optional countdown timer for Writing (5min default), Voting (3min), Discussing (10min). No timer for Grouping or Reporting. SM controls: start, pause, reset, +time. Timer state is ephemeral (SignalR group state, not persisted). Default durations stored as JSON on Sprint. Timer expiry alerts but does not auto-advance.
 
 ### 30. Open Actions from Previous Retro
-**Status: Open**
+**Status: Spec Ready** | **Feature Spec:** `docs/features/OpenActions/spec.md`
 **Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.7
 **Dependencies:** None
 During Writing phase, show action items from the most recently closed sprint in the same team. SM marks each as Done / Carried Over / Dropped. Status persisted on the original card (`ReviewStatus` enum + `ReviewedInSprintId` FK). No card duplication. Collapsible section, SM-only interaction.
