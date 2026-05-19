@@ -16,8 +16,9 @@ The `{slug}` identifies a unit of work and follows these conventions:
 
 The team lead or PO assigns the slug at the start of each pipeline run and passes it to all downstream agents. Agents never derive the slug — they use exactly what was passed.
 
-Folder layout per slug:
+Standard paths:
 ```
+docs/backlog.md                              ← feature sequence, dependencies, status
 docs/specs/{slug}/
   definition/   ← spec.md (or epic.md / bug.md), help.tooltips.md, images
   delivery/     ← plan.md, implementation.md, review.md, lessons.md, summary.md, communication-log.md
@@ -85,7 +86,7 @@ Human → architect (plan)
           ↓                     ↓ findings
      plan approved         architect fixes gaps → plan approved
                     ↓
-         auto-approve if ≤11 steps & no open questions, else human approves
+         auto-approve always (split if >10 steps and each sub-plan >= 2 steps)
                     ↓
               developer (implement → implementation.md)
                     ↓

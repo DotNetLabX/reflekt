@@ -71,11 +71,7 @@ Derive status mechanically from file existence — don't guess.
 
 ## Agent Selection
 
-**Pipeline roles** (architect, developer, reviewer, tester, teacher, builder) → always use project agents from `.claude/agents/`. Never substitute OMC equivalents (oh-my-claudecode:planner, oh-my-claudecode:executor, oh-my-claudecode:architect) for pipeline work.
-
-**OMC pipeline orchestration** (oh-my-claudecode:team, oh-my-claudecode:autopilot, oh-my-claudecode:ralph) → never replaces the project pipeline.
-
-**OMC specialists** (oh-my-claudecode:debugger, oh-my-claudecode:security-reviewer, oh-my-claudecode:tracer, oh-my-claudecode:code-simplifier, oh-my-claudecode:designer, etc.) → available for standalone tasks outside the pipeline when the user requests them or the task benefits from specialized analysis.
+Follow the agent selection rules in `pipeline-guardrails.md` (auto-loaded).
 
 ## Launching a Team
 
@@ -150,11 +146,7 @@ When unsure, default to Standard.
 
    **Why resume-first:** Resumed agents retain their full transcript/context from prior work — cheaper, faster, and more consistent. Fresh spawns lose all prior context and re-read everything.
 
-   Start with the architect:
-   ```
-   Agent(subagent_type="architect", run_in_background=true, name="architect",
-         prompt="You are the architect on team {Feature}. Read .claude/agents/architect.md. {task}")
-   ```
+   Start with the architect using a minimal prompt (see Message Templates below).
 
    **Track agent IDs throughout the pipeline run.** When an agent completes, note the agent ID from the launch result. Use that ID for all subsequent `SendMessage` calls to that agent.
 
@@ -171,23 +163,12 @@ When unsure, default to Standard.
 
    Use `TeamCreate` to create a persistent team. All agents spawn once and stay alive — use `SendMessage` to hand off between phases instead of respawning.
 
-   Create the team with all required agents upfront:
-   ```
-   TeamCreate(name="{Feature}", teammates=[
-     { name: "architect", agentType: "architect", prompt: "You are the architect on team {Feature}. Read .claude/agents/architect.md. Wait for your task." },
-     { name: "developer", agentType: "developer", prompt: "You are the developer on team {Feature}. Read .claude/agents/developer.md. Wait for your task." },
-     { name: "reviewer", agentType: "reviewer", prompt: "You are the reviewer on team {Feature}. Read .claude/agents/reviewer.md. Wait for your task." }
-   ])
-   ```
-   Omit reviewer for Fast mode. Add Codex instructions to reviewer prompt for Standard + Codex.
+   Create the team with all required agents upfront (use minimal prompts — see Message Templates below). Omit reviewer for Fast mode. Add Codex instructions to reviewer prompt for Standard + Codex.
 
-   Pipeline flow via `SendMessage`:
-   1. `SendMessage(to: "architect", message: "Plan {Feature}. Spec: docs/specs/{slug}/definition/spec.md. Save to docs/specs/{slug}/delivery/plan.md.")`
-   2. When architect reports done → `SendMessage(to: "developer", message: "Implement {Feature}. Plan: docs/specs/{slug}/delivery/plan.md.")`
-   3. When developer reports done → `SendMessage(to: "architect", message: "Step 1 done check for {Feature}. Plan + implementation.md. Write lessons to lessons.md after passing.")`
-   4. When architect passes (lessons already written) → `SendMessage(to: "reviewer", message: "Step 2 code review for {Feature}.")`
-   5. Fix cycles: `SendMessage` to developer, then back to reviewer — same agents, no respawn.
-   6. When approved → team lead writes summary.md and updates cross-references directly. No architect wake-up needed.
+   Pipeline flow via `SendMessage` using the message templates:
+   1. Architect plans → 2. Developer implements → 3. Architect done check → 4. Reviewer reviews.
+   Fix cycles: `SendMessage` to developer, then back to reviewer — same agents, no respawn.
+   When approved → team lead writes summary.md and updates cross-references directly. No architect wake-up needed.
 
    **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. Use Background mode for unattended/overnight runs.
 
@@ -200,6 +181,18 @@ When unsure, default to Standard.
    - **Fast:** architect → developer (add to developer prompt: "After implementation.md, run /review on the changes, then report back. No separate reviewer agent.")
 
 The pipeline runs per `.claude/rules/agents-workflow.md`.
+
+## Message Templates
+
+Agents already know their job from their agent files. **Do not restate their instructions, steps, or file conventions in the prompt.** Only pass what they can't derive: the slug and the spec/plan path.
+
+**First spawn:** `{action} {slug}.` — e.g., `Plan F30-OpenActions.`, `Implement F30-OpenActions.`, `Review F30-OpenActions.`
+
+**Resume:** `{action}.` — e.g., `Step 1 done check.`, `Fix findings in review.md.`, `Re-review after fixes.`
+
+All paths (spec, plan, delivery artifacts, backlog) are derivable from the slug via the standard paths in agents-workflow.md. Resumed agents already have the slug and full context from their previous work.
+
+**Why minimal:** Over-specifying overrides the agent's built-in flow — checkpoints get skipped, review mode choices get pre-decided, and the agent loses its ability to stop and ask. Trust the agent file.
 
 ## Architect Questions Checkpoint
 

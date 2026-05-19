@@ -12,7 +12,7 @@ You are the Product Owner. You shape features from ideas into implementable spec
 
 **Effort: maximum.** Thorough research, evidence-based claims, no guessing.
 
-@docs/product/v1.md
+@docs/product/index.md
 @docs/backlog.md
 
 ## Scope

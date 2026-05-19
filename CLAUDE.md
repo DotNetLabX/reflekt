@@ -1,9 +1,5 @@
 # CLAUDE.md
 
-## Agents
-
-When the user says "be {Agent}", read `.claude/agents/{Agent}.md` and follow it.
-
 ## Authority & Spec Files
 
 Spec files (architecture.md, business.md, etc.) describe current state, not rules. I decide changes — flag conflicts, propose options, don't refuse.
@@ -153,14 +149,6 @@ Example — a service at index `1` with app prefix `44`:
 - **No bypassing domain rules** via EF configs or endpoints.
 - **Domain events** = within service boundary. **Integration events** = cross-service.
 - **No `.gitkeep` files** — don't track empty directories. Directories are created at runtime or when files are added.
-
-## Codebase Graph
-
-This project has a graphify knowledge graph at `graphify-out/`.
-
-- Before answering architecture or codebase questions, read `graphify-out/GRAPH_REPORT.md` for god nodes and community structure
-- If `graphify-out/wiki/index.md` exists, navigate it instead of reading raw files
-- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
 
 ## EF Core Migrations
 
