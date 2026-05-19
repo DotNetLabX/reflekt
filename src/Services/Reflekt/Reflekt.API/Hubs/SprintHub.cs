@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Reflekt.API.Auth;
@@ -54,8 +56,30 @@ public class SprintHub(
             totalCount,
         });
 
-        // Send timer snapshot to joining client
+        // Auto-start timer if timed phase and timer not yet started
         var timerSnapshot = timerService.GetSnapshot(sprintId);
+        if (timerSnapshot.Status == Timer.TimerStatus.Stopped)
+        {
+            using var scope = scopeFactory.CreateScope();
+            var sprintRepo = scope.ServiceProvider.GetRequiredService<SprintRepository>();
+            var sprint = await sprintRepo.GetByIdAsync(sprintId, Context.ConnectionAborted);
+            if (sprint is not null && sprint.CurrentPhase is
+                Reflekt.Domain.Sprints.SprintPhase.Writing or
+                Reflekt.Domain.Sprints.SprintPhase.Voting or
+                Reflekt.Domain.Sprints.SprintPhase.Discussing)
+            {
+                var durationSeconds = sprint.GetTimerDefaultForPhase() * 60;
+                timerSnapshot = timerService.Start(sprintId, durationSeconds);
+                await Clients.Group($"sprint:{sprintId}").SendAsync("TimerUpdated", new
+                {
+                    status = timerSnapshot.Status.ToString().ToLowerInvariant(),
+                    remainingSeconds = timerSnapshot.RemainingSeconds,
+                    endTimeUtc = timerSnapshot.EndTimeUtc,
+                });
+            }
+        }
+
+        // Send timer snapshot to joining client
         await Clients.Caller.SendAsync("TimerSnapshot", new
         {
             status = timerSnapshot.Status.ToString().ToLowerInvariant(),
@@ -167,7 +191,24 @@ public class SprintHub(
         var teamRepo = scope.ServiceProvider.GetRequiredService<TeamRepository>();
 
         var participant = await participantRepo.GetByIdAsync(participantId, Context.ConnectionAborted);
-        if (participant?.UserId is null)
+
+        int? resolvedUserId = participant?.UserId;
+        if (resolvedUserId is null)
+        {
+            var httpContext = Context.GetHttpContext();
+            if (httpContext is not null)
+            {
+                var cookieResult = await httpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (cookieResult.Succeeded)
+                {
+                    var userIdClaim = cookieResult.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (int.TryParse(userIdClaim, out var cookieUserId))
+                        resolvedUserId = cookieUserId;
+                }
+            }
+        }
+
+        if (resolvedUserId is null)
             throw new HubException("Only the Scrum Master can control the timer.");
 
         var sprint = await sprintRepo.GetByIdAsync(sprintId, Context.ConnectionAborted);
@@ -175,7 +216,7 @@ public class SprintHub(
             throw new HubException("Sprint not found.");
 
         var team = await teamRepo.GetByIdAsync(sprint.TeamId, Context.ConnectionAborted);
-        if (team is null || team.OwnerId != participant.UserId.Value)
+        if (team is null || team.OwnerId != resolvedUserId.Value)
             throw new HubException("Only the Scrum Master can control the timer.");
     }
 

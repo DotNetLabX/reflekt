@@ -83,11 +83,7 @@ export function useRetroRoom(sprintId: number) {
   onMounted(async () => {
     await policyStore.fetch()
     await sprintStore.fetchSprintSummary(sprintId)
-    guestStore.loadToken(sprintId)
-    if (guestStore.token) {
-      try { await participantStore.fetchMe(sprintId); await enterRoom(); return }
-      catch (err: unknown) { if ((err as { status?: number })?.status === 401) guestStore.clearToken(sprintId) }
-    }
+
     if (!authStore.loaded) await authStore.fetchMe()
     if (authStore.isSignedIn) {
       try {
@@ -95,11 +91,20 @@ export function useRetroRoom(sprintId: number) {
         guestStore.saveToken(sprintId, response.guestToken, response.displayName)
         await enterRoom(); return
       } catch (err: unknown) {
+        console.error('[joinWithGoogle] failed:', err)
         const status = (err as { status?: number })?.status
         if (status === 409) errorMessage.value = 'Sprint is not accepting participants.'
         else if (status === 404) errorMessage.value = 'Sprint not found.'
-        // other errors: fall through to show join form
+        else errorMessage.value = `Could not join with Google (${status ?? 'network error'}). You can join as a guest instead.`
       }
+      loading.value = false
+      return
+    }
+
+    guestStore.loadToken(sprintId)
+    if (guestStore.token) {
+      try { await participantStore.fetchMe(sprintId); await enterRoom(); return }
+      catch (err: unknown) { if ((err as { status?: number })?.status === 401) guestStore.clearToken(sprintId) }
     }
     loading.value = false
   })

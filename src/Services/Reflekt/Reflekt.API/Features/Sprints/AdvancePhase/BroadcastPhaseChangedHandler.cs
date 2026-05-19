@@ -19,12 +19,33 @@ public sealed class BroadcastPhaseChangedHandler(IHubContext<SprintHub> hubConte
             .SendAsync("ReadinessReset", new { }, ct);
 
         timerService.ClearTimer(sprintId);
-        await hubContext.Clients.Group($"sprint:{sprintId}")
-            .SendAsync("TimerUpdated", new
-            {
-                status = "stopped",
-                remainingSeconds = 0,
-                endTimeUtc = (DateTime?)null,
-            }, ct);
+
+        var isTimedPhase = ev.Sprint.CurrentPhase is
+            Reflekt.Domain.Sprints.SprintPhase.Writing or
+            Reflekt.Domain.Sprints.SprintPhase.Voting or
+            Reflekt.Domain.Sprints.SprintPhase.Discussing;
+
+        if (isTimedPhase)
+        {
+            var durationSeconds = ev.Sprint.GetTimerDefaultForPhase() * 60;
+            var snapshot = timerService.Start(sprintId, durationSeconds);
+            await hubContext.Clients.Group($"sprint:{sprintId}")
+                .SendAsync("TimerUpdated", new
+                {
+                    status = snapshot.Status.ToString().ToLowerInvariant(),
+                    remainingSeconds = snapshot.RemainingSeconds,
+                    endTimeUtc = snapshot.EndTimeUtc,
+                }, ct);
+        }
+        else
+        {
+            await hubContext.Clients.Group($"sprint:{sprintId}")
+                .SendAsync("TimerUpdated", new
+                {
+                    status = "stopped",
+                    remainingSeconds = 0,
+                    endTimeUtc = (DateTime?)null,
+                }, ct);
+        }
     }
 }

@@ -22,7 +22,7 @@
           @mouseenter="showReadinessTooltip = true"
           @mouseleave="showReadinessTooltip = false"
         >
-          <BaseBadge variant="default">{{ readyCount }}/{{ totalCount }} done</BaseBadge>
+          <BaseBadge :variant="allDone ? 'success' : 'default'" :class="{ 'animate-attention': allDone }">{{ readyCount }}/{{ totalCount }} done</BaseBadge>
           <!-- SM tooltip listing ready/not-ready names -->
           <div
             v-if="isScrumMaster && showReadinessTooltip && totalCount > 0"
@@ -115,4 +115,6 @@ const isTimedPhase = computed(() =>
   props.currentPhase === 'Voting' ||
   props.currentPhase === 'Discussing',
 )
+
+const allDone = computed(() => props.totalCount > 0 && props.readyCount >= props.totalCount)
 </script>

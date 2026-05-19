@@ -2,17 +2,16 @@
   <div class="flex items-center gap-2">
     <!-- Timer area — clickable for SM to open controls -->
     <div
-      class="relative flex items-center gap-1.5"
-      :class="{ 'cursor-pointer': isScrumMaster }"
+      class="relative flex items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors"
+      :class="isScrumMaster ? 'cursor-pointer hover:bg-gray-100' : ''"
       @click="isScrumMaster ? (showControls = !showControls) : undefined"
     >
       <!-- Timer text -->
       <span
-        v-if="timerStatus !== 'stopped' || isScrumMaster"
         class="font-mono text-sm font-semibold tabular-nums select-none"
         :class="[
           timerStatus === 'expired'
-            ? 'text-red-600 animate-pulse'
+            ? 'text-red-600 animate-blink'
             : timerStatus === 'running'
               ? 'text-gray-800'
               : 'text-gray-500',
@@ -20,6 +19,10 @@
       >
         {{ timerStatus === 'stopped' ? phaseDefaultFormatted : formattedTime }}
       </span>
+      <!-- SM dropdown indicator -->
+      <svg v-if="isScrumMaster" class="w-3 h-3 text-gray-400" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M2 4l4 4 4-4" />
+      </svg>
 
       <!-- Mute toggle (visible to all when timer is not stopped) -->
       <button

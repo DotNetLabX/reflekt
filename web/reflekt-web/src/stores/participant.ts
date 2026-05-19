@@ -33,6 +33,8 @@ export const useParticipantStore = defineStore('participant', {
     async joinWithGoogle(sprintId: number): Promise<JoinSprintResponse> {
       const res = await fetch(`/api/sprints/${sprintId}/join/google`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
         credentials: 'include',
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }

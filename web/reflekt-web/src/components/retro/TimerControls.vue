@@ -3,13 +3,8 @@
     class="absolute right-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-[--radius-sm] shadow-lg p-2 flex flex-col gap-1.5 min-w-[140px]"
     @click.stop
   >
-    <!-- Stopped: Start -->
-    <template v-if="timerStatus === 'stopped'">
-      <button class="timer-btn timer-btn-primary" @click="invoke('StartTimer')">Start</button>
-    </template>
-
     <!-- Running: Pause, Reset, +time -->
-    <template v-else-if="timerStatus === 'running'">
+    <template v-if="timerStatus === 'running'">
       <button class="timer-btn timer-btn-secondary" @click="invoke('PauseTimer')">Pause</button>
       <button class="timer-btn timer-btn-secondary" @click="invoke('ResetTimer')">Reset</button>
       <div class="flex gap-1 mt-0.5">
@@ -44,6 +39,7 @@
 
 <script setup lang="ts">
 import { getHubConnection } from '../../composables/useSprintHub'
+import { useToast } from '../../composables/useToast'
 import type { TimerStatus } from '../../composables/useTimer'
 
 const props = defineProps<{
@@ -55,30 +51,33 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { addToast } = useToast()
+
 async function invoke(method: string) {
   const conn = getHubConnection()
-  if (!conn) return
+  if (!conn) { addToast('Not connected to server.', 'error'); return }
   try {
     await conn.invoke(method, props.sprintId)
-  } catch (e) {
-    console.error(`Timer hub method ${method} failed:`, e)
+  } catch (e: any) {
+    addToast(e?.message ?? 'Timer action failed.', 'error')
   }
   emit('close')
 }
 
 async function invokeAddTime(minutes: number) {
   const conn = getHubConnection()
-  if (!conn) return
+  if (!conn) { addToast('Not connected to server.', 'error'); return }
   try {
     await conn.invoke('AddTime', props.sprintId, minutes)
-  } catch (e) {
-    console.error('AddTime hub method failed:', e)
+  } catch (e: any) {
+    addToast(e?.message ?? 'Failed to add time.', 'error')
   }
   emit('close')
 }
 </script>
 
 <style scoped>
+@reference "../../assets/main.css";
 .timer-btn {
   @apply w-full px-3 py-1 text-xs font-medium rounded-[--radius-sm] transition-colors cursor-pointer text-center;
 }

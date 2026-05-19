@@ -191,9 +191,14 @@ async function onAdvanceClick() {
       showAdvanceDialog.value = true
     } else if (check.currentPhase === 'Voting') {
       const n = check.nonVotingParticipantCount ?? 0
-      advanceDialogMessage.value = n > 0
-        ? `${n} participant${n === 1 ? '' : 's'} haven't voted yet. Advance to Discussing anyway?`
-        : `All participants have voted. Advance to Discussing?`
+      const notDone = totalCount.value - readyCount.value
+      if (n > 0) {
+        advanceDialogMessage.value = `${n} participant${n === 1 ? '' : 's'} haven't voted yet. Advance to Discussing anyway?`
+      } else if (notDone > 0) {
+        advanceDialogMessage.value = `All participants have voted, but ${notDone} of ${totalCount.value} haven't marked as done. Advance to Discussing anyway?`
+      } else {
+        advanceDialogMessage.value = `All participants have voted and are done. Advance to Discussing?`
+      }
       advanceError.value = ''
       showAdvanceDialog.value = true
     } else if (check.currentPhase === 'Discussing') {
