@@ -57,13 +57,15 @@ Two layouts exist. **Aggregate-grouped** (recommended for new aggregates) is use
 
 Single-aggregate services may use a **flat layout** with top-level folders (Entities/, Behaviors/, Events/, ValueObjects/) instead of grouping by aggregate.
 
-## EF Configuration: `{Service}.Persistence/EntityConfigurations/{AggregateName}Configuration.cs`
+## EF Configuration: `{Service}.Persistence/EntityConfigurations/{AggregateName}EntityConfiguration.cs`
 
 ```csharp
-internal sealed class {AggregateName}Configuration : EntityConfiguration<{AggregateName}>
+internal class {AggregateName}EntityConfiguration : AuditedEntityConfiguration<{AggregateName}>
 {
     // Override if needed:
-    // protected override bool HasGeneratedId => false;  // for natural keys
+    // protected override bool HasGeneratedId => false;        // for natural keys
+    // protected override string DefaultDateSql => "NOW()..."; // for PostgreSQL
+    // protected override bool HasConcurrencyToken => true;    // for optimistic concurrency
 
     public override void Configure(EntityTypeBuilder<{AggregateName}> builder)
     {
@@ -73,9 +75,6 @@ internal sealed class {AggregateName}Configuration : EntityConfiguration<{Aggreg
         builder.OwnsOne(e => e.{ValueObject}, b => { b.Property(v => v.Value).HasMaxLength(MaxLength.C256); });
     }
 }
-```
-
-**Note:** Composite-key lookup entities (e.g., PhaseAction) may implement `IEntityTypeConfiguration<T>` directly instead of inheriting `EntityConfiguration<T>`.
 ```
 
 ## Repository: `{Service}.Persistence/Repositories/{AggregateName}Repository.cs`

@@ -57,29 +57,34 @@ The feature name determines: type names, API module file, store name, view name,
 
 ## Page Shell Pattern
 
-**Prerequisite:** `PageLayout` and `PageToolbar` must exist in `components/layout/` before creating views. These are defined by the `vue-component-architecture` skill — create them first if missing.
-
 Every view wraps content in the standard PageLayout + PageToolbar composition:
 
 ```vue
 <template>
-  <PageLayout :loading="store.loading" :empty="!store.data">
-    <template #header>
-      <PageToolbar>
-        <template #title>Feature Name</template>
-        <template #actions>
-          <!-- toolbar actions here -->
-        </template>
-      </PageToolbar>
+  <PageLayout title="FeatureName">
+    <template #toolbar>
+      <PageToolbar
+        :sprints="store.closedSprints"
+        :selected-sprint-id="store.selectedSprintId"
+        @update:selected-sprint-id="onSprintChange"
+      />
     </template>
 
-    <!-- Content (shown when not loading and not empty) -->
-    <FeatureComponent :data="store.data" />
+    <!-- Loading state -->
+    <div v-if="store.initializing" class="flex items-center justify-center h-64">
+      <div class="text-text-muted text-sm">Loading...</div>
+    </div>
+
+    <!-- Empty state -->
+    <EmptyState v-else-if="!store.data" title="No data yet" description="..." />
+
+    <!-- Content -->
+    <template v-else>
+      <!-- Feature content here -->
+    </template>
   </PageLayout>
 </template>
 ```
-
-`PageLayout` accepts `loading` and `empty` boolean props and renders named slots: `header` (above content), `loading` (override loading UI), `empty` (override empty UI), and the default slot for content. `PageToolbar` is slot-based only — `title`, `filters`, and `actions` slots; no props.
 
 Views follow the three-state template: initializing → empty → content.
 
@@ -90,10 +95,8 @@ client/src/
 ├── types/index.ts                          # Add interfaces here
 ├── api/{resource}.ts                       # API module
 ├── stores/{name}Store.ts                   # Pinia store
-├── components/
-│   ├── layout/                             # PageLayout, PageToolbar (shared shell)
-│   └── {featureName}/                      # Feature-specific components
-├── views/{FeatureName}View.vue             # Page view (L0)
+├── components/{FeatureName}*.vue           # Feature components
+├── views/{FeatureName}View.vue             # Page view
 └── router.ts                               # Route entry
 ```
 

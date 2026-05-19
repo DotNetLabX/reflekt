@@ -1,11 +1,13 @@
 # Plan Template
 
-Use this template for every `docs/plans/{Feature}/plan.md` file. This template extends the plan format in `agents-workflow.md`. The Skill Mapping section and anti-pattern rules are additions — all other sections follow the existing format.
+Use this template for every `docs/specs/{slug}/delivery/plan.md` file. This template extends the plan format in `agents-workflow.md`. The Skill Mapping section and anti-pattern rules are additions — all other sections follow the existing format.
 
 ---
 
 ```markdown
 # {Feature Name}
+
+**Feature Spec:** `docs/specs/{slug}/definition/spec.md` | None
 
 ## Context
 What problem this solves. Which service(s) impacted and why.
@@ -24,7 +26,7 @@ In scope. Explicitly out of scope.
 **Disposition rules:**
 - **Follow** — apply the skill pattern. Adapt implementation specifics (e.g., SQLite instead of SQL Server) but never skip the pattern.
 - **Build** — skill references infrastructure that doesn't exist locally. Build it first, then follow the skill.
-- **None** — no skill covers this step. Full inline detail required. Log the gap.
+- **None** — no skill covers this step. Describe what to accomplish + acceptance criteria. Do NOT write method-body logic flows. The developer decides internal decomposition. Log the gap.
 - **Never "Adapt"** — if you're about to write "adapted for this project's needs," you're skipping the skill. Either Follow (the pattern applies, specifics may differ) or Build (the infrastructure is missing).
 
 **Anti-patterns (if any of these appear, revise before proceeding):**
@@ -48,14 +50,19 @@ For each step:
 - Feature-specific inputs only (entity names, property types, route paths)
 - Dependencies on previous steps
 
+**Follow step content budget:** When disposition is Follow, include ONLY what the skill can't know — feature-specific inputs. The developer invokes the skill via the Skill tool to get structural patterns. Over-specifying Follow steps causes the developer to skip skill invocation (all info is already inline). Target: 5-15 lines. A Follow step exceeding 30 lines is over-specified — split feature-specific inputs from structural patterns and delete the structural patterns.
+
 ## Cross-Service Changes (if applicable)
 gRPC contract changes, integration events, consumers.
 
 ## Migration Notes
-EF Core migration commands. Seed data if needed.
+Migration commands per persistence convention. Seed data if needed.
 
 ## Testing Strategy
 Key scenarios to test.
+
+## KB Impact
+Which `docs/kb/` entries need updating or creating after this feature? (None if purely frontend/infra)
 
 ## Open Questions
 Unresolved decisions needing input.

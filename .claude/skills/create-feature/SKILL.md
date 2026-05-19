@@ -43,21 +43,8 @@ Everything co-located in the API project:
 ```
 {Svc}.API/Features/{Domain}/{FeatureName}/
 ├── {FeatureName}Endpoint.cs           (endpoint + handler logic)
-├── {FeatureName}Command.cs            (command + response record + validator, co-located)
+├── {FeatureName}Command.cs            (command + validator, co-located)
 ```
-
-### Query-Only / No Request DTO
-
-Some endpoints don't have a request body (GET queries, auth flows, DELETE with route-only params). These only need the endpoint file:
-
-```
-{Svc}.API/Features/{Domain}/{FeatureName}/
-└── {FeatureName}Endpoint.cs           (endpoint + response record if any)
-```
-
-- No command file, no validator
-- Response record (if any) lives in the endpoint file
-- For DELETE with route params: extend `EndpointWithoutRequest` or `Endpoint<TRequest>` binding from route only — no body expected
 
 ### Carter + MediatR
 
@@ -67,7 +54,7 @@ Endpoint in API project, handler in Application project:
 └── {FeatureName}Endpoint.cs           (endpoint, dispatches to MediatR)
 
 {Svc}.Application/Features/{Domain}/{FeatureName}/
-├── {FeatureName}Command.cs            (command + response record + validator)
+├── {FeatureName}Command.cs            (command + validator)
 └── {FeatureName}CommandHandler.cs     (MediatR handler)
 ```
 
@@ -79,7 +66,7 @@ Endpoint flat in API project, handler in Application project:
 └── {FeatureName}Endpoint.cs           (endpoint, dispatches to MediatR)
 
 {Svc}.Application/Features/{FeatureName}/
-├── {FeatureName}Command.cs            (command + response record + validator)
+├── {FeatureName}Command.cs            (command + validator)
 └── {FeatureName}CommandHandler.cs     (MediatR handler)
 ```
 

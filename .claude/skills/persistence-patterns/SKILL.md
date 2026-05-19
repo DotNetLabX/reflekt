@@ -1,7 +1,7 @@
 ---
 name: persistence-patterns
 description: EF Core persistence — repository pattern, entity configurations, DbContext setup, seed data, interceptors. Loaded when working with database entities or persistence infrastructure.
-user-invocable: false
+user-invocable: true
 ---
 
 # Persistence Patterns (EF Core)
@@ -72,15 +72,18 @@ await repository.FindByIdOrThrowAsync(id);
 - `HasKey(e => e.Id)` + auto-calls `builder.SeedFromJsonFile()`
 - `HasGeneratedId` virtual (default `true`) — override to `false` for natural keys
 
-### Usage
+### Audited: AuditedEntityConfiguration<T>
+**File:** `src/BuildingBlocks/Blocks.EntityFrameworkCore/EntityConfigurations/AuditedEntityConfiguration.cs`
 
-One override point:
-- `HasGeneratedId` — default `true` (`ValueGeneratedOnAdd()`), override to `false` for natural keys
+Extends `EntityConfiguration<T>`. Three opt-in override points:
+- `HasGeneratedId` — `ValueGeneratedOnAdd()` vs `ValueGeneratedNever()`
+- `DefaultDateSql` — default `"GETUTCDATE()"`, override `"NOW() AT TIME ZONE 'UTC'"` for PostgreSQL. **Requires** `Microsoft.EntityFrameworkCore.Relational` package — `HasDefaultValueSql()` is not in the base EF Core package.
+- `HasConcurrencyToken` — default `false`, set `true` for opt-in `RowVersion` shadow property
 
 ```csharp
-internal sealed class {Entity}Configuration : EntityConfiguration<{Entity}>
+public class {Entity}EntityConfiguration : AuditedEntityConfiguration<{Entity}>
 {
-    protected override bool HasGeneratedId => false;
+    protected override bool HasConcurrencyToken => true;
 
     public override void Configure(EntityTypeBuilder<{Entity}> builder)
     {
@@ -89,12 +92,6 @@ internal sealed class {Entity}Configuration : EntityConfiguration<{Entity}>
     }
 }
 ```
-
-**File naming:** `{Entity}Configuration.cs` (not `{Entity}EntityConfiguration.cs`).
-
-**SQLite note:** `HasDefaultValueSql()` requires `Microsoft.EntityFrameworkCore.Relational` — SQLite services may need to handle date defaults differently.
-
-**Child entities** (not aggregate roots) do not get their own repositories — they are loaded via the parent aggregate's repository with `Include()`.
 
 ### Value Object Mapping
 Two approaches:

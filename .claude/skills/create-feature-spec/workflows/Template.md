@@ -1,16 +1,21 @@
 # Feature Spec Template
 
-Use this template for every `docs/features/{Feature}/spec.md` file. Omit sections marked "if applicable" when they don't apply. Do not add sections beyond this template.
+Use this template for every `docs/specs/{slug}/definition/spec.md` file (or `epic.md` for epics, `bug.md` for bugs). Omit sections marked "if applicable" when they don't apply. Do not add sections beyond this template.
 
 ---
 
 ```markdown
 # {Feature Name}
 
-**Traces to:** `docs/specs/v1.md` §{section numbers}
+**Traces to:** `docs/product/v1.md` §{section numbers}
 **Source:** Scratch | Jira {TICKET-KEY}
 **Dependencies:** {features or aggregates that must exist first, or "None"}
-**Status:** Draft | Ready
+**Status:** Draft | Ready | Done
+**Plan:** `docs/specs/{slug}/delivery/plan.md` | None
+
+---
+
+> **Revision (YYYY-MM-DD) — Pending:** One-paragraph summary: what changed, why, what's already implemented, and where the implementation delta is. Include enough detail that the architect can plan only the delta — not re-plan the entire feature. Status is `Pending` (not yet implemented) or `Implemented` (done). Stack multiple revisions in reverse chronological order (newest first). The architect plans only `Pending` revisions; mark `Implemented` when the pipeline completes. *Only add when revising a spec that already reached `Status: Ready`. Omit during initial creation.*
 
 ---
 
@@ -29,7 +34,7 @@ For each entity, specify:
 
 Do not include: persistence details (cascade behavior, collation, index types, migration names), constructor visibility, base class names, or interface names. Those belong in the plan.
 
-Reference `docs/specs/v1.md` §4 for the canonical entity definitions.
+Reference `docs/product/v1.md` §4 for the canonical entity definitions.
 
 ## User Flows
 
@@ -50,7 +55,7 @@ Flow 1: {Name}
 
 For each endpoint, specify error responses and their conditions.
 
-## SignalR Events
+## Real-time Events
 
 *Omit section if this feature produces no real-time events.*
 

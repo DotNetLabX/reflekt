@@ -11,6 +11,7 @@ Class extending `Endpoint<TRequest, TResponse>`. Handler logic lives directly in
 Create `{FeatureName}Endpoint.cs` in `Features/{Domain}/{FeatureName}/`:
 
 ```csharp
+[Authorize(Roles = Role.{RequiredRole})]
 [Http{Method}("{route}")]
 [Tags("{Domain}")]
 public class {FeatureName}Endpoint({Dependencies})
@@ -41,16 +42,6 @@ public class {FeatureName}Endpoint({Dependencies})
     }
 }
 ```
-
-## Authorization
-
-**Check service CLAUDE.md for auth approach.** Common variants:
-
-- **MVC attributes:** `[Authorize(Roles = Role.{RequiredRole})]` on the class
-- **FastEndpoints Configure():** `Roles(...)` or `Policies(...)` inside `Configure()` override
-- **Policy-based:** `[Authorize(Policy = "...")]` with custom policies
-
-FastEndpoints projects that define their own attributes in the `FastEndpoints` namespace will conflict with `Microsoft.AspNetCore.Mvc` attributes — use `Configure()` or the framework's own attributes in that case.
 
 ## Registration
 
