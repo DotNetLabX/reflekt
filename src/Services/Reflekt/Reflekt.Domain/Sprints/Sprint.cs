@@ -21,4 +21,8 @@ public sealed partial class Sprint : AggregateRoot
     public ColumnColor Column1Color { get; private set; } = ColumnColor.Create("green");
     public ColumnColor Column2Color { get; private set; } = ColumnColor.Create("red");
     public ColumnColor Column3Color { get; private set; } = ColumnColor.Create("amber");
+
+    public required int WritingTimerDefault { get; init; }
+    public required int VotingTimerDefault { get; init; }
+    public required int DiscussingTimerDefault { get; init; }
 }

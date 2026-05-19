@@ -22,6 +22,7 @@
 
     <div v-else class="w-full flex-1 min-h-0 px-4 sm:px-8 lg:px-12 py-6 flex flex-col gap-5">
       <RetroPhaseHeader
+        :sprint-id="sprintId"
         :sprint-name="sprintName || `Sprint #${sprintId}`"
         :current-phase="currentPhase"
         :is-scrum-master="isScrumMaster"
@@ -38,6 +39,9 @@
         :remaining-budget="voteStore.remainingBudget"
         :votes-per-participant="voteStore.votesPerParticipant"
         :show-votes-badge="showVotesBadge"
+        :writing-timer-default="sprintStore.currentSummary?.writingTimerDefault ?? 5"
+        :voting-timer-default="sprintStore.currentSummary?.votingTimerDefault ?? 3"
+        :discussing-timer-default="sprintStore.currentSummary?.discussingTimerDefault ?? 10"
         @advance-phase="onAdvanceClick"
         @close-sprint="onCloseClick"
         @toggle-ready="onToggleReady"

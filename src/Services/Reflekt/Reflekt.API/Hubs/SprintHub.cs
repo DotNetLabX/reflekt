@@ -3,11 +3,16 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Reflekt.API.Auth;
+using Reflekt.API.Features.Sprints.Timer;
+using Reflekt.Persistence.Repositories;
 
 namespace Reflekt.API.Hubs;
 
 [Authorize(AuthenticationSchemes = GuestTokenDefaults.AuthenticationScheme)]
-public class SprintHub(ILogger<SprintHub> logger) : Hub
+public class SprintHub(
+    ILogger<SprintHub> logger,
+    TimerService timerService,
+    IServiceScopeFactory scopeFactory) : Hub
 {
     // sprintId -> participantId -> displayName (ready participants)
     private static readonly ConcurrentDictionary<int, ConcurrentDictionary<int, string>> ReadinessState = new();
@@ -47,6 +52,15 @@ public class SprintHub(ILogger<SprintHub> logger) : Hub
             readyParticipantIds = readyDict.Keys.ToList(),
             readyCount = readyDict.Count,
             totalCount,
+        });
+
+        // Send timer snapshot to joining client
+        var timerSnapshot = timerService.GetSnapshot(sprintId);
+        await Clients.Caller.SendAsync("TimerSnapshot", new
+        {
+            status = timerSnapshot.Status.ToString().ToLowerInvariant(),
+            remainingSeconds = timerSnapshot.RemainingSeconds,
+            endTimeUtc = timerSnapshot.EndTimeUtc,
         });
     }
 
@@ -94,6 +108,100 @@ public class SprintHub(ILogger<SprintHub> logger) : Hub
             totalCount,
         });
     }
+
+    public async Task StartTimer(int sprintId)
+    {
+        await RequireScrumMasterAsync(sprintId);
+        var sprint = await LoadTimedSprintAsync(sprintId);
+        var snapshot = timerService.Start(sprintId, sprint.GetTimerDefaultForPhase() * 60);
+        await BroadcastTimerUpdated(sprintId, snapshot);
+    }
+
+    public async Task PauseTimer(int sprintId)
+    {
+        await RequireScrumMasterAsync(sprintId);
+        await LoadTimedSprintAsync(sprintId);
+        var snapshot = timerService.Pause(sprintId);
+        await BroadcastTimerUpdated(sprintId, snapshot);
+    }
+
+    public async Task ResumeTimer(int sprintId)
+    {
+        await RequireScrumMasterAsync(sprintId);
+        await LoadTimedSprintAsync(sprintId);
+        var snapshot = timerService.Resume(sprintId);
+        await BroadcastTimerUpdated(sprintId, snapshot);
+    }
+
+    public async Task ResetTimer(int sprintId)
+    {
+        await RequireScrumMasterAsync(sprintId);
+        var sprint = await LoadTimedSprintAsync(sprintId);
+        var snapshot = timerService.Reset(sprintId, sprint.GetTimerDefaultForPhase() * 60);
+        await BroadcastTimerUpdated(sprintId, snapshot);
+    }
+
+    public async Task AddTime(int sprintId, int minutes)
+    {
+        if (minutes is not (1 or 2 or 5))
+            throw new HubException("Invalid minutes value. Allowed: 1, 2, 5.");
+        await RequireScrumMasterAsync(sprintId);
+        await LoadTimedSprintAsync(sprintId);
+        var snapshot = timerService.AddTime(sprintId, minutes);
+        await BroadcastTimerUpdated(sprintId, snapshot);
+    }
+
+    private async Task RequireScrumMasterAsync(int sprintId)
+    {
+        var claimSprintId = Context.User?.FindFirstValue("sprintId");
+        if (!int.TryParse(claimSprintId, out var parsedSprintId) || parsedSprintId != sprintId)
+            throw new HubException("Not authorized for this sprint.");
+
+        var participantIdClaim = Context.User?.FindFirstValue("participantId");
+        if (!int.TryParse(participantIdClaim, out var participantId))
+            throw new HubException("Missing participant claims.");
+
+        using var scope = scopeFactory.CreateScope();
+        var participantRepo = scope.ServiceProvider.GetRequiredService<ParticipantRepository>();
+        var sprintRepo = scope.ServiceProvider.GetRequiredService<SprintRepository>();
+        var teamRepo = scope.ServiceProvider.GetRequiredService<TeamRepository>();
+
+        var participant = await participantRepo.GetByIdAsync(participantId, Context.ConnectionAborted);
+        if (participant?.UserId is null)
+            throw new HubException("Only the Scrum Master can control the timer.");
+
+        var sprint = await sprintRepo.GetByIdAsync(sprintId, Context.ConnectionAborted);
+        if (sprint is null)
+            throw new HubException("Sprint not found.");
+
+        var team = await teamRepo.GetByIdAsync(sprint.TeamId, Context.ConnectionAborted);
+        if (team is null || team.OwnerId != participant.UserId.Value)
+            throw new HubException("Only the Scrum Master can control the timer.");
+    }
+
+    private async Task<Reflekt.Domain.Sprints.Sprint> LoadTimedSprintAsync(int sprintId)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var sprintRepo = scope.ServiceProvider.GetRequiredService<SprintRepository>();
+        var sprint = await sprintRepo.GetByIdAsync(sprintId, Context.ConnectionAborted)
+            ?? throw new HubException("Sprint not found.");
+
+        if (sprint.CurrentPhase is not (
+            Reflekt.Domain.Sprints.SprintPhase.Writing or
+            Reflekt.Domain.Sprints.SprintPhase.Voting or
+            Reflekt.Domain.Sprints.SprintPhase.Discussing))
+            throw new HubException($"Timer is not available in phase {sprint.CurrentPhase}.");
+
+        return sprint;
+    }
+
+    private Task BroadcastTimerUpdated(int sprintId, TimerSnapshot snapshot) =>
+        Clients.Group($"sprint:{sprintId}").SendAsync("TimerUpdated", new
+        {
+            status = snapshot.Status.ToString().ToLowerInvariant(),
+            remainingSeconds = snapshot.RemainingSeconds,
+            endTimeUtc = snapshot.EndTimeUtc,
+        });
 
     public static void ClearReadiness(int sprintId)
     {

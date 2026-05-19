@@ -43,6 +43,9 @@ public sealed class GetSprintSummaryEndpoint(SprintRepository sprintRepository, 
             sprint.Column2Name,
             sprint.Column2Color.Value,
             sprint.Column3Name,
-            sprint.Column3Color.Value), ct);
+            sprint.Column3Color.Value,
+            sprint.WritingTimerDefault,
+            sprint.VotingTimerDefault,
+            sprint.DiscussingTimerDefault), ct);
     }
 }

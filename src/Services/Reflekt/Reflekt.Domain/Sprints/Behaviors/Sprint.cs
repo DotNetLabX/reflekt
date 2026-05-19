@@ -2,6 +2,12 @@ namespace Reflekt.Domain.Sprints;
 
 public sealed partial class Sprint
 {
+    private const int WritingTimerMin = 1;
+    private const int WritingTimerMax = 60;
+    private const int DefaultWritingTimer = 5;
+    private const int DefaultVotingTimer = 3;
+    private const int DefaultDiscussingTimer = 10;
+
     public static Sprint Create(
         string name,
         int teamId,
@@ -11,10 +17,20 @@ public sealed partial class Sprint
         string? column2Name = null,
         string? column2Color = null,
         string? column3Name = null,
-        string? column3Color = null)
+        string? column3Color = null,
+        int? writingTimerDefault = null,
+        int? votingTimerDefault = null,
+        int? discussingTimerDefault = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentOutOfRangeException.ThrowIfLessThan(votesPerParticipant, 1);
+
+        if (writingTimerDefault.HasValue)
+            ValidateTimerRange(writingTimerDefault.Value, nameof(writingTimerDefault));
+        if (votingTimerDefault.HasValue)
+            ValidateTimerRange(votingTimerDefault.Value, nameof(votingTimerDefault));
+        if (discussingTimerDefault.HasValue)
+            ValidateTimerRange(discussingTimerDefault.Value, nameof(discussingTimerDefault));
 
         var sprint = new Sprint
         {
@@ -22,6 +38,9 @@ public sealed partial class Sprint
             TeamId = teamId,
             VotesPerParticipant = votesPerParticipant,
             CreatedAt = DateTime.UtcNow,
+            WritingTimerDefault = writingTimerDefault ?? DefaultWritingTimer,
+            VotingTimerDefault = votingTimerDefault ?? DefaultVotingTimer,
+            DiscussingTimerDefault = discussingTimerDefault ?? DefaultDiscussingTimer,
         };
         sprint.State = SprintState.Draft;
         sprint.CurrentPhase = SprintPhase.Writing;
@@ -35,6 +54,21 @@ public sealed partial class Sprint
 
         sprint.AddDomainEvent(new Events.SprintCreatedEvent(sprint));
         return sprint;
+    }
+
+    public int GetTimerDefaultForPhase() => CurrentPhase switch
+    {
+        SprintPhase.Writing => WritingTimerDefault,
+        SprintPhase.Voting => VotingTimerDefault,
+        SprintPhase.Discussing => DiscussingTimerDefault,
+        _ => throw new InvalidOperationException($"Phase {CurrentPhase} does not have a timer default."),
+    };
+
+    private static void ValidateTimerRange(int value, string paramName)
+    {
+        if (value < WritingTimerMin || value > WritingTimerMax)
+            throw new ArgumentOutOfRangeException(paramName, value,
+                $"Timer default must be between {WritingTimerMin} and {WritingTimerMax} minutes.");
     }
 
     public void UpdateColumnConfig(

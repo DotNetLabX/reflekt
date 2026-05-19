@@ -15,6 +15,9 @@ interface Sprint {
   column2Color: string
   column3Name: string
   column3Color: string
+  writingTimerDefault: number
+  votingTimerDefault: number
+  discussingTimerDefault: number
 }
 
 interface SprintSummary {
@@ -32,6 +35,9 @@ interface SprintSummary {
   column2Color: string
   column3Name: string
   column3Color: string
+  writingTimerDefault: number
+  votingTimerDefault: number
+  discussingTimerDefault: number
 }
 
 export interface AdvancePhaseCheckResponse {
@@ -60,6 +66,9 @@ interface CreateSprintPayload {
   column2Color?: string
   column3Name?: string
   column3Color?: string
+  writingTimerDefault?: number
+  votingTimerDefault?: number
+  discussingTimerDefault?: number
 }
 
 export const useSprintStore = defineStore('sprint', {

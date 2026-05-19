@@ -54,6 +54,43 @@
       </div>
     </div>
 
+    <!-- Timer defaults -->
+    <div class="flex flex-col gap-2 mt-1">
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Timer Defaults (minutes)</p>
+      <div class="flex gap-2">
+        <div class="flex flex-col gap-1 flex-1">
+          <label class="text-xs text-gray-600">Writing</label>
+          <input
+            v-model.number="writingTimerDefault"
+            type="number"
+            min="1"
+            max="60"
+            class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div class="flex flex-col gap-1 flex-1">
+          <label class="text-xs text-gray-600">Voting</label>
+          <input
+            v-model.number="votingTimerDefault"
+            type="number"
+            min="1"
+            max="60"
+            class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div class="flex flex-col gap-1 flex-1">
+          <label class="text-xs text-gray-600">Discussing</label>
+          <input
+            v-model.number="discussingTimerDefault"
+            type="number"
+            min="1"
+            max="60"
+            class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+    </div>
+
     <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
     <button
       class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50"
@@ -90,6 +127,9 @@ const emit = defineEmits<{
     column2Color: string
     column3Name: string
     column3Color: string
+    writingTimerDefault: number
+    votingTimerDefault: number
+    discussingTimerDefault: number
   }]
 }>()
 
@@ -98,6 +138,9 @@ const sprintName = ref('')
 const votesPerParticipant = ref<number | undefined>(undefined)
 const error = ref('')
 const busy = ref(false)
+const writingTimerDefault = ref(5)
+const votingTimerDefault = ref(3)
+const discussingTimerDefault = ref(10)
 
 const col1 = ref({ name: DEFAULT_COLUMNS[0]!.name, color: DEFAULT_COLUMNS[0]!.color as string })
 const col2 = ref({ name: DEFAULT_COLUMNS[1]!.name, color: DEFAULT_COLUMNS[1]!.color as string })
@@ -116,6 +159,14 @@ onMounted(() => {
   }
 })
 
+function validateTimerDefault(value: number, label: string): boolean {
+  if (!Number.isInteger(value) || value < 1 || value > 60) {
+    error.value = `${label} timer must be between 1 and 60 minutes.`
+    return false
+  }
+  return true
+}
+
 async function handleCreate() {
   error.value = ''
   const name = sprintName.value.trim()
@@ -123,6 +174,9 @@ async function handleCreate() {
   if (!col1.value.name.trim()) { error.value = 'Column 1 name is required.'; return }
   if (!col2.value.name.trim()) { error.value = 'Column 2 name is required.'; return }
   if (!col3.value.name.trim()) { error.value = 'Column 3 name is required.'; return }
+  if (!validateTimerDefault(writingTimerDefault.value, 'Writing')) return
+  if (!validateTimerDefault(votingTimerDefault.value, 'Voting')) return
+  if (!validateTimerDefault(discussingTimerDefault.value, 'Discussing')) return
   busy.value = true
   try {
     emit('create', {
@@ -134,6 +188,9 @@ async function handleCreate() {
       column2Color: col2.value.color,
       column3Name: col3.value.name.trim(),
       column3Color: col3.value.color,
+      writingTimerDefault: writingTimerDefault.value,
+      votingTimerDefault: votingTimerDefault.value,
+      discussingTimerDefault: discussingTimerDefault.value,
     })
     sprintName.value = ''
     votesPerParticipant.value = undefined

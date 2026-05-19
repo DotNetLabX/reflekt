@@ -41,5 +41,9 @@ internal sealed class SprintConfiguration : EntityConfiguration<Sprint>
             .HasMaxLength(10)
             .HasDefaultValue(ColumnColor.Create("amber"))
             .HasConversion(c => c.Value, s => ColumnColor.Create(s));
+
+        builder.Property(s => s.WritingTimerDefault).IsRequired().HasDefaultValue(5);
+        builder.Property(s => s.VotingTimerDefault).IsRequired().HasDefaultValue(3);
+        builder.Property(s => s.DiscussingTimerDefault).IsRequired().HasDefaultValue(10);
     }
 }

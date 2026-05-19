@@ -6,6 +6,8 @@ import { useVoteStore } from '../stores/vote'
 import { useSprintStore } from '../stores/sprint'
 import { useCardGroupStore } from '../stores/cardGroup'
 import { useReadinessStore } from '../stores/readiness'
+import { useTimerStore } from '../stores/timer'
+import type { TimerPayload } from './useTimer'
 
 let connection: signalR.HubConnection | null = null
 
@@ -21,6 +23,7 @@ export function useSprintHub(onKicked?: () => void) {
   const sprintStore = useSprintStore()
   const cardGroupStore = useCardGroupStore()
   const readinessStore = useReadinessStore()
+  const timerStore = useTimerStore()
 
   function build(sprintId: number) {
     connection = new signalR.HubConnectionBuilder()
@@ -187,6 +190,14 @@ export function useSprintHub(onKicked?: () => void) {
         readinessStore.setFromSnapshot(payload)
       },
     )
+
+    connection.on('TimerUpdated', (payload: TimerPayload) => {
+      timerStore.applyTimerUpdate(payload)
+    })
+
+    connection.on('TimerSnapshot', (payload: TimerPayload) => {
+      timerStore.applyTimerSnapshot(payload)
+    })
   }
 
   async function connect(sprintId: number) {

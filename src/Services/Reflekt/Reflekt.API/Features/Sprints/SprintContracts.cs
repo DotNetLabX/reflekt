@@ -14,7 +14,10 @@ public sealed record SprintResponse(
     string Column2Name,
     string Column2Color,
     string Column3Name,
-    string Column3Color);
+    string Column3Color,
+    int WritingTimerDefault,
+    int VotingTimerDefault,
+    int DiscussingTimerDefault);
 
 public sealed record SprintSummaryParticipant(string DisplayName);
 
@@ -32,7 +35,10 @@ public sealed record SprintSummaryResponse(
     string Column2Name,
     string Column2Color,
     string Column3Name,
-    string Column3Color);
+    string Column3Color,
+    int WritingTimerDefault,
+    int VotingTimerDefault,
+    int DiscussingTimerDefault);
 
 public sealed record SprintRouteRequest(int TeamId, int SprintId);
 

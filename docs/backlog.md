@@ -216,13 +216,13 @@ Participants choose: Google sign-in (persistent identity, cross-device rejoin) o
 3 configurable reflection columns + 1 fixed Action Items column. SM sets column names at sprint creation (max 30 chars, defaults: "Went Well" / "Didn't Go Well" / "Start Doing"). `ColumnType` enum migrates from semantic (`WentWell`, `DidntGoWell`) to positional (`Column1`, `Column2`, `Column3`). Per-sprint, not per-team.
 
 ### 28. Inline Phase Controls
-**Status: Spec Ready** | **Feature Spec:** `docs/features/InlinePhaseControls/spec.md`
+**Status: Done** | **Feature Spec:** `docs/features/InlinePhaseControls/spec.md` | **Plan:** `docs/plans/InlinePhaseControls/plan.md`
 **Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.5
 **Dependencies:** None
 Move phase advancement from the sprint manager page into the sprint board top bar. All participants see the current phase; only SM sees the "Next: {phase}" button. Close Sprint is a separate action (state transition, not phase advance), shown only during Reporting. Existing advance gates preserved.
 
 ### 29. Timer per Phase
-**Status: Open**
+**Status: Done** | **Feature Spec:** `docs/features/TimerPerPhase/spec.md` | **Plan:** `docs/specs/F29-TimerPerPhase/delivery/plan.md`
 **Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.6
 **Dependencies:** #28
 Optional countdown timer for Writing (5min default), Voting (3min), Discussing (10min). No timer for Grouping or Reporting. SM controls: start, pause, reset, +time. Timer state is ephemeral (SignalR group state, not persisted). Default durations stored as JSON on Sprint. Timer expiry alerts but does not auto-advance.

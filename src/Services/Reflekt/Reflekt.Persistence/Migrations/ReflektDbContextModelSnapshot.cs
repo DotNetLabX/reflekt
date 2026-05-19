@@ -358,6 +358,11 @@ namespace Reflekt.Persistence.Migrations
                     b.Property<int>("CurrentPhase")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("DiscussingTimerDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(10);
+
                     b.Property<int?>("FocusedGroupId")
                         .HasColumnType("INTEGER");
 
@@ -376,6 +381,16 @@ namespace Reflekt.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(3);
+
+                    b.Property<int>("VotingTimerDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(3);
+
+                    b.Property<int>("WritingTimerDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(5);
 
                     b.HasKey("Id");
 

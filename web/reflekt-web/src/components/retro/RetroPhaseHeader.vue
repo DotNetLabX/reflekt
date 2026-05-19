@@ -1,9 +1,20 @@
 <template>
   <div class="flex flex-col gap-3 bg-surface rounded-[--radius-md] shadow-card px-4 py-3">
-    <!-- Row 1: Sprint name | badges + action button -->
+    <!-- Row 1: Sprint name | timer + badges + action button -->
     <div class="flex items-center justify-between gap-3">
       <h1 class="text-xl font-bold text-gray-800 truncate">{{ sprintName }}</h1>
       <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- Timer display (Writing/Voting/Discussing phases only) -->
+        <TimerDisplay
+          v-if="isTimedPhase"
+          :sprint-id="sprintId"
+          :is-scrum-master="isScrumMaster"
+          :current-phase="currentPhase"
+          :writing-timer-default="writingTimerDefault"
+          :voting-timer-default="votingTimerDefault"
+          :discussing-timer-default="discussingTimerDefault"
+        />
+
         <!-- Readiness badge (Writing/Voting, >1 participant) -->
         <div
           v-if="showReadiness"
@@ -62,12 +73,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import BaseBadge from '../ui/BaseBadge.vue'
 import PhaseIndicator from '../PhaseIndicator.vue'
 import RetroParticipantList from './RetroParticipantList.vue'
+import TimerDisplay from './TimerDisplay.vue'
 
-defineProps<{
+const props = defineProps<{
+  sprintId: number
   sprintName: string
   currentPhase: string
   isScrumMaster: boolean
@@ -84,6 +97,9 @@ defineProps<{
   remainingBudget: number
   votesPerParticipant: number
   showVotesBadge: boolean
+  writingTimerDefault: number
+  votingTimerDefault: number
+  discussingTimerDefault: number
 }>()
 
 defineEmits<{
@@ -93,4 +109,10 @@ defineEmits<{
 }>()
 
 const showReadinessTooltip = ref(false)
+
+const isTimedPhase = computed(() =>
+  props.currentPhase === 'Writing' ||
+  props.currentPhase === 'Voting' ||
+  props.currentPhase === 'Discussing',
+)
 </script>

@@ -1,6 +1,8 @@
 using FastEndpoints;
+using Microsoft.AspNetCore.SignalR;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
+using Reflekt.API.Features.Sprints.Timer;
 using Reflekt.API.Features.Teams;
 using Reflekt.API.Hubs;
 using Reflekt.API.OpenGraph;
@@ -28,6 +30,7 @@ public static class DependencyInjection
         services.AddReflektAuthorization();
         services.AddReflektOpenGraph();
         services.AddSingleton<PhaseActionCache>();
+        services.AddSingleton<TimerService>();
 
         return services;
     }
@@ -44,6 +47,19 @@ public static class DependencyInjection
 
         app.MapFastEndpoints();
         app.MapHub<SprintHub>("/hubs/sprint");
+
+        // Wire timer expiry callback: on expiry, broadcast TimerUpdated(expired) to sprint group
+        var timerService = app.Services.GetRequiredService<TimerService>();
+        var hubContext = app.Services.GetRequiredService<IHubContext<SprintHub>>();
+        timerService.RegisterExpiryCallback(async sprintId =>
+        {
+            await hubContext.Clients.Group($"sprint:{sprintId}").SendAsync("TimerUpdated", new
+            {
+                status = "expired",
+                remainingSeconds = 0,
+                endTimeUtc = (DateTime?)null,
+            });
+        });
 
         if (app.Environment.IsDevelopment())
         {

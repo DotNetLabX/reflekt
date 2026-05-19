@@ -12,7 +12,10 @@ public sealed record CreateSprintCommand(
     string? Column2Name,
     string? Column2Color,
     string? Column3Name,
-    string? Column3Color);
+    string? Column3Color,
+    int? WritingTimerDefault,
+    int? VotingTimerDefault,
+    int? DiscussingTimerDefault);
 
 public sealed class CreateSprintCommandValidator : Validator<CreateSprintCommand>
 {
@@ -26,5 +29,8 @@ public sealed class CreateSprintCommandValidator : Validator<CreateSprintCommand
         RuleFor(x => x.Column1Color).Must(v => v is null || ColumnColor.IsValid(v)).WithMessage("Column1Color must be one of the allowed palette values.");
         RuleFor(x => x.Column2Color).Must(v => v is null || ColumnColor.IsValid(v)).WithMessage("Column2Color must be one of the allowed palette values.");
         RuleFor(x => x.Column3Color).Must(v => v is null || ColumnColor.IsValid(v)).WithMessage("Column3Color must be one of the allowed palette values.");
+        RuleFor(x => x.WritingTimerDefault).InclusiveBetween(1, 60).When(x => x.WritingTimerDefault.HasValue);
+        RuleFor(x => x.VotingTimerDefault).InclusiveBetween(1, 60).When(x => x.VotingTimerDefault.HasValue);
+        RuleFor(x => x.DiscussingTimerDefault).InclusiveBetween(1, 60).When(x => x.DiscussingTimerDefault.HasValue);
     }
 }

@@ -54,7 +54,10 @@ public sealed class CreateSprintEndpoint(TeamRepository teamRepository, SprintRe
             command.VotesPerParticipant ?? 3,
             col1Name, col1Color,
             col2Name, col2Color,
-            col3Name, col3Color);
+            col3Name, col3Color,
+            command.WritingTimerDefault,
+            command.VotingTimerDefault,
+            command.DiscussingTimerDefault);
 
         await sprintRepository.AddAsync(sprint, ct);
         await sprintRepository.SaveChangesAsync(ct);
