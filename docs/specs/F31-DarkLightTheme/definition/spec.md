@@ -4,7 +4,7 @@
 **Source:** Scratch — user feedback on visual polish
 **Dependencies:** None
 **Status:** Ready
-**Plan:** `docs/specs/F31-DarkLightTheme/delivery/plan.md`
+**Plan:** [`docs/specs/F31-DarkLightTheme/delivery/plan.md`](../delivery/plan.md)
 
 ---
 

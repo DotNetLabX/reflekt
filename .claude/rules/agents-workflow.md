@@ -78,7 +78,11 @@ Human → PO (shape feature → write spec)
           ↓                     ↓ findings
      Status: Ready         PO fixes gaps → Status: Ready
                     ↓
-Human → architect (plan)
+Human → architect (analyze — Phase 1)
+                    ↓
+              questions checkpoint (team lead triages)
+                    ↓
+         architect (write plan — Phase 2)
                     ↓
          architect offers: self-review or critic?
           ↓ self                ↓ critic
