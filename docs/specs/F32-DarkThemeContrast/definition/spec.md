@@ -3,7 +3,7 @@
 **Traces to:** F31 spec BR6 (WCAG AA contrast compliance)
 **Source:** Scratch — user visual testing feedback after F31 shipped
 **Dependencies:** F31-DarkLightTheme (complete)
-**Status:** Ready
+**Status:** Done
 **Plan:** [`docs/specs/F32-DarkThemeContrast/delivery/plan.md`](../delivery/plan.md)
 
 ---

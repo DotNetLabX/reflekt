@@ -12,7 +12,7 @@
         </div>
         <span
           class="text-[10px] sm:text-xs font-medium transition-colors duration-300"
-          :class="index <= currentIndex ? 'text-primary-700' : 'text-text-muted'"
+          :class="index <= currentIndex ? 'text-badge-primary-text' : 'text-text-muted'"
         >
           <span class="hidden sm:inline">{{ phase.name }}</span>
           <span class="sm:hidden">{{ phase.short }}</span>

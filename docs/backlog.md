@@ -233,6 +233,18 @@ Optional countdown timer for Writing (5min default), Voting (3min), Discussing (
 **Dependencies:** None
 During Writing phase, show action items from the most recently closed sprint in the same team. SM marks each as Done / Carried Over / Dropped. Status persisted on the original card (`ReviewStatus` enum + `ReviewedInSprintId` FK). No card duplication. Collapsible section, SM-only interaction.
 
+### 31. Dark / Light Theme
+**Status: Done** | **Feature Spec:** `docs/specs/F31-DarkLightTheme/definition/spec.md` | **Plan:** `docs/specs/F31-DarkLightTheme/delivery/plan.md`
+**Epic:** Visual Polish | **Priority:** Must
+**Dependencies:** None
+Dark/light theme with shared token system, dark default, localStorage persistence, no-flash blocking script. Full token migration across all Vue files.
+
+### 32. Dark Theme Contrast & Visual Hierarchy
+**Status: Done** | **Feature Spec:** `docs/specs/F32-DarkThemeContrast/definition/spec.md` | **Plan:** `docs/specs/F32-DarkThemeContrast/delivery/plan.md`
+**Epic:** Visual Polish | **Priority:** Must
+**Dependencies:** #31
+Fixes WCAG AA contrast failures and visual hierarchy issues in dark mode: muted text token too dim, cards invisible against column backgrounds, "I'm done" button too subtle, phase stepper labels failing contrast, input field borders missing.
+
 ---
 
 ## How to resume in a new session

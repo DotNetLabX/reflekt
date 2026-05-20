@@ -7,7 +7,9 @@
           'px-3 py-1.5 text-sm font-medium rounded-[--radius-sm] border transition-colors cursor-pointer',
           isReady
             ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'
-            : 'bg-surface border-border text-text-secondary hover:bg-surface-raised',
+            : isDark
+              ? 'bg-emerald-600/80 border-transparent text-white hover:bg-emerald-700'
+              : 'bg-surface border-border text-text-secondary hover:bg-surface-raised',
         ]"
         @click="$emit('toggle-ready')"
       >
@@ -191,6 +193,7 @@ import { useParticipantStore } from '../../stores/participant'
 import { usePolicyStore } from '../../stores/policy'
 import { useSprintStore } from '../../stores/sprint'
 import { useToast } from '../../composables/useToast'
+import { useTheme } from '../../composables/useTheme'
 import { useRetroBoardActions } from '../../composables/useRetroBoardActions'
 import RetroCardItem from './RetroCardItem.vue'
 import RetroGroupItem from './RetroGroupItem.vue'
@@ -217,6 +220,7 @@ const policyStore = usePolicyStore()
 const sprintStore = useSprintStore()
 const previousActionsStore = usePreviousActionsStore()
 const { addToast } = useToast()
+const { isDark } = useTheme()
 
 const newCardText = ref({ Column1: '', Column2: '', Column3: '' })
 const newActionText = ref('')

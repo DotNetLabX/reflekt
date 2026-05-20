@@ -1,5 +1,5 @@
 <template>
-  <div class="relative rounded-[--radius-md] shadow-card p-3 flex flex-col gap-1 transition-shadow hover:shadow-card-hover" :class="cardBgClass">
+  <div class="relative rounded-[--radius-md] shadow-card border border-border p-3 flex flex-col gap-1 transition-shadow hover:shadow-card-hover" :class="cardBgClass">
     <!-- Blurred -->
     <div v-if="blurred" class="relative select-none">
       <p class="text-sm text-text-primary whitespace-pre-wrap blur-md" aria-hidden="true">Someone's note</p>
