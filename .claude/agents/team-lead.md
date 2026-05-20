@@ -94,9 +94,10 @@ Run these sequentially before any team launch. Apply defaults silently for most 
 5. **Spawn mode.** Ask the user to pick a spawn mode:
      ```
      Which spawn mode?
-     1. Background (recommended) — agents spawned in background, resumed via SendMessage. Survives /resume and /compact.
+     1. Background (recommended) — agents spawned in background, resumed via SendMessage.
      2. Foreground — agents run in foreground, blocking until complete. Simpler flow, results inline.
      ```
+     Neither mode survives `/resume`, `/compact`, or session restarts — agents are killed. Resume across sessions uses the communication log (see Resume section).
 6. **Commit strategy.** 2 commits (default). Inform: "2-commit strategy (plan + final)."
 
 The user can override any default by stating a preference in their launch message (e.g., "implement F26 on a new branch" or "fast mode").
@@ -153,16 +154,34 @@ When unsure, default to Standard.
 
    Start with the architect using a minimal prompt (see Message Templates below).
 
-   **Track agent IDs throughout the pipeline run.** When an agent completes, note the agent ID from the launch result. Use that ID for all subsequent `SendMessage` calls to that agent.
+   **Track agent IDs throughout the pipeline run.** When an agent completes, note the agent ID from the launch result. Use that ID for all subsequent `SendMessage` calls to that agent. **Never use the agent name** — name-based addressing has a known bug (silently fails for completed agents).
 
    Spawn the next agent type only when the current one completes and you've triaged its output. The pipeline is sequential — architect → developer → architect (done check) → reviewer.
 
-   When an agent completes (you get the background notification), read its output, triage any messages it produced, then decide:
-   - If the agent wrote questions.md → read it, check if it needs user input, handle accordingly. Then **resume the same agent** via `SendMessage(to: agentId)` with the answer.
-   - If the agent wrote implementation.md → **resume the next agent** via `SendMessage(to: agentId)` if it was already spawned, or spawn it for the first time if not.
-   - If the agent's output contains a decision that contradicts user requirements → ask the user before proceeding.
+   When an agent completes (you get the background notification):
+   1. **Relay the agent's full output to the user verbatim.** The user cannot see agent messages — you are their only window. Show the output first, before any routing or triage.
+   2. Triage any messages the agent produced, then decide:
+      - If the agent wrote questions.md → read it, check if it needs user input, handle accordingly. Then **resume the same agent** via `SendMessage(to: agentId)` with the answer.
+      - If the agent wrote implementation.md → **resume the next agent** via `SendMessage(to: agentId)` if it was already spawned, or spawn it for the first time if not.
+      - If the agent's output contains a decision that contradicts user requirements → ask the user before proceeding.
 
    **Key:** Use `SendMessage` to resume agents across ALL phases (same phase and cross-phase). Only use `Agent` to spawn the first instance of each agent type. Fall back to a fresh `Agent` spawn only if `SendMessage` returns "not addressable."
+
+### Spawn Mode: Foreground
+
+   Spawn agents using the `Agent` tool without `run_in_background` (default). The call blocks until the agent completes or times out. Results are returned inline.
+
+   **Agent IDs still matter.** Every `Agent` call returns an `agentId` in its result. Track it — you need it to resume the agent later. **Do not use the agent name** for `SendMessage` after a foreground agent completes — name-based addressing silently fails for completed foreground agents. Always use the agent ID.
+
+   **Resume via SendMessage works.** After a foreground agent completes (or times out), resume it with `SendMessage(to: agentId)`. The agent retains its full conversation history — same as background mode.
+
+   **Timeout recovery.** Foreground agents can stall on large tasks (stream idle timeout after ~10 min, or watchdog kill after 600s of no progress). When this happens:
+   1. Check what work was completed: `git diff --name-only`, check for output files.
+   2. Resume via `SendMessage(to: agentId)` with a message describing what's done and what's remaining.
+   3. If resume stalls again, spawn a fresh agent with explicit context: list completed steps, list remaining steps, reference the plan.
+   4. For tasks touching 20+ files, proactively split into multiple agent runs (e.g., "implement Steps 1-4" then "implement Steps 5-8").
+
+   **Pipeline flow:** Same sequential pipeline as Background mode. The only difference is blocking vs non-blocking execution.
 
 ### Spawn Mode: Persistent
 
@@ -175,7 +194,7 @@ When unsure, default to Standard.
    Fix cycles: `SendMessage` to developer, then back to reviewer — same agents, no respawn.
    When approved → team lead writes summary.md and updates cross-references directly. No architect wake-up needed.
 
-   **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. Use Background mode for unattended/overnight runs.
+   **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. No spawn mode survives these — use the communication log Resume flow to continue across sessions.
 
    **How to start:** Use `TeamCreate` directly — it spawns agents in-process. Do NOT pass tmux-related flags or attempt to use a tmux backend; in-process is the correct mode for persistent teams.
 
@@ -232,7 +251,25 @@ The user can request to review the plan by saying so in their launch message. Ot
 
 ## Phase Failure Handling
 
-When an agent reports failure (build error, tool failure, unexpected state) — not a review cycle rejection:
+### Agent Timeout / Stall Recovery
+
+When an agent times out (stream idle timeout) or stalls (watchdog kill after 600s of no progress):
+
+1. **Assess progress.** Run `git diff --name-only` and check for output files (implementation.md, questions.md). Map completed work to plan steps.
+2. **Resume first.** Use `SendMessage(to: agentId)` — the agent retains full context. Tell it what's done and what remains:
+   ```
+   You timed out. Completed: Steps 1-6 (list files). Remaining: Steps 7-8 (list files). Continue from Step 7.
+   ```
+3. **If resume stalls again**, the task is too large for one agent run. Spawn a fresh agent scoped to just the remaining steps:
+   ```
+   Implement Steps 7-8 of F31-DarkLightTheme. Plan: docs/specs/{slug}/delivery/plan.md.
+   Steps 1-6 are already done. Only do Steps 7-8: {brief description}. Files to modify: {list}.
+   ```
+4. **Proactive splitting.** For plans touching 20+ files, split the developer work upfront into 2-3 agent runs by step ranges. Don't wait for a timeout — prevent it.
+
+### Other Phase Failures
+
+When an agent reports failure (build error, tool failure, unexpected state) — not a review cycle rejection or timeout:
 
 Present the user with:
 ```

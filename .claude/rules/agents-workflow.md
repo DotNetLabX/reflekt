@@ -252,16 +252,18 @@ Written by team lead after reviewer approval: `docs/specs/{slug}/delivery/summar
 
 ## Questions File Format
 
-Written by developer when blocked. Architect answers inline.
+Written by any agent when blocked or needing clarification. The recipient answers inline. All questions go in one file — `docs/specs/{slug}/delivery/questions.md`.
+
+**Write first, message second.** Every agent must write its questions to the file before sending them as a message. The file is the log; the message is the notification.
 
 ```
 # {Feature Name} — Questions
 
 ## Q1: [Short title]
-**From:** developer
-**To:** architect
+**From:** [agent role]
+**To:** [agent role or "user"]
 **Status:** Open | Answered | Resolved
-**Step:** [Plan step number and name]
+**Step:** [Plan step number and name, or "Phase 1 analysis" if pre-plan]
 **File:** [File being worked on, if relevant]
 
 **Context:** [What was being done, what was tried, what is unclear]
@@ -269,13 +271,14 @@ Written by developer when blocked. Architect answers inline.
 **Question:** [Specific question or decision needed]
 
 ### Answer
-[Architect fills this in, sets Status → Answered]
+[Recipient fills this in, sets Status → Answered]
 ```
 
 **Rules:**
 - One question per section. Multiple blockers = multiple sections.
-- Include enough context that architect can answer without reading developer's work.
+- Include enough context that the recipient can answer without reading the sender's work.
 - If the answer changes the plan, architect updates the plan. Plan stays source of truth.
+- Questions are numbered sequentially across the entire file (Q1, Q2, Q3...) regardless of sender.
 
 ## Lessons File Format
 

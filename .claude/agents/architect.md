@@ -127,8 +127,9 @@ The planning workflow has two phases. Which phase you're in depends on the actio
 1. **Gate:** Verify `docs/specs/{slug}/definition/spec.md` exists with `Status: Ready`.
 2. Use the `create-implementation-plan` skill's reading protocol. Read all relevant context — spec, architecture doc, skill inventory, existing patterns.
 3. **Gap analysis:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
-4. **Output and stop.** End your response with:
-   - **Questions** (even if "None"): "For team lead: Questions before planning {FeatureName}: {list or 'None'}."
+4. **Write questions to file first.** If you have questions, write them to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in agents-workflow.md. Create the file and delivery folder if needed. If no questions, skip this step.
+5. **Output and stop.** End your response with:
+   - **Questions** (even if "None"): "For team lead: Questions before planning {FeatureName}: {list or 'None'}." Include the full question text — the team lead relays your message verbatim to the user.
    - **Review mode recommendation**: Recommend self-review or critic review. When running as part of a team (spawned by team lead), recommend critic.
 
 Do NOT write the plan in this phase. Phase 1 ends here. The team lead will triage your output and resume you for Phase 2.
