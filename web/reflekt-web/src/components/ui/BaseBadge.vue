@@ -19,12 +19,12 @@ const badgeClasses = computed(() => {
   const base = 'inline-flex items-center font-medium rounded-[--radius-full]';
 
   const variants = {
-    default: 'bg-gray-100 text-gray-700',
-    success: 'bg-emerald-50 text-emerald-700',
-    danger: 'bg-red-50 text-red-700',
-    warning: 'bg-amber-50 text-amber-700',
-    info: 'bg-blue-50 text-blue-700',
-    primary: 'bg-primary-50 text-primary-700',
+    default: 'bg-badge-default-bg text-badge-default-text',
+    success: 'bg-badge-success-bg text-badge-success-text',
+    danger: 'bg-badge-danger-bg text-badge-danger-text',
+    warning: 'bg-badge-warning-bg text-badge-warning-text',
+    info: 'bg-badge-info-bg text-badge-info-text',
+    primary: 'bg-badge-primary-bg text-badge-primary-text',
   };
 
   const sizes = {

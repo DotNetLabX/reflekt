@@ -7,10 +7,10 @@
           <span class="text-xl font-semibold">Reflekt</span>
         </div>
 
-        <h1 class="text-lg font-semibold text-gray-800 text-center">{{ sprintName }}</h1>
+        <h1 class="text-lg font-semibold text-text-primary text-center">{{ sprintName }}</h1>
 
         <div v-if="participants.length > 0" class="flex flex-col gap-2">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Already in this retro:</p>
+          <p class="text-xs font-semibold text-text-muted uppercase tracking-wide">Already in this retro:</p>
           <div class="flex flex-wrap gap-2">
             <div
               v-for="p in participants"
@@ -28,15 +28,15 @@
         <template v-if="showGoogleSignIn">
           <a
             :href="googleLoginUrl"
-            class="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 rounded-[--radius-sm] text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 border border-border rounded-[--radius-sm] text-sm font-medium text-text-secondary bg-surface hover:bg-surface-raised transition-colors"
           >
             Sign in with Google
           </a>
 
           <div class="flex items-center gap-3">
-            <div class="flex-1 h-px bg-gray-200" />
-            <span class="text-xs text-gray-400">or</span>
-            <div class="flex-1 h-px bg-gray-200" />
+            <div class="flex-1 h-px bg-border" />
+            <span class="text-xs text-text-muted">or</span>
+            <div class="flex-1 h-px bg-border" />
           </div>
         </template>
 

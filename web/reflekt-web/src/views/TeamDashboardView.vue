@@ -2,9 +2,9 @@
   <div class="flex flex-col items-center min-h-[calc(100vh-3.5rem)] p-8">
     <!-- Not signed in -->
     <div v-if="authStore.loaded && !authStore.isSignedIn" class="flex flex-col items-center gap-4 mt-16">
-      <h1 class="text-2xl font-semibold text-gray-800">Welcome to Reflekt</h1>
+      <h1 class="text-2xl font-semibold text-text-primary">Welcome to Reflekt</h1>
       <button
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
         @click="authStore.signIn()"
       >
         Sign in with Google
@@ -21,10 +21,10 @@
       <!-- Teams card grid -->
       <div v-else class="w-full max-w-4xl">
         <div class="flex items-center justify-between mb-6">
-          <h1 class="text-2xl font-semibold text-gray-800">Your Teams</h1>
+          <h1 class="text-2xl font-semibold text-text-primary">Your Teams</h1>
           <div class="relative group">
             <button
-              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="teamsStore.isAtLimit"
               @click="showCreateForm = true"
             >
@@ -32,13 +32,13 @@
             </button>
             <div
               v-if="teamsStore.isAtLimit"
-              class="absolute right-0 mt-1 w-64 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"
+              class="absolute right-0 mt-1 w-64 bg-surface-raised text-text-primary border border-border text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"
             >
               You've reached the maximum of 10 teams. Delete a team to create a new one.
             </div>
             <div
               v-else
-              class="absolute right-0 mt-1 w-52 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"
+              class="absolute right-0 mt-1 w-52 bg-surface-raised text-text-primary border border-border text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"
             >
               Create a new team. You can manage up to 10 teams.
             </div>

@@ -1,13 +1,13 @@
 <template>
   <div
-    class="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer p-5"
+    class="relative bg-surface border border-border rounded-lg shadow-card hover:shadow-card-hover hover:bg-surface-raised transition-all cursor-pointer p-5"
     @click="$emit('click')"
   >
     <!-- Three-dot menu -->
     <div class="absolute top-3 right-3" @click.stop>
       <div class="relative group">
         <button
-          class="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+          class="p-1 rounded hover:bg-surface-raised text-text-muted hover:text-text-secondary"
           :title="'Manage this team. Options include deleting the team.'"
           @click="menuOpen = !menuOpen"
         >
@@ -20,7 +20,7 @@
         <div
           v-if="menuOpen"
           ref="menuRef"
-          class="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded shadow-lg z-20"
+          class="absolute right-0 mt-1 w-36 bg-surface-raised border border-border rounded shadow-lg z-20"
         >
           <button
             class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -33,30 +33,30 @@
     </div>
 
     <!-- Team name -->
-    <h3 class="text-base font-semibold text-gray-800 pr-8 mb-3">{{ team.name }}</h3>
+    <h3 class="text-base font-semibold text-text-primary pr-8 mb-3">{{ team.name }}</h3>
 
     <!-- Sprint count -->
-    <div class="flex items-center gap-1 text-sm text-gray-500 mb-1">
+    <div class="flex items-center gap-1 text-sm text-text-muted mb-1">
       <span>{{ team.sprintCount }} sprint{{ team.sprintCount !== 1 ? 's' : '' }}</span>
       <div class="relative group/tip">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-text-muted cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
         </svg>
-        <div class="absolute left-1/2 -translate-x-1/2 bottom-5 w-64 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
+        <div class="absolute left-1/2 -translate-x-1/2 bottom-5 w-64 bg-surface-raised text-text-primary border border-border text-xs rounded px-2 py-1 opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
           The total number of sprints created under this team, including draft, active, and closed.
         </div>
       </div>
     </div>
 
     <!-- Last sprint date -->
-    <div class="flex items-center gap-1 text-sm text-gray-400">
+    <div class="flex items-center gap-1 text-sm text-text-muted">
       <span v-if="team.lastSprintDate">Last sprint {{ formatDate(team.lastSprintDate) }}</span>
       <span v-else>No sprints yet</span>
       <div v-if="team.lastSprintDate" class="relative group/tip">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-text-muted cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
         </svg>
-        <div class="absolute left-1/2 -translate-x-1/2 bottom-5 w-64 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
+        <div class="absolute left-1/2 -translate-x-1/2 bottom-5 w-64 bg-surface-raised text-text-primary border border-border text-xs rounded px-2 py-1 opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
           The date when the most recent sprint was created in this team.
         </div>
       </div>

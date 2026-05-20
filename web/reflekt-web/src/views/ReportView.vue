@@ -1,12 +1,12 @@
 <template>
   <PageLayout :loading="reportStore.loading" :empty="!reportStore.loading && !report">
     <template #loading-content>
-      <p class="text-gray-500 text-sm">Loading report...</p>
+      <p class="text-text-muted text-sm">Loading report...</p>
     </template>
 
     <template #empty-content>
-      <div class="bg-white rounded shadow p-8 text-center">
-        <p class="text-red-600 text-sm">{{ reportStore.error ?? 'Report not found.' }}</p>
+      <div class="bg-surface border border-border rounded shadow-card p-8 text-center">
+        <p class="text-danger text-sm">{{ reportStore.error ?? 'Report not found.' }}</p>
       </div>
     </template>
 

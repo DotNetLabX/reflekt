@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-3 bg-surface rounded-[--radius-md] shadow-card px-4 py-3">
     <!-- Row 1: Sprint name | timer + badges + action button -->
     <div class="flex items-center justify-between gap-3">
-      <h1 class="text-xl font-bold text-gray-800 truncate">{{ sprintName }}</h1>
+      <h1 class="text-xl font-bold text-text-primary truncate">{{ sprintName }}</h1>
       <div class="flex items-center gap-2 flex-shrink-0">
         <!-- Timer display (Writing/Voting/Discussing phases only) -->
         <TimerDisplay
@@ -26,14 +26,14 @@
           <!-- SM tooltip listing ready/not-ready names -->
           <div
             v-if="isScrumMaster && showReadinessTooltip && totalCount > 0"
-            class="absolute right-0 top-full mt-1 z-20 w-48 bg-gray-900 text-white text-xs rounded-[--radius-sm] p-2 shadow-lg"
+            class="absolute right-0 top-full mt-1 z-20 w-48 bg-surface-raised text-text-primary border border-border text-xs rounded-[--radius-sm] p-2 shadow-lg"
           >
             <div v-if="readyParticipants.length > 0" class="mb-1">
-              <p class="font-semibold text-emerald-300">Done ({{ readyParticipants.length }})</p>
+              <p class="font-semibold text-badge-success-text">Done ({{ readyParticipants.length }})</p>
               <p v-for="name in readyParticipants" :key="name" class="truncate">{{ name }}</p>
             </div>
             <div v-if="notReadyParticipants.length > 0">
-              <p class="font-semibold text-gray-300">Not done ({{ notReadyParticipants.length }})</p>
+              <p class="font-semibold text-text-secondary">Not done ({{ notReadyParticipants.length }})</p>
               <p v-for="name in notReadyParticipants" :key="name" class="truncate">{{ name }}</p>
             </div>
           </div>

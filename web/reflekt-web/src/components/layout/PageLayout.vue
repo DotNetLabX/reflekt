@@ -3,7 +3,7 @@
     <slot v-if="loading" name="loading">
       <div class="flex items-center justify-center min-h-screen">
         <slot name="loading-content">
-          <p class="text-gray-500 text-sm">Loading...</p>
+          <p class="text-text-muted text-sm">Loading...</p>
         </slot>
       </div>
     </slot>
@@ -11,7 +11,7 @@
     <slot v-else-if="empty" name="empty">
       <div class="flex items-center justify-center min-h-screen">
         <slot name="empty-content">
-          <p class="text-gray-400 text-sm">Nothing here yet.</p>
+          <p class="text-text-muted text-sm">Nothing here yet.</p>
         </slot>
       </div>
     </slot>

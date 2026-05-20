@@ -1,12 +1,12 @@
 <template>
   <div :class="cardClasses">
-    <div v-if="$slots.header" class="border-b border-gray-200 px-4 py-3">
+    <div v-if="$slots.header" class="border-b border-border px-4 py-3">
       <slot name="header" />
     </div>
     <div :class="bodyPadding">
       <slot />
     </div>
-    <div v-if="$slots.footer" class="border-t border-gray-200 px-4 py-3">
+    <div v-if="$slots.footer" class="border-t border-border px-4 py-3">
       <slot name="footer" />
     </div>
   </div>
@@ -24,8 +24,8 @@ const props = withDefaults(defineProps<{
 });
 
 const cardClasses = computed(() => {
-  const base = 'bg-surface border border-gray-200 rounded-[--radius-md] shadow-card';
-  const hover = props.hoverable ? 'transition-shadow hover:shadow-card-hover' : '';
+  const base = 'bg-surface border border-border rounded-[--radius-md] shadow-card';
+  const hover = props.hoverable ? 'transition-all hover:shadow-card-hover hover:-translate-y-0.5' : '';
   return [base, hover];
 });
 

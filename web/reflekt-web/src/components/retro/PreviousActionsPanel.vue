@@ -1,21 +1,21 @@
 <template>
-  <div class="bg-white border border-amber-200 rounded-[--radius-md] shadow-sm">
+  <div class="bg-surface border border-border rounded-[--radius-md] shadow-card">
     <!-- Header row -->
     <div
-      class="flex items-center justify-between px-4 py-3 cursor-pointer select-none bg-amber-50 rounded-t-[--radius-md]"
+      class="flex items-center justify-between px-4 py-3 cursor-pointer select-none bg-badge-warning-bg rounded-t-[--radius-md]"
       :title="sectionTooltip"
       @click="toggleCollapsed"
     >
-      <h2 class="text-sm font-semibold text-amber-800">
+      <h2 class="text-sm font-semibold text-badge-warning-text">
         Actions from last sprint ({{ totalCount }})
       </h2>
-      <span class="text-amber-600 text-xs">{{ isCollapsed ? '▶ Expand' : '▼ Collapse' }}</span>
+      <span class="text-badge-warning-text text-xs">{{ isCollapsed ? '▶ Expand' : '▼ Collapse' }}</span>
     </div>
 
     <!-- Auto-collapse summary line -->
     <div
       v-if="isCollapsed && allReviewed"
-      class="px-4 py-2 text-sm text-gray-600 italic cursor-pointer"
+      class="px-4 py-2 text-sm text-text-secondary italic cursor-pointer"
       :title="summaryTooltip"
       @click="toggleCollapsed"
     >
@@ -23,12 +23,12 @@
     </div>
 
     <!-- Items list -->
-    <div v-if="!isCollapsed" class="divide-y divide-gray-100">
+    <div v-if="!isCollapsed" class="divide-y divide-border-subtle">
       <div v-for="item in items" :key="item.cardId" class="flex items-start justify-between gap-4 px-4 py-3">
         <!-- Text + assignee -->
         <div class="flex-1 min-w-0">
-          <p class="text-sm text-gray-800">{{ item.text }}</p>
-          <p v-if="item.assigneeName" class="text-xs text-gray-500 mt-0.5">@{{ item.assigneeName }}</p>
+          <p class="text-sm text-text-primary">{{ item.text }}</p>
+          <p v-if="item.assigneeName" class="text-xs text-text-muted mt-0.5">@{{ item.assigneeName }}</p>
         </div>
 
         <!-- SM: status buttons -->
@@ -55,7 +55,7 @@
           <span v-if="item.reviewStatus !== 'None'" :class="statusBadgeClass(item.reviewStatus)" class="px-2 py-0.5 rounded text-xs font-medium">
             {{ formatStatus(item.reviewStatus) }}
           </span>
-          <span v-else class="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+          <span v-else class="px-2 py-0.5 rounded text-xs font-medium bg-badge-default-bg text-badge-default-text">
             Pending
           </span>
         </div>
@@ -130,16 +130,16 @@ function statusButtonClass(item: PreviousActionItem, status: string): string {
   if (isActive) {
     if (status === 'Done') return `${base} bg-emerald-600 border-emerald-600 text-white`
     if (status === 'CarriedOver') return `${base} bg-amber-500 border-amber-500 text-white`
-    if (status === 'Dropped') return `${base} bg-gray-500 border-gray-500 text-white`
+    if (status === 'Dropped') return `${base} bg-text-muted border-text-muted text-white`
   }
-  return `${base} bg-white border-gray-300 text-gray-600 hover:bg-gray-50`
+  return `${base} bg-surface border-border text-text-secondary hover:bg-surface-raised`
 }
 
 function statusBadgeClass(status: string): string {
-  if (status === 'Done') return 'bg-emerald-100 text-emerald-700'
-  if (status === 'CarriedOver') return 'bg-amber-100 text-amber-700'
-  if (status === 'Dropped') return 'bg-gray-100 text-gray-600'
-  return 'bg-gray-100 text-gray-500'
+  if (status === 'Done') return 'bg-badge-success-bg text-badge-success-text'
+  if (status === 'CarriedOver') return 'bg-badge-warning-bg text-badge-warning-text'
+  if (status === 'Dropped') return 'bg-badge-default-bg text-badge-default-text'
+  return 'bg-badge-default-bg text-badge-default-text'
 }
 
 function formatStatus(status: string): string {

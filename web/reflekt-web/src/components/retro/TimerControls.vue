@@ -1,6 +1,6 @@
 <template>
   <div
-    class="absolute right-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-[--radius-sm] shadow-lg p-2 flex flex-col gap-1.5 min-w-[140px]"
+    class="absolute right-0 top-full mt-1 z-30 bg-surface-raised border border-border rounded-[--radius-sm] shadow-lg p-2 flex flex-col gap-1.5 min-w-[140px]"
     @click.stop
   >
     <!-- Running: Pause, Reset, +time -->
@@ -85,9 +85,9 @@ async function invokeAddTime(minutes: number) {
   @apply bg-primary-600 hover:bg-primary-700 text-white;
 }
 .timer-btn-secondary {
-  @apply bg-gray-100 hover:bg-gray-200 text-gray-700;
+  @apply bg-surface-raised hover:bg-border text-text-secondary;
 }
 .timer-btn-add {
-  @apply flex-1 px-1 py-1 text-xs font-medium rounded-[--radius-sm] bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer text-center;
+  @apply flex-1 px-1 py-1 text-xs font-medium rounded-[--radius-sm] bg-surface-raised hover:bg-border text-text-secondary transition-colors cursor-pointer text-center;
 }
 </style>

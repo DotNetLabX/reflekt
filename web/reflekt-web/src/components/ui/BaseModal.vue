@@ -8,10 +8,10 @@
           role="dialog"
           aria-modal="true"
         >
-          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">{{ title }}</h2>
+          <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h2 class="text-lg font-semibold text-text-primary">{{ title }}</h2>
             <button
-              class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              class="text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
               @click="$emit('close')"
             >
               <X :size="20" />
@@ -20,7 +20,7 @@
           <div class="px-5 py-4">
             <slot />
           </div>
-          <div v-if="$slots.footer" class="px-5 py-4 border-t border-gray-200">
+          <div v-if="$slots.footer" class="px-5 py-4 border-t border-border">
             <slot name="footer" />
           </div>
         </div>

@@ -34,14 +34,14 @@ defineEmits<{
 }>();
 
 const inputClasses = computed(() => {
-  const base = 'block w-full px-3 py-2 text-sm border rounded-[--radius-md] transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500';
+  const base = 'block w-full px-3 py-2 text-sm border rounded-[--radius-md] transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ring-offset-focus-offset';
 
   if (props.disabled) {
-    return [base, 'bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200'];
+    return [base, 'bg-surface-raised text-text-muted cursor-not-allowed border-border'];
   }
   if (props.error) {
-    return [base, 'border-danger text-gray-900 focus:ring-danger focus:border-danger'];
+    return [base, 'border-danger text-text-primary focus:ring-danger focus:border-danger'];
   }
-  return [base, 'border-gray-300 text-gray-900 bg-white'];
+  return [base, 'border-border text-text-primary bg-surface'];
 });
 </script>

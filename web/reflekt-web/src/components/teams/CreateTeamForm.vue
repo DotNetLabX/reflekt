@@ -1,22 +1,22 @@
 <template>
-  <div class="flex flex-col gap-3 p-8 bg-white rounded shadow w-72">
-    <h2 class="text-lg font-semibold text-gray-800">Create your first team</h2>
+  <div class="flex flex-col gap-3 p-8 bg-surface border border-border rounded shadow-card w-72">
+    <h2 class="text-lg font-semibold text-text-primary">Create your first team</h2>
     <div class="relative group">
       <input
         v-model="teamName"
         type="text"
         placeholder="Team name"
         maxlength="100"
-        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="w-full border border-border rounded px-3 py-2 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500"
       />
-      <div class="absolute left-0 bottom-10 w-64 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
+      <div class="absolute left-0 bottom-10 w-64 bg-surface-raised text-text-primary border border-border text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
         Choose a name for your team. Must be unique among your teams. Max 100 characters.
       </div>
     </div>
     <p v-if="errorMessage" class="text-red-600 text-sm">{{ errorMessage }}</p>
     <div class="flex gap-2">
       <button
-        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50"
+        class="flex-1 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 text-sm disabled:opacity-50"
         :disabled="busy"
         @click="handleCreate"
       >
@@ -24,7 +24,7 @@
       </button>
       <button
         v-if="showCancel"
-        class="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+        class="px-4 py-2 text-sm text-text-secondary border border-border rounded hover:bg-surface-raised"
         @click="$emit('cancel')"
       >
         Cancel

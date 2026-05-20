@@ -1,7 +1,7 @@
 <template>
   <div
     v-show="visible"
-    class="bg-surface border border-gray-200 rounded-[--radius-md] shadow-card flex flex-col min-h-0"
+    class="bg-surface border border-border rounded-[--radius-md] shadow-card flex flex-col min-h-0"
     :class="extraClass"
   >
     <!-- Column header -->
@@ -16,7 +16,7 @@
           v-model="editName"
           type="text"
           maxlength="30"
-          class="flex-1 text-sm font-semibold bg-white border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          class="flex-1 text-sm font-semibold bg-surface border border-border rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
           :class="`text-col-${columnColor}`"
           @keydown.enter="confirmEdit"
           @blur="confirmEdit"
@@ -30,7 +30,7 @@
             class="w-4 h-4 rounded-full border-2 transition-transform cursor-pointer"
             :class="[
               `bg-col-${color}`,
-              editColor === color ? 'border-gray-800 scale-110' : 'border-transparent',
+              editColor === color ? 'border-text-primary scale-110' : 'border-transparent',
             ]"
             @mousedown.prevent="selectColor(color)"
           />

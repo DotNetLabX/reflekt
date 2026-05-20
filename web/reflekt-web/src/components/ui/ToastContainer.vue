@@ -5,12 +5,12 @@
         <div
           v-for="toast in toasts"
           :key="toast.id"
-          class="relative overflow-hidden pointer-events-auto flex items-start gap-3 min-w-[300px] max-w-sm bg-surface border border-gray-200 rounded-[--radius-md] shadow-card-hover px-4 py-3"
+          class="relative overflow-hidden pointer-events-auto flex items-start gap-3 min-w-[300px] max-w-sm bg-surface border border-border rounded-[--radius-md] shadow-card-hover px-4 py-3"
         >
           <component :is="iconMap[toast.variant]" :size="18" :class="iconColorMap[toast.variant]" class="shrink-0 mt-0.5" />
-          <p class="flex-1 text-sm text-gray-800">{{ toast.message }}</p>
+          <p class="flex-1 text-sm text-text-primary">{{ toast.message }}</p>
           <button
-            class="shrink-0 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            class="shrink-0 text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
             @click="removeToast(toast.id)"
           >
             <X :size="16" />

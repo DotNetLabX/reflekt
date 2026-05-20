@@ -12,7 +12,7 @@
     </button>
     <button
       v-if="isScrumMaster"
-      class="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+      class="text-xs text-text-muted hover:text-text-secondary cursor-pointer"
       @click="$emit('toggle-discussed')"
     >
       {{ group.isDiscussed ? 'Unmark' : 'Mark discussed' }}

@@ -1,7 +1,7 @@
 <template>
   <BaseCard padding="sm">
     <div class="flex flex-col gap-2">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Participants</h2>
+      <h2 class="text-xs font-semibold text-text-muted uppercase tracking-wide">Participants</h2>
       <div class="flex flex-wrap gap-2">
         <BaseBadge
           v-for="p in participants"

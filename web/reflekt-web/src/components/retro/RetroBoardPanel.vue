@@ -7,7 +7,7 @@
           'px-3 py-1.5 text-sm font-medium rounded-[--radius-sm] border transition-colors cursor-pointer',
           isReady
             ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'
-            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
+            : 'bg-surface border-border text-text-secondary hover:bg-surface-raised',
         ]"
         @click="$emit('toggle-ready')"
       >
@@ -47,8 +47,8 @@
         @update-config="(name, color) => onUpdateColumnConfig(1, name, color)"
       >
         <template #empty>
-          <div v-if="showGroups && column1Groups.length === 0" class="text-gray-400 text-sm text-center py-4">No groups yet</div>
-          <div v-else-if="!showGroups && column1Cards.length === 0" class="text-gray-400 text-sm text-center py-4">No cards yet</div>
+          <div v-if="showGroups && column1Groups.length === 0" class="text-text-muted text-sm text-center py-4">No groups yet</div>
+          <div v-else-if="!showGroups && column1Cards.length === 0" class="text-text-muted text-sm text-center py-4">No cards yet</div>
         </template>
         <template v-if="showGroups">
           <RetroGroupItem v-for="group in column1Groups" :key="'g' + group.id" v-bind="groupItemProps(group, column1Color)"
@@ -81,8 +81,8 @@
         @update-config="(name, color) => onUpdateColumnConfig(2, name, color)"
       >
         <template #empty>
-          <div v-if="showGroups && column2Groups.length === 0" class="text-gray-400 text-sm text-center py-4">No groups yet</div>
-          <div v-else-if="!showGroups && column2Cards.length === 0" class="text-gray-400 text-sm text-center py-4">No cards yet</div>
+          <div v-if="showGroups && column2Groups.length === 0" class="text-text-muted text-sm text-center py-4">No groups yet</div>
+          <div v-else-if="!showGroups && column2Cards.length === 0" class="text-text-muted text-sm text-center py-4">No cards yet</div>
         </template>
         <template v-if="showGroups">
           <RetroGroupItem v-for="group in column2Groups" :key="'g' + group.id" v-bind="groupItemProps(group, column2Color)"
@@ -115,8 +115,8 @@
         @update-config="(name, color) => onUpdateColumnConfig(3, name, color)"
       >
         <template #empty>
-          <div v-if="showGroups && column3Groups.length === 0" class="text-gray-400 text-sm text-center py-4">No groups yet</div>
-          <div v-else-if="!showGroups && column3Cards.length === 0" class="text-gray-400 text-sm text-center py-4">No cards yet</div>
+          <div v-if="showGroups && column3Groups.length === 0" class="text-text-muted text-sm text-center py-4">No groups yet</div>
+          <div v-else-if="!showGroups && column3Cards.length === 0" class="text-text-muted text-sm text-center py-4">No cards yet</div>
         </template>
         <template v-if="showGroups">
           <RetroGroupItem v-for="group in column3Groups" :key="'g' + group.id" v-bind="groupItemProps(group, column3Color)"
@@ -149,7 +149,7 @@
         @drop="() => {}"
       >
         <template #empty>
-          <div v-if="actionItems.length === 0" class="text-gray-400 text-sm text-center py-4">No action items yet</div>
+          <div v-if="actionItems.length === 0" class="text-text-muted text-sm text-center py-4">No action items yet</div>
         </template>
         <RetroCardItem v-for="card in actionItems" :key="card.id"
           :card="card" :can-edit="canMutateCard(card)"
@@ -161,7 +161,7 @@
         <template #input>
           <div v-if="policyStore.isAllowed(currentPhase, 'CreateActionItem')" class="flex flex-col gap-2">
             <BaseInput v-model="newActionText" :maxlength="2000" placeholder="Action item..." @keydown.enter="onAddActionItem" />
-            <select v-model="newActionAssignee" class="border border-gray-300 rounded-[--radius-md] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <select v-model="newActionAssignee" class="border border-border rounded-[--radius-md] px-3 py-2 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">Assign to...</option>
               <option v-for="p in participants" :key="p.id" :value="p.displayName">{{ p.displayName }}</option>
             </select>
@@ -173,7 +173,7 @@
 
     <!-- Delete confirmation modal -->
     <BaseModal :open="!!deleteTarget" title="Delete Card" @close="deleteTarget = null">
-      <p class="text-sm text-gray-600">Are you sure you want to delete this card? This action cannot be undone.</p>
+      <p class="text-sm text-text-secondary">Are you sure you want to delete this card? This action cannot be undone.</p>
       <template #footer>
         <div class="flex justify-end gap-3">
           <BaseButton variant="secondary" @click="deleteTarget = null">Cancel</BaseButton>

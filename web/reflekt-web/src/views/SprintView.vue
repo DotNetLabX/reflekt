@@ -1,6 +1,6 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-50">
-    <div v-if="!sprint" class="text-gray-500">Loading sprint…</div>
+  <div class="flex items-center justify-center min-h-screen bg-background">
+    <div v-if="!sprint" class="text-text-muted">Loading sprint…</div>
     <SprintDetailPanel
       v-else
       :sprint="sprint"

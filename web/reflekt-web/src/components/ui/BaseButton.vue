@@ -32,13 +32,13 @@ const iconSize = computed(() => {
 });
 
 const buttonClasses = computed(() => {
-  const base = 'inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500';
+  const base = 'inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 ring-offset-focus-offset';
 
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800',
-    secondary: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100',
+    secondary: 'border border-border bg-surface text-text-secondary hover:bg-surface-raised active:bg-surface-raised',
     danger: 'bg-danger text-white hover:bg-red-600 active:bg-red-700',
-    ghost: 'text-gray-700 hover:bg-gray-100 active:bg-gray-200',
+    ghost: 'text-text-secondary hover:bg-surface-raised active:bg-surface-raised',
   };
 
   const sizes = {

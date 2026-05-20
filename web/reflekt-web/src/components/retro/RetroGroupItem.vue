@@ -12,24 +12,24 @@
     @drop="onDrop"
   >
     <div class="flex items-start gap-1">
-      <GripVertical v-if="canGroup" :size="14" class="text-gray-300 flex-shrink-0 mt-0.5" />
-      <p class="text-sm text-gray-800 whitespace-pre-wrap flex-1">{{ group.cards[0]?.text }}</p>
+      <GripVertical v-if="canGroup" :size="14" class="text-text-muted flex-shrink-0 mt-0.5" />
+      <p class="text-sm text-text-primary whitespace-pre-wrap flex-1">{{ group.cards[0]?.text }}</p>
       <div v-if="showVoting" class="flex items-center gap-1 flex-shrink-0">
         <button class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all" :class="voteBtnClass" :disabled="remainingBudget <= 0 && myVoteCount === 0" @click="myVoteCount > 0 ? emit('retract-vote', group) : emit('vote', group)">
           <Check v-if="myVoteCount > 0" :size="14" /><ChevronUp v-else :size="14" /><span>{{ voteCount }}</span>
         </button>
       </div>
-      <span v-else-if="voteCount > 0" class="text-xs font-medium text-gray-500 flex-shrink-0">{{ voteCount }} votes</span>
+      <span v-else-if="voteCount > 0" class="text-xs font-medium text-text-muted flex-shrink-0">{{ voteCount }} votes</span>
     </div>
     <div v-if="group.cards[0]?.evidenceLinks?.length" class="flex flex-col gap-1 mt-1">
-      <a v-for="link in group.cards[0]!.evidenceLinks" :key="link.id" :href="link.url" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-600 truncate max-w-[200px] hover:text-blue-600">{{ link.title || link.url }}</a>
+      <a v-for="link in group.cards[0]!.evidenceLinks" :key="link.id" :href="link.url" target="_blank" rel="noopener noreferrer" class="text-xs text-text-secondary truncate max-w-[200px] hover:text-blue-600">{{ link.title || link.url }}</a>
     </div>
     <RetroGroupDiscussion v-if="isDiscussing" :group="group" :is-scrum-master="isScrumMaster" @focus="emit('focus', group)" @toggle-discussed="emit('toggle-discussed', group)" />
     <div v-if="isScrumMaster && canGroup" class="flex items-center gap-2 mt-1 justify-end">
-      <button class="text-xs text-gray-500 hover:text-gray-700 cursor-pointer" @click="editingTitle = true">Rename</button>
+      <button class="text-xs text-text-muted hover:text-text-secondary cursor-pointer" @click="editingTitle = true">Rename</button>
     </div>
     <div v-if="editingTitle" class="flex gap-1">
-      <input v-model="titleInput" maxlength="100" placeholder="Group title..." class="flex-1 border border-gray-300 rounded-[--radius-sm] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" @keydown.enter="saveTitle" @keydown.escape="editingTitle = false" />
+      <input v-model="titleInput" maxlength="100" placeholder="Group title..." class="flex-1 border border-border rounded-[--radius-sm] px-2 py-1 text-xs text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" @keydown.enter="saveTitle" @keydown.escape="editingTitle = false" />
       <button class="px-2 py-1 text-xs bg-primary-600 text-white rounded-[--radius-sm] cursor-pointer" @click="saveTitle">Save</button>
     </div>
   </div>
@@ -47,28 +47,28 @@
     @drop="onDrop"
   >
     <div class="flex items-center gap-2">
-      <GripVertical v-if="canGroup" :size="14" class="text-gray-300 flex-shrink-0" />
-      <span class="text-sm font-medium text-gray-800 flex-1 truncate">{{ group.title || group.cards[0]?.text || 'Untitled group' }}</span>
+      <GripVertical v-if="canGroup" :size="14" class="text-text-muted flex-shrink-0" />
+      <span class="text-sm font-medium text-text-primary flex-1 truncate">{{ group.title || group.cards[0]?.text || 'Untitled group' }}</span>
       <div v-if="showVoting" class="flex items-center gap-1">
         <button class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all" :class="voteBtnClass" :disabled="remainingBudget <= 0 && myVoteCount === 0" @click="myVoteCount > 0 ? emit('retract-vote', group) : emit('vote', group)">
           <Check v-if="myVoteCount > 0" :size="14" /><ChevronUp v-else :size="14" /><span>{{ voteCount }}</span>
         </button>
       </div>
-      <span v-else-if="voteCount > 0" class="text-xs font-medium text-gray-500">{{ voteCount }} votes</span>
+      <span v-else-if="voteCount > 0" class="text-xs font-medium text-text-muted">{{ voteCount }} votes</span>
     </div>
-    <div v-if="expanded" class="flex flex-col gap-1 pl-2 border-l-2 border-gray-200">
-      <div v-for="card in group.cards" :key="card.id" class="text-xs text-gray-600 py-0.5" :class="{ 'cursor-grab': canUngroup }" :draggable="canUngroup" @dragstart.stop="onCardDragStart($event, card)">{{ card.text }}</div>
+    <div v-if="expanded" class="flex flex-col gap-1 pl-2 border-l-2 border-border">
+      <div v-for="card in group.cards" :key="card.id" class="text-xs text-text-secondary py-0.5" :class="{ 'cursor-grab': canUngroup }" :draggable="canUngroup" @dragstart.stop="onCardDragStart($event, card)">{{ card.text }}</div>
     </div>
     <div class="flex items-center gap-2">
       <button class="text-xs text-primary-600 hover:text-primary-800 cursor-pointer" @click="expanded = !expanded">{{ expanded ? 'Collapse' : `Show ${group.cards.length} cards` }}</button>
       <template v-if="isScrumMaster">
-        <button v-if="canGroup" class="text-xs text-gray-500 hover:text-gray-700 cursor-pointer" @click="editingTitle = true">Rename</button>
+        <button v-if="canGroup" class="text-xs text-text-muted hover:text-text-secondary cursor-pointer" @click="editingTitle = true">Rename</button>
         <button v-if="canUngroup && group.cards.length > 1" class="text-xs text-danger hover:text-red-700 cursor-pointer" @click="emit('dissolve', group)">Dissolve</button>
       </template>
     </div>
     <RetroGroupDiscussion v-if="isDiscussing" :group="group" :is-scrum-master="isScrumMaster" @focus="emit('focus', group)" @toggle-discussed="emit('toggle-discussed', group)" />
     <div v-if="editingTitle" class="flex gap-1">
-      <input v-model="titleInput" maxlength="100" placeholder="Group title..." class="flex-1 border border-gray-300 rounded-[--radius-sm] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500" @keydown.enter="saveTitle" @keydown.escape="editingTitle = false" />
+      <input v-model="titleInput" maxlength="100" placeholder="Group title..." class="flex-1 border border-border rounded-[--radius-sm] px-2 py-1 text-xs text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" @keydown.enter="saveTitle" @keydown.escape="editingTitle = false" />
       <button class="px-2 py-1 text-xs bg-primary-600 text-white rounded-[--radius-sm] cursor-pointer" @click="saveTitle">Save</button>
     </div>
   </div>
@@ -123,8 +123,8 @@ const isSolo = computed(() => props.group.cards.length === 1)
 
 const groupBgClass = computed(() => {
   if (props.group.isFocused) return 'bg-primary-50 ring-2 ring-primary-500'
-  if (props.group.isDiscussed) return `bg-${props.columnColor}-light/30 opacity-75`
-  return `bg-${props.columnColor}-light/30`
+  if (props.group.isDiscussed) return `bg-col-${props.columnColor}-light opacity-75`
+  return `bg-col-${props.columnColor}-light`
 })
 
 const dragClasses = computed(() => ({
@@ -138,8 +138,8 @@ const voteBtnClass = computed(() =>
   props.myVoteCount > 0
     ? 'bg-primary-600 text-white border-primary-600 hover:bg-primary-700 cursor-pointer'
     : props.remainingBudget <= 0
-      ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-      : 'border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 cursor-pointer'
+      ? 'border-border text-text-muted cursor-not-allowed'
+      : 'border-border text-text-muted hover:border-primary-400 hover:text-primary-600 cursor-pointer'
 )
 
 function onDragStart(e: DragEvent) {

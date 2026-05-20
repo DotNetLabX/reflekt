@@ -2,7 +2,7 @@
   <div :class="['bg-background flex', joined && !kicked && !loading ? 'h-[calc(100vh-3.5rem)] overflow-hidden flex-col' : 'min-h-screen items-center justify-center']">
     <div v-if="kicked" class="w-full max-w-sm p-8 bg-surface rounded-[--radius-md] shadow-card flex flex-col gap-4 items-center">
       <h1 class="text-2xl font-bold text-danger">You were removed</h1>
-      <p class="text-sm text-gray-600 text-center">The Scrum Master removed you from this retro. You'll need a new invite to rejoin.</p>
+      <p class="text-sm text-text-secondary text-center">The Scrum Master removed you from this retro. You'll need a new invite to rejoin.</p>
     </div>
 
     <div v-else-if="loading" class="flex flex-col items-center gap-4">
@@ -47,13 +47,13 @@
         @toggle-ready="onToggleReady"
       />
 
-      <div v-if="isClosed" class="bg-amber-50 border border-amber-200 rounded-[--radius-sm] px-4 py-2 text-sm text-amber-800">
+      <div v-if="isClosed" class="bg-badge-warning-bg border border-badge-warning-text rounded-[--radius-sm] px-4 py-2 text-sm text-badge-warning-text">
         This retro has been closed. The board is now read-only.
       </div>
 
       <div v-if="isReportingPhase" class="flex items-center gap-2">
-        <button class="px-4 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer" :class="reportingView === 'report' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'" @click="reportingView = 'report'">Report</button>
-        <button class="px-4 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer" :class="reportingView === 'board' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'" @click="reportingView = 'board'">Board</button>
+        <button class="px-4 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer" :class="reportingView === 'report' ? 'bg-primary-600 text-white' : 'bg-surface-raised text-text-secondary hover:bg-border'" @click="reportingView = 'report'">Report</button>
+        <button class="px-4 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer" :class="reportingView === 'board' ? 'bg-primary-600 text-white' : 'bg-surface-raised text-text-secondary hover:bg-border'" @click="reportingView = 'board'">Board</button>
       </div>
 
       <RetroReportPanel v-if="isReportingPhase && reportingView === 'report'" @copy-markdown="handleCopyMarkdown" />
@@ -71,7 +71,7 @@
       <p v-if="advanceError" class="text-sm text-danger">{{ advanceError }}</p>
       <p
         v-else
-        class="text-sm text-gray-600"
+        class="text-sm text-text-secondary"
         :title="advanceIsWritingWarning ? advanceWarningTooltip : undefined"
       >{{ advanceDialogMessage }}</p>
       <template #footer>
@@ -84,7 +84,7 @@
 
     <!-- Close sprint confirmation dialog -->
     <BaseModal :open="showCloseDialog" title="Close Sprint" @close="showCloseDialog = false">
-      <p class="text-sm text-gray-600">Close this sprint? No more changes will be allowed.</p>
+      <p class="text-sm text-text-secondary">Close this sprint? No more changes will be allowed.</p>
       <template #footer>
         <div class="flex justify-end gap-3">
           <BaseButton variant="secondary" @click="showCloseDialog = false">Cancel</BaseButton>

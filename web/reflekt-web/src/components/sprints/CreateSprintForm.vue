@@ -1,54 +1,54 @@
 <template>
-  <div class="flex flex-col gap-2 pt-2 border-t border-gray-100">
-    <h3 class="text-sm font-semibold text-gray-700">New Sprint</h3>
+  <div class="flex flex-col gap-2 pt-2 border-t border-border-subtle">
+    <h3 class="text-sm font-semibold text-text-secondary">New Sprint</h3>
     <input
       v-model="sprintName"
       type="text"
       placeholder="Sprint name"
       maxlength="100"
-      class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="border border-border rounded px-3 py-2 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500"
     />
     <input
       v-model.number="votesPerParticipant"
       type="number"
       placeholder="Votes per participant (default 3)"
       min="1"
-      class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="border border-border rounded px-3 py-2 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500"
     />
 
     <!-- Column configuration rows -->
     <div class="flex flex-col gap-2 mt-1">
-      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Column Configuration</p>
+      <p class="text-xs font-medium text-text-muted uppercase tracking-wide">Column Configuration</p>
       <!-- Column 1 -->
       <div class="flex items-center gap-2">
         <input v-model="col1.name" type="text" placeholder="Column 1 name" maxlength="30"
-          class="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          class="flex-1 border border-border rounded px-3 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" />
         <div class="flex gap-1">
           <button v-for="color in paletteColors" :key="color" type="button" :title="color"
             class="w-5 h-5 rounded-full border-2 transition-transform cursor-pointer"
-            :class="[`bg-col-${color}`, col1.color === color ? 'border-gray-800 scale-110' : 'border-transparent']"
+            :class="[`bg-col-${color}`, col1.color === color ? 'border-text-primary scale-110' : 'border-transparent']"
             @click="col1.color = color" />
         </div>
       </div>
       <!-- Column 2 -->
       <div class="flex items-center gap-2">
         <input v-model="col2.name" type="text" placeholder="Column 2 name" maxlength="30"
-          class="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          class="flex-1 border border-border rounded px-3 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" />
         <div class="flex gap-1">
           <button v-for="color in paletteColors" :key="color" type="button" :title="color"
             class="w-5 h-5 rounded-full border-2 transition-transform cursor-pointer"
-            :class="[`bg-col-${color}`, col2.color === color ? 'border-gray-800 scale-110' : 'border-transparent']"
+            :class="[`bg-col-${color}`, col2.color === color ? 'border-text-primary scale-110' : 'border-transparent']"
             @click="col2.color = color" />
         </div>
       </div>
       <!-- Column 3 -->
       <div class="flex items-center gap-2">
         <input v-model="col3.name" type="text" placeholder="Column 3 name" maxlength="30"
-          class="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          class="flex-1 border border-border rounded px-3 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" />
         <div class="flex gap-1">
           <button v-for="color in paletteColors" :key="color" type="button" :title="color"
             class="w-5 h-5 rounded-full border-2 transition-transform cursor-pointer"
-            :class="[`bg-col-${color}`, col3.color === color ? 'border-gray-800 scale-110' : 'border-transparent']"
+            :class="[`bg-col-${color}`, col3.color === color ? 'border-text-primary scale-110' : 'border-transparent']"
             @click="col3.color = color" />
         </div>
       </div>
@@ -56,44 +56,44 @@
 
     <!-- Timer defaults -->
     <div class="flex flex-col gap-2 mt-1">
-      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Timer Defaults (minutes)</p>
+      <p class="text-xs font-medium text-text-muted uppercase tracking-wide">Timer Defaults (minutes)</p>
       <div class="flex gap-2">
         <div class="flex flex-col gap-1 flex-1">
-          <label class="text-xs text-gray-600">Writing</label>
+          <label class="text-xs text-text-secondary">Writing</label>
           <input
             v-model.number="writingTimerDefault"
             type="number"
             min="1"
             max="60"
-            class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="border border-border rounded px-2 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
         <div class="flex flex-col gap-1 flex-1">
-          <label class="text-xs text-gray-600">Voting</label>
+          <label class="text-xs text-text-secondary">Voting</label>
           <input
             v-model.number="votingTimerDefault"
             type="number"
             min="1"
             max="60"
-            class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="border border-border rounded px-2 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
         <div class="flex flex-col gap-1 flex-1">
-          <label class="text-xs text-gray-600">Discussing</label>
+          <label class="text-xs text-text-secondary">Discussing</label>
           <input
             v-model.number="discussingTimerDefault"
             type="number"
             min="1"
             max="60"
-            class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="border border-border rounded px-2 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
       </div>
     </div>
 
-    <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
+    <p v-if="error" class="text-danger text-sm">{{ error }}</p>
     <button
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50"
+      class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 text-sm disabled:opacity-50"
       :disabled="busy"
       @click="handleCreate"
     >

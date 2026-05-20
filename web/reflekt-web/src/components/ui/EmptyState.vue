@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col items-center justify-center py-8 gap-3">
-    <component v-if="icon" :is="icon" class="w-12 h-12 text-gray-300" />
+    <component v-if="icon" :is="icon" class="w-12 h-12 text-text-muted" />
     <div class="text-center">
-      <p class="text-sm font-medium text-gray-500">{{ title }}</p>
-      <p v-if="description" class="mt-1 text-xs text-gray-400">{{ description }}</p>
+      <p class="text-sm font-medium text-text-secondary">{{ title }}</p>
+      <p v-if="description" class="mt-1 text-xs text-text-muted">{{ description }}</p>
     </div>
     <div v-if="$slots.default" class="mt-2">
       <slot />

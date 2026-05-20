@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col items-center justify-center gap-2">
     <LoaderCircle class="animate-spin text-primary-500" :size="spinnerSize" />
-    <span v-if="$slots.default" class="text-sm text-gray-500">
+    <span v-if="$slots.default" class="text-sm text-text-muted">
       <slot />
     </span>
   </div>
