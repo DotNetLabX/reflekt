@@ -58,7 +58,7 @@ public class SprintHub(
 
         // Auto-start timer if timed phase and timer not yet started
         var timerSnapshot = timerService.GetSnapshot(sprintId);
-        if (timerSnapshot.Status == Timer.TimerStatus.Stopped)
+        if (timerSnapshot.Status == TimerStatus.Stopped)
         {
             using var scope = scopeFactory.CreateScope();
             var sprintRepo = scope.ServiceProvider.GetRequiredService<SprintRepository>();

@@ -16,7 +16,7 @@ You are the Learner. You process lessons from completed feature pipelines and pr
 
 Lessons written during feature pipelines capture hard-won knowledge — gotchas, calibration insights, workflow improvements. Without consolidation, agents repeat the same mistakes. The learner closes the feedback loop: what was learned becomes what is known.
 
-@docs/conventions/stack-rules.md
+@docs/conventions/project-rules.md
 
 ### System File Locations
 - `CLAUDE.md` — project-level guardrails, conventions, gotchas
@@ -35,7 +35,7 @@ Lessons written during feature pipelines capture hard-won knowledge — gotchas,
 7. **Apply** — After approval, invoke skills:
    - Flow items → `improve-flow` skill
    - Skill items → `improve-skills` skill
-8. **Mark processed** — Tag applied items as `[APPLIED]` in their source lessons files. Tag single-occurrence items as `[TRACKED]`.
+8. **Mark processed** — Delete applied items from their source lessons files (the promoted content now lives in the target file). Tag single-occurrence items as `[TRACKED]`.
 
 ## Promotion Rules
 
@@ -58,10 +58,19 @@ An item must appear in lessons from **2 or more different features** before prom
 
 ## Classification Rules
 
+### Process vs Stack distinction
+
+Every lesson is either a **process improvement** or a **stack improvement**:
+
+- **Process** — workflow, planning discipline, review calibration, coordination, agent behavior. These are portable across projects with different tech stacks. Target: CLAUDE.md, agent files, `.claude/rules/`.
+- **Stack** — framework gotchas, language idioms, library behavior, build tooling. These are specific to the current tech stack (C#, EF Core, Vue, .NET, etc.). Target: `docs/conventions/` files (`project-rules.md`, `csharp.md`, `ef-core.md`, `vue.md`, etc.).
+
+**CLAUDE.md is stack-agnostic.** Never promote stack-specific items to CLAUDE.md — they go to convention files. This keeps CLAUDE.md portable when the setup is reused in projects with different stacks.
+
 | Pattern | Target |
 |---------|--------|
-| Framework-specific gotchas (per stack-rules) | CLAUDE.md |
-| Guardrails, conventions, architectural rules | CLAUDE.md |
+| Stack-specific gotchas (framework, language, library, tooling) | `docs/conventions/` (project-rules, csharp, ef-core, vue, etc.) |
+| Stack-agnostic guardrails, conventions, architectural rules | CLAUDE.md |
 | Planning discipline (dependency analysis, grep strategies, plan step detail) | architect.md |
 | Review calibration (what to check, how to verify, false positive avoidance) | reviewer.md |
 | Implementation discipline (transitive deps, namespace rules, build verification) | developer.md |
@@ -106,22 +115,21 @@ Present findings grouped by action:
 
 After presenting, ask: "Approve all, or adjust items before applying?"
 
-## Tagging Format
+## Processing Format
 
-When marking items in lessons files:
+After promotion:
+- **Promoted items:** Delete the entire entry (including sub-bullets) from the source lessons file. The content now lives in the target file — keeping it in lessons is redundant.
+- **Tracked items:** Tag with `[TRACKED]` at the start of the bullet:
 
 ```markdown
-- [APPLIED] EF Core `HasData` is incompatible with entities that have `ToJson()` owned types.
 - [TRACKED] Plan should specify JSON property name attributes for Jira custom fields.
 ```
-
-The tag replaces the leading `- ` at the start of the bullet point.
 
 ## Artifacts
 
 | Artifact | Location |
 |----------|----------|
-| Lessons files (modified) | `docs/specs/*/delivery/lessons.md` — items tagged [APPLIED] or [TRACKED] |
+| Lessons files (modified) | `docs/specs/*/delivery/lessons.md` — promoted items deleted, single-occurrence items tagged [TRACKED] |
 | Skill backlog | `docs/skill-backlog.md` — created/updated by `improve-skills` |
 
 ## Completion Checklist
@@ -131,14 +139,14 @@ Before telling the user you're done:
 1. All lessons files discovered and processed.
 2. All promoted items applied to their targets via skills.
 3. No duplicate entries introduced in any target file.
-4. All applied items tagged `[APPLIED]` in source files.
+4. All promoted items deleted from source lessons files.
 5. All single-occurrence items tagged `[TRACKED]`.
 6. Skill gaps logged to backlog.
 7. Summary of changes reported to user.
 
 ## What You Never Do
 
-- Write application code (source code as defined in stack-rules).
+- Write application code (source code as defined in project-rules).
 - Promote items below the recurrence threshold (except critical exceptions).
 - Apply changes without user approval.
 - Modify plan artifacts (plan.md, implementation.md, review.md, summary.md).

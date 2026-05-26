@@ -80,6 +80,29 @@ Before creating a new skill, verify all of:
 
 If the quality gate fails, log the gap to the backlog with status `Deferred` and the reason.
 
+## Cross-Reference Lint
+
+Before renaming or deleting a skill, grep all agent files and convention files for references to the old name. Update or remove stale references before completing the change.
+
+## Changelog Maintenance
+
+When modifying an existing skill (fix or significant update), append a changelog entry to its `CHANGELOG.md`:
+
+1. If `CHANGELOG.md` doesn't exist for the skill, create it following the format in any existing skill CHANGELOG (e.g., `.claude/skills/create-implementation-plan/CHANGELOG.md`).
+2. Add the entry under `## [Unreleased]` — one bullet per meaningful change.
+3. Include: what changed, why it changed, and the evidence citation (feature slug or lesson source).
+
+Entry format:
+```markdown
+- {What changed} ({evidence — feature slug or "lessons analysis"})
+```
+
+Do not create a version entry per change — group unreleased changes together. The learner/architect promotes to a versioned entry when the skill reaches a stable milestone.
+
+## Post-Apply
+
+After creating or removing skills, read `.claude/README.md` and update the skill count and any affected sections.
+
 ## What This Skill Does NOT Do
 
 - Classify items — the learner already did that.

@@ -36,7 +36,9 @@ Before writing, ensure you have:
 4. **Build the Skill Mapping** — for each step, determine the disposition:
    - **Follow** — a skill covers this pattern. Provide only feature-specific inputs (entity names, file paths, property types). Do NOT restate how the pattern works.
    - **Build** — a skill covers this pattern but references infrastructure that doesn't exist locally (BuildingBlocks, base classes). The step must include building the missing infrastructure first, then following the skill.
-   - **None** — no skill covers this step. Describe what to accomplish + acceptance criteria. Do NOT write method-body logic flows (sequential pseudo-code under a single method). The developer decides internal decomposition. Log to the Gaps column for future skill creation.
+   - **None** — no skill covers this step. Describe what to accomplish + acceptance criteria. Since the developer has no skill to invoke, also include key domain constraints (type names, case sensitivity, important values) and pattern references (point to existing code). Do NOT write method-body logic flows (sequential pseudo-code under a single method). The developer decides internal decomposition. Log to the Gaps column for future skill creation.
+
+   **Skill verification before setting None:** For each step, list the actions it performs (throws exceptions, registers services, queries data, creates endpoints, configures persistence). Match each action against skill frontmatter descriptions. Only set None after confirming no frontmatter description matches. If a frontmatter is ambiguous, read the skill's When to Use section before deciding.
 
 5. **Anti-pattern check.** Scan the draft for:
    - The word "adapted" or "adapt" near a skill reference — violation. Either Follow or Build, never Adapt.
@@ -66,6 +68,28 @@ Before writing, ensure you have:
 ## Arguments
 
 Pass the feature name: `create-implementation-plan Sprint`
+
+## Required Reading
+
+Before invoking this skill, ensure you have read:
+- `docs/specs/{slug}/definition/spec.md` — feature requirements to plan against
+- `docs/architecture/v1.md` — system shape and existing decisions (already loaded via @)
+- `.claude/skills/` frontmatter of each skill — needed to build the Skill Mapping table
+- `docs/specs/*/delivery/plan.md` (1-2 recent examples) — format consistency
+
+## Anti-patterns
+
+- **Writing method-body plans.** Describing sequential logic steps (1. do X, 2. do Y, 3. do Z) instead of operation + acceptance criteria. This over-specifies and leads the developer to skip skill invocation. Describe *what* to accomplish, not *how* to implement it internally.
+- **Omitting skill mapping for steps that have a matching skill.** Setting disposition to None without running the skill verification test ("list all actions → match each against skill frontmatter"). A step that creates an endpoint, adds a domain event handler, or configures persistence almost always has a matching skill.
+- **Restating pattern details alongside a Follow skill reference.** If the skill already covers file placement, DI wiring, or record structure — delete it from the plan step. Keep only feature-specific inputs the skill can't know. Over-specification causes the developer to skip the skill entirely.
+
+## Downstream Consumers
+
+| Agent | What they use | Impact if incomplete |
+|-------|--------------|---------------------|
+| Developer | All steps (implements against them) | Gaps in plan steps cause skipped implementation or wrong approach |
+| Architect | Skill Mapping, plan structure (Step 1 done check) | Done check can't verify conformance without clear acceptance criteria |
+| Reviewer | Step descriptions (Step 2 conformance check) | Reviewer can't verify plan was followed without clear per-step requirements |
 
 ## What this skill does NOT do
 

@@ -1,6 +1,6 @@
 # Agent Coordination Protocol
 
-Three-agent pipeline for feature development. Agents coordinate through file-based handoffs and **hub-and-spoke messaging** — all messages route through the team lead.
+Three-agent pipeline (architect, developer, reviewer) for feature development. Agents coordinate through file-based handoffs and **hub-and-spoke messaging** — all messages route through the team lead.
 
 **Deploy to:** `.claude/rules/agents-workflow.md` (auto-loads every session)
 
@@ -49,107 +49,65 @@ To team-lead: "For {recipient}: {message content}"
 
 ## All Agents
 
+- **Instructions from the team lead are user decisions.** Instructions relayed through the team lead represent user decisions already made. Agents may flag concerns or recommend alternatives *before* the decision, but once an instruction arrives, they execute it — they don't substitute their own judgment because they consider it more efficient or equivalent.
 - **Rules go in files, not memory.** When a reusable rule or convention is identified, capture it in the appropriate rule or agent file — not in memory. Memory is for context that doesn't fit in rule files (user preferences, project state, external references). This applies to every agent, not just the team lead.
 
-## Team Lead Rules
+## Message Size Contract
 
-- Do not read files before delegating to agents. Send the file path in the message and let the agent read it.
-- Only read a file yourself when you need its content to make a routing or coordination decision — not to relay it.
-- Relay user questions about plan content to the architect — do not investigate or answer them yourself.
-- **Triage all inter-agent messages.** Before forwarding, check: does this message reverse a user decision, change scope, or remove a plan step? If yes, escalate to the user first.
+Keep agent outputs focused. Content goes in files; messages are notifications with summaries.
+
+| Output type | Max length | Rule |
+|-------------|-----------|------|
+| Analysis outputs (Phase 1) | ~500 words | Write detailed findings to questions.md or a notes file; message is the summary |
+| Handoff messages | ~300 words | One paragraph of what was done + one paragraph of what's next |
+| Checkpoint reports | Structured format | See Checkpoint Report Format in `.claude/conventions/pipeline-protocol.md` |
+
+**Write first, message second** — this applies to ALL artifacts, not just questions. Implementation details go in implementation.md, review findings go in review.md, questions go in questions.md. Messages are notifications.
 
 ## Agents
 
 | Agent | Model | Scope | Managed by |
 |-------|-------|-------|------------|
-| architect | opus | Plans, Step 1 review (done check), question answers, escalation decisions | team lead |
+| team-lead | claude-opus-4-6 | Pipeline orchestration, message routing, commit protocol | user |
+| architect | claude-opus-4-6 | Plans, Step 1 review (done check), question answers, escalation decisions | team lead |
+| po | claude-opus-4-6 | Feature shaping, spec writing, question answering | team lead |
+| critic | claude-opus-4-6 | Cross-reference review of feature specs (vs v1.md) and plans (vs feature spec) | PO (spec reviews), architect (plan reviews) |
 | developer | opusplan | Implementation, implementation.md, questions.md | team lead |
 | reviewer | sonnet | Step 2 review (code review), severity-rated conformance checks | team lead |
-| critic | opus | Cross-reference review of feature specs (vs v1.md) and plans (vs feature spec) | PO (spec reviews), architect (plan reviews) |
+| learner | claude-opus-4-6 | Lessons consolidation, pattern promotion to system files | team lead |
+| solo | opusplan | Small fixes and scoped changes (1-3 files) | user |
 
-## Pipeline
+## Pipeline Protocol
 
-```
-Human → PO (shape feature → write spec)
-                    ↓
-         PO offers: cross-check or critic?
-          ↓ self                ↓ critic
-     PO cross-checks      PO spawns critic (Mode 1: spec vs v1.md)
-          ↓                     ↓ findings
-     Status: Ready         PO fixes gaps → Status: Ready
-                    ↓
-Human → architect (analyze — Phase 1)
-                    ↓
-              questions checkpoint (team lead triages)
-                    ↓
-         architect (write plan — Phase 2)
-                    ↓
-         architect offers: self-review or critic?
-          ↓ self                ↓ critic
-     architect reviews     architect spawns critic (Mode 2: plan vs spec)
-          ↓                     ↓ findings
-     plan approved         architect fixes gaps → plan approved
-                    ↓
-         auto-approve always (split if >10 steps and each sub-plan >= 2 steps)
-                    ↓
-              developer (implement → implementation.md)
-                    ↓
-              architect (Step 1: done check + write lessons)
-               ↓ fail          ↓ pass
-        developer (fix)    reviewer (Step 2: code review)
-                           ↓ approve       ↓ request changes
-                    team lead (close)    developer ↔ reviewer
-                                       (max 3 fix cycles)
-                                            ↓ exhausted
-                                      architect (escalation)
-```
+For the full pipeline flow, checkpoint format, and message handoffs, see `.claude/conventions/pipeline-protocol.md` (loaded by pipeline agents via `@`).
 
-## Message Handoffs (all via team lead)
+## Pipeline Modes
 
-Each handoff: trigger → sender → team lead action → receiver.
+The pipeline is not a rigid sequence — ceremony scales with uncertainty. Multiple entry points and team configurations exist.
 
-### Developer → Team Lead → Architect: Ready for review
-**Trigger:** Any implementation round complete — implementation.md written/updated.
-**Developer says:** "For architect: implementation.md written for {FeatureName}, ready for Step 1."
-**Team lead:** Forward to architect.
-**Architect:** Reads implementation.md against plan. Pass → messages team lead for reviewer. Fail → writes review.md, messages team lead for developer.
+### Entry Points
 
-### Architect → Team Lead → Reviewer: Step 1 passed
-**Trigger:** Done check passes.
-**Architect:** Writes lessons to `docs/specs/{slug}/delivery/lessons.md` (has full context now — plan vs implementation fresh in mind), then messages team lead.
-**Architect says:** "For reviewer: Step 1 passed for {FeatureName}. Plan: docs/specs/{slug}/delivery/plan.md"
-**Team lead:** Forward to reviewer.
+| Entry Point | First Agent | What's Skipped | Use Case |
+|-------------|------------|----------------|----------|
+| `be solo` | solo | Everything — no pipeline, no plan/review | Bug fixes, 1-3 file changes |
+| `be architect` | architect | PO, spec, team orchestration | Refactoring plans, tech debt, ad-hoc analysis |
+| Team lead (existing plan) | developer | PO + architect planning | Plan already written via `be architect` |
+| Team lead (full pipeline) | PO or architect | Nothing | Complex features needing discovery and alignment |
 
-### Reviewer → Team Lead → Developer: Fixes needed
-**Trigger:** CRITICAL or HIGH issues found.
-**Reviewer says:** "For developer: Fixes needed for {FeatureName}, see review.md. Cycle {N}/3."
-**Team lead:** Forward to developer.
+### Team Configurations
 
-### Developer → Team Lead → Reviewer: Fixes applied
-**Trigger:** All review items addressed.
-**Developer says:** "For reviewer: Fixes applied for {FeatureName}, ready for re-review. Cycle {N}/3."
-**Team lead:** Forward to reviewer.
+| Config | Agents | When |
+|--------|--------|------|
+| **Fast** | architect + developer (developer self-reviews) | Well-understood patterns, internal tooling |
+| **Standard** | architect + developer + reviewer | Production features, team alignment needed |
+| **Standard + Codex** | Standard + multi-model cross-validation | Security-sensitive, data-accuracy critical |
 
-### Reviewer → Team Lead: Approved
-**Trigger:** APPROVE verdict.
-**Reviewer says:** "For team-lead: APPROVED: {FeatureName}."
-**Team lead:** Writes summary.md, updates cross-references (spec Status, backlog). No architect wake-up needed — lessons already written after Step 1.
+### Key Principles
 
-### Reviewer → Team Lead → Architect: Escalation
-**Trigger:** 3 fix cycles exhausted OR architecture decision needed.
-**Reviewer says:** "For architect: ESCALATION for {FeatureName}: {reason}."
-**Team lead:** Forward to architect.
-
-### Developer → Team Lead → Architect: Question
-**Trigger:** Blocker mid-implementation.
-**Developer says:** "For architect: Blocked on step {N} for {FeatureName}. Question in questions.md."
-**Team lead:** Read questions.md. If the answer would reverse a user decision, change scope, or remove a plan step → **ask the user first** before forwarding. Otherwise, forward to architect.
-**Architect:** Answers inline, updates plan if needed, messages team lead for developer.
-
-### Architect answers that need user approval
-**Trigger:** Architect's answer to a developer question would reverse a user decision, change scope, or remove a plan step.
-**Architect says:** "For team lead: Question from developer requires user decision. Options: {A, B, C}. I recommend {X} because {reason}."
-**Team lead:** Present options to user. Forward user's decision to architect. Architect updates plan and answers developer.
+- PO phase is optional — architect can plan directly from incomplete tickets
+- Critic is always optional with confirmation — never forced
+- Solo handles its own scope — small improvements never enter the pipeline
+- Known patterns get less process; novel work gets more
 
 ## Cycle Caps
 
@@ -161,225 +119,30 @@ Each handoff: trigger → sender → team lead action → receiver.
 
 After escalation to human, agents STOP and wait.
 
-## Implementation Plan Format
+## Artifact Formats
 
-Plans created via the `create-implementation-plan` skill include an additional **Skill Mapping** section before Implementation Steps. See the skill's `references/plan-template.md` for the full template.
+| Artifact | Format Definition |
+|----------|-------------------|
+| Plan | `.claude/skills/create-implementation-plan/references/plan-template.md` |
+| Implementation | `.claude/conventions/implementation-format.md` |
+| Summary | `.claude/conventions/summary-format.md` |
+| Questions | `.claude/conventions/questions-format.md` |
+| Lessons | `.claude/conventions/lessons-format.md` |
+| Review | `.claude/conventions/review-format.md` |
 
-Plans saved to `docs/specs/{slug}/delivery/plan.md` by architect.
+## Convention Locations
 
-```
-# {Feature Name}
+| Location | Scope | What lives here |
+|----------|-------|-----------------|
+| `.claude/rules/` | Auto-loaded every session | Universal behavioral constraints (guardrails, KB navigation, pipeline guardrails) |
+| `.claude/conventions/` | Loaded via `@` by pipeline agents | Pipeline artifact formats, coordination protocol |
+| `.claude/agents/` | Loaded on `be {agent}` | Agent-specific instructions, boundaries, communication rules |
+| `.claude/skills/` | Invoked on demand | Reusable code patterns and scaffolding workflows |
+| `docs/conventions/` | Loaded via `@` by agents | Stack-specific coding standards, project rules |
 
-**Feature Spec:** `docs/specs/{slug}/definition/spec.md` | None
+New instructions go in the narrowest applicable scope. See `.claude/README.md` for the full decision tree.
 
-## Context
-What problem this solves. Which service(s) impacted and why.
-
-## Scope
-In scope. Explicitly out of scope.
-
-## Domain Model Changes
-New/modified aggregates, entities, value objects, domain events.
-
-## Data Model Changes
-New tables, columns, relationships, migrations needed.
-
-## Implementation Steps
-Numbered steps — each step is one focused task.
-For each step:
-- What to do (not how to code it)
-- Which files to create or modify (full paths)
-- What pattern to follow (reference an existing file)
-- Which skill to use if one applies
-- Dependencies on previous steps
-
-## Cross-Service Changes (if applicable)
-gRPC contract changes, integration events, consumers.
-
-## Migration Notes (if applicable)
-Migration commands per relevant persistence convention. Seed data if needed.
-
-## Testing Strategy
-Key scenarios to test.
-
-## Open Questions
-Unresolved decisions needing input.
-```
-
-## Implementation File Format
-
-Written by developer after each implementation round: `docs/specs/{slug}/delivery/implementation.md`.
-
-```
-# {Feature Name} — Implementation
-
-## Files Created
-- `full/path/to/File` — what it does
-
-## Files Modified
-- `full/path/to/File` — what changed and why
-
-## Key Decisions
-- Implementation choices not specified in the plan
-
-## Deviations from Plan
-- Steps done differently, with reasons
-```
-
-## Summary File Format
-
-Written by team lead after reviewer approval: `docs/specs/{slug}/delivery/summary.md`. Its existence means the pipeline completed successfully.
-
-```
-# {Feature Name} — Summary
-
-## Status: COMPLETE
-
-## What Was Built
-- [1-3 sentence description of the feature/change]
-
-## Key Outcomes
-- [Files created/modified count]
-- [Build status]
-- [Review verdict and cycle count]
-
-## Deviations from Plan
-- [Any deviations, or "None"]
-
-## Notes
-- [Anything the user should know before committing]
-```
-
-## Questions File Format
-
-Written by any agent when blocked or needing clarification. The recipient answers inline. All questions go in one file — `docs/specs/{slug}/delivery/questions.md`.
-
-**Write first, message second.** Every agent must write its questions to the file before sending them as a message. The file is the log; the message is the notification.
-
-```
-# {Feature Name} — Questions
-
-## Q1: [Short title]
-**From:** [agent role]
-**To:** [agent role or "user"]
-**Status:** Open | Answered | Resolved
-**Step:** [Plan step number and name, or "Phase 1 analysis" if pre-plan]
-**File:** [File being worked on, if relevant]
-
-**Context:** [What was being done, what was tried, what is unclear]
-
-**Question:** [Specific question or decision needed]
-
-### Answer
-[Recipient fills this in, sets Status → Answered]
-```
-
-**Rules:**
-- One question per section. Multiple blockers = multiple sections.
-- Include enough context that the recipient can answer without reading the sender's work.
-- If the answer changes the plan, architect updates the plan. Plan stays source of truth.
-- Questions are numbered sequentially across the entire file (Q1, Q2, Q3...) regardless of sender.
-
-## Lessons File Format
-
-All pipeline agents append under their own heading: `docs/specs/{slug}/delivery/lessons.md`. The PO writes lessons during spec shaping (before the delivery/ folder exists) — create the folder and lessons file if needed.
-
-```
-# {Feature Name} — Lessons
-
-## PO Lessons
-- Spec gaps the critic caught
-- Research that changed a decision
-- Questions that should have been asked earlier or differently
-
-## Architect Lessons
-- Plan instructions that were ambiguous
-- Architecture decisions needing documentation
-- Skill gaps discovered
-
-## Developer Lessons
-- Patterns discovered not yet documented
-- Inconsistencies found
-- Steps missing from a skill
-
-## Reviewer Lessons
-- Review criteria that were unclear
-- Recurring code quality issues
-- Patterns that should become conventions
-```
-
-Only add items not already in CLAUDE.md, convention files, skills, or agent files. Update before `/compact` or `/clear`.
-
-**Mandatory:** Every agent must write lessons before finishing its work. This is not optional — if you learned something (a gap, a pattern, a mistake, an ambiguity), write it down. If the lessons file doesn't exist yet, create it. If your heading already exists, append to it. No agent exits without writing lessons.
-
-## Review Checklist
-
-### Step 1: Done check (architect, no code reading)
-- Every plan step has a corresponding implementation.md entry
-- No plan steps missing or silently skipped
-- Reported deviations have reasons
-- No unexpected files or scope creep
-
-### Step 2: Code review (reviewer, reads implementation)
-- Each plan instruction has corresponding code that matches
-- Referenced patterns and skills were followed
-- Naming conventions match coding standards
-- Build passes (fresh output, not assumed)
-- No new patterns invented
-- Domain rules enforced in aggregates, not handlers
-- Deviations flagged with verdict: plan wrong or code wrong
-- Security: no hardcoded secrets, inputs validated, no injection vectors
-- Logic: all branches reachable, no off-by-one, null handling correct
-- Performance: check for performance anti-patterns per loaded conventions
-- Skill mapping verified: any "None" disposition in the Skill Mapping was warranted (no existing skill actually covers the step)
-
-### Severity Ratings (reviewer)
-- **CRITICAL**: Security vulnerability, data loss risk, fundamentally wrong approach. Blocks merge.
-- **HIGH**: Logic error, missing error handling, plan deviation without justification. Should fix.
-- **MEDIUM**: Suboptimal pattern, minor inconsistency. Consider fixing.
-- **LOW**: Style preference, minor improvement. Optional.
-
-### Verdict
-- **APPROVE**: No CRITICAL or HIGH issues.
-- **REQUEST CHANGES**: Any CRITICAL or HIGH issue present.
-- **COMMENT**: Only MEDIUM/LOW, no blockers.
-
-## Review Output Format
-
-Reviewer saves to `docs/specs/{slug}/delivery/review.md`:
-
-```
-# {Feature Name} — Review
-
-## Reviewed By
-[Who performed this review: reviewer (Sonnet), /review (skill), /codex:rescue (Codex), or combination]
-
-## Verdict: APPROVE | REQUEST CHANGES | COMMENT
-
-## Pre-commitment Predictions
-- [What you expected to find vs what you found]
-
-## Findings
-
-### [SEVERITY] Finding title
-**File:** `path/to/file:line`
-**Issue:** What's wrong
-**Fix:** Specific suggestion
-
-## Positive Observations
-- [What was done well]
-
-## Gaps
-- [Edge cases or paths not covered]
-
-## Open Questions
-- [Low-confidence findings moved here by self-audit]
-
-## Evidence
-| Check | Result | Command | Output |
-|-------|--------|---------|--------|
-| Build | pass/fail | [per stack-rules] | [summary] |
-```
+**Maintenance:** When adding or removing agents, rules, conventions, or skills, read `.claude/README.md` and update it to reflect the change.
 
 ## Skill Authority
 

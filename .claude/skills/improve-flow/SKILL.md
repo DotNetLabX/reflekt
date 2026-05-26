@@ -55,6 +55,24 @@ Applies classified and approved lesson items to their target flow files. Each it
 - Don't add dates. The git history tracks when it was added.
 - Condense the lesson to its actionable essence. Strip the story, keep the rule.
 
+## Anti-pattern Promotion
+
+When a lesson recurs 2+ times across features and maps to an agent file, check if that agent has an `## Anti-patterns` section. If yes, promote the recurring lesson as a new anti-pattern entry. Format:
+
+```markdown
+- **{Pattern name}.** {What goes wrong}. {Correct approach instead}.
+```
+
+Anti-patterns are a valid promotion target alongside rules, conventions, and agent instructions. The `## Anti-patterns` section exists in developer.md and reviewer.md.
+
+## Post-Apply
+
+After modifying agent files, rule files, or conventions, read `.claude/README.md` and update it if the change affects the system overview (new/removed agents, new rule files, changed information layers).
+
+## Cross-Reference Lint
+
+Before renaming or removing a rule, convention, or agent reference, grep all agent files, rule files, and convention files for references to the old name. Update or remove stale references before completing the change.
+
 ## What This Skill Does NOT Do
 
 - Classify items — the learner already did that.
