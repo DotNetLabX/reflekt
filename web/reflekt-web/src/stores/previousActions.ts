@@ -48,9 +48,10 @@ export const usePreviousActionsStore = defineStore('previousActions', {
         }
         const data = (await res.json()) as PreviousActionItem[]
         this.items = data
-        if (data.length > 0) {
-          this.previousSprintId = data[0].previousSprintId
-          this.previousSprintName = data[0].previousSprintName
+        const first = data[0]
+        if (first) {
+          this.previousSprintId = first.previousSprintId
+          this.previousSprintName = first.previousSprintName
         } else {
           this.previousSprintId = null
           this.previousSprintName = null

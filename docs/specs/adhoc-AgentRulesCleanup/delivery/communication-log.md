@@ -12,7 +12,7 @@
 | 2 | team-lead | analyst | Spawned read-only audit of all agent and rule files | None |
 | 3 | analyst | team-lead | Delivered full audit: 4 critical, 2 high, 8 medium, 2 low findings | None |
 | 4 | team-lead | user | Presented findings and asked 4 clarifying questions | None |
-| 5 | user | team-lead | Answered: conventions exist, product v1+v2 exist, new auto-approve splitting rule, build KB from fokus format | None |
+| 5 | user | team-lead | Answered: conventions exist, product v1+v2 exist, new auto-approve splitting rule, build KB from a sibling app's format | None |
 | 6 | team-lead | user | Presented final cleanup plan with all changes | None |
 | 7 | user | team-lead | Approved: go ahead, implement all through pipeline | None |
 | 8 | team-lead | architect | Launching architect to write implementation plan | None |

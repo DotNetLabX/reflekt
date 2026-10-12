@@ -7,7 +7,7 @@ namespace Reflekt.UnitTests.Cards;
 public class EvidenceLinkTests
 {
     private static Card CreateCard() =>
-        Card.Create("Some text", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        Card.Create("Some text", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
 
     // AttachEvidenceLink
 

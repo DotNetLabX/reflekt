@@ -2,7 +2,7 @@
 
 ## Architect Lessons
 
-- The reference project (`D:\src\dotnet-microservices`) uses `Blocks.{Name}` naming for BuildingBlocks packages, but Reflekt uses `BuildingBlocks.{Name}`. Skills were written for the reference project's convention. When porting infrastructure from a reference project, always check naming conventions first and adapt — don't blindly copy.
+- The reference template project uses `Blocks.{Name}` naming for BuildingBlocks packages, but Reflekt uses `BuildingBlocks.{Name}`. Skills were written for the reference project's convention. When porting infrastructure from a reference project, always check naming conventions first and adapt — don't blindly copy.
 
 - The `create-building-blocks-package` skill hardcodes `Blocks.{Name}` naming. This should be parameterized or at minimum documented as "check the existing convention in `src/BuildingBlocks/`." The naming is a project-level decision, not a skill-level one.
 

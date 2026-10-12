@@ -5,7 +5,7 @@ Programming conventions for EF Core specific to this codebase. Referenced by dev
 ## Navigation Loading
 
 - `ThenInclude` chains continue from the last included navigation. Pattern: `Include(s => s.Memberships).ThenInclude(m => m.Ticket).ThenInclude(t => t.Assignee)`.
-- `Contains` on a fetched `List<string>` translates to SQL `IN (...)` correctly. For very large sets this would need batching, but Fokus dataset is bounded.
+- `Contains` on a fetched `List<string>` translates to SQL `IN (...)` correctly. For very large sets this would need batching, but the Reflekt dataset is bounded.
 - **Missing `ThenInclude` causes silent null/zero — not a runtime error.** When service logic accesses `link.Ticket?.IssueType` but the repository only includes `link` (not `.ThenInclude(l => l.Ticket)`), the navigation property is null. Computations silently produce 0 or skip entries. Always match `ThenInclude` depth to the deepest navigation property accessed in downstream service code.
 
 ## Cross-Aggregate Queries

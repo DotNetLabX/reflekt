@@ -12,13 +12,13 @@ public class CardTests
     public void Create_Note_SetsAllPropertiesCorrectly()
     {
         var before = DateTime.UtcNow;
-        var card = Card.Create("Great teamwork", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        var card = Card.Create("Great teamwork", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
         var after = DateTime.UtcNow;
 
         card.Text.Should().Be("Great teamwork");
         card.SprintId.Should().Be(1);
         card.ParticipantId.Should().Be(2);
-        card.ColumnType.Should().Be(ColumnType.WentWell);
+        card.ColumnType.Should().Be(ColumnType.Column1);
         card.CardType.Should().Be(CardType.Note);
         card.AssigneeName.Should().BeNull();
         card.CreatedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
@@ -38,7 +38,7 @@ public class CardTests
     [Fact]
     public void Create_Note_RaisesCardCreatedEvent()
     {
-        var card = Card.Create("Good sprint", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        var card = Card.Create("Good sprint", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
 
         card.DomainEvents.Should().HaveCount(1);
         var ev = card.DomainEvents[0].Should().BeOfType<CardCreatedEvent>().Subject;
@@ -48,7 +48,7 @@ public class CardTests
     [Fact]
     public void Create_WithEmptyText_Throws()
     {
-        var act = () => Card.Create("", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        var act = () => Card.Create("", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -57,7 +57,7 @@ public class CardTests
     [InlineData("   ")]
     public void Create_WithWhitespaceText_Throws(string text)
     {
-        var act = () => Card.Create(text, sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        var act = () => Card.Create(text, sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -71,7 +71,7 @@ public class CardTests
     [Fact]
     public void Create_ActionItem_InWrongColumn_Throws()
     {
-        var act = () => Card.Create("Fix bug", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.ActionItem, "Ana");
+        var act = () => Card.Create("Fix bug", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.ActionItem, "Ana");
         act.Should().Throw<ArgumentException>();
     }
 
@@ -85,7 +85,7 @@ public class CardTests
     [Fact]
     public void Create_Note_WithAssigneeName_Throws()
     {
-        var act = () => Card.Create("Nice work", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, "Ana");
+        var act = () => Card.Create("Nice work", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, "Ana");
         act.Should().Throw<ArgumentException>();
     }
 
@@ -94,7 +94,7 @@ public class CardTests
     [Fact]
     public void Update_ChangesTextAndTimestamp()
     {
-        var card = Card.Create("Original", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        var card = Card.Create("Original", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
         var createdAt = card.CreatedAt;
         var before = DateTime.UtcNow;
 
@@ -120,7 +120,7 @@ public class CardTests
     [Fact]
     public void Update_RaisesCardUpdatedEvent()
     {
-        var card = Card.Create("Original", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        var card = Card.Create("Original", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
         card.ClearDomainEvents();
 
         card.Update("Updated", null);
@@ -133,7 +133,7 @@ public class CardTests
     [Fact]
     public void Update_WithEmptyText_Throws()
     {
-        var card = Card.Create("Original", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        var card = Card.Create("Original", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
         var act = () => card.Update("", null);
         act.Should().Throw<ArgumentException>();
     }
@@ -143,7 +143,7 @@ public class CardTests
     [Fact]
     public void MarkDeleted_RaisesCardDeletedEvent()
     {
-        var card = Card.Create("Original", sprintId: 1, participantId: 2, ColumnType.WentWell, CardType.Note, null);
+        var card = Card.Create("Original", sprintId: 1, participantId: 2, ColumnType.Column1, CardType.Note, null);
         card.ClearDomainEvents();
 
         card.MarkDeleted();

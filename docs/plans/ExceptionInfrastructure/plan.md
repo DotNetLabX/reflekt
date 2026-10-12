@@ -2,7 +2,7 @@
 
 ## Context
 
-The skill audit (`docs/audits/full-skill-audit.md`) found that the error-handling skill documents a full exception stack (exception hierarchy, GlobalExceptionMiddleware, Guard utilities) that doesn't exist in the Reflekt codebase. The reference implementation lives in `D:\src\dotnet-microservices` under `Blocks.Exceptions`, `Blocks.Core`, `Blocks.Domain`, and `Blocks.AspNetCore`.
+The skill audit (`docs/audits/full-skill-audit.md`) found that the error-handling skill documents a full exception stack (exception hierarchy, GlobalExceptionMiddleware, Guard utilities) that doesn't exist in the Reflekt codebase. The reference implementation lives in the reference template project under `Blocks.Exceptions`, `Blocks.Core`, `Blocks.Domain`, and `Blocks.AspNetCore`.
 
 Additionally, the existing BuildingBlocks packages in Reflekt use the wrong naming convention (`BuildingBlocks.{Name}` instead of `Blocks.{Name}`). This plan corrects the naming and adds the missing exception infrastructure.
 
@@ -305,7 +305,7 @@ The current `RepositoryBase` only has `AddAsync`, `SaveChangesAsync`, and `GetBy
 
 **Sub-step 4a — Extend RepositoryBase with missing methods**
 
-Add `FindByIdAsync`, `ExistsAsync`, and `Query()` to `RepositoryBase`. Check the reference project at `D:\src\dotnet-microservices\src\BuildingBlocks\Blocks.EntityFrameworkCore\Repositories\RepositoryBase.cs` for the exact signatures.
+Add `FindByIdAsync`, `ExistsAsync`, and `Query()` to `RepositoryBase`. Check `src/BuildingBlocks/Blocks.EntityFrameworkCore/Repositories/RepositoryBase.cs` in the reference template project for the exact signatures.
 
 **Files to modify:**
 

@@ -33,6 +33,7 @@ public class SprintEndpointTests : IAsyncLifetime
         _authFactory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -58,6 +59,7 @@ public class SprintEndpointTests : IAsyncLifetime
         _anonFactory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -68,6 +70,7 @@ public class SprintEndpointTests : IAsyncLifetime
 
         _client = _authFactory.CreateClient();
         _anonClient = _anonFactory.CreateClient();
+        await _authFactory.SeedTestUserAsync();
 
         var res = await _client.PostAsJsonAsync("/api/teams", new { name = "Test Team" });
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
@@ -155,6 +158,7 @@ public class SprintEndpointTests : IAsyncLifetime
         var res3 = await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
         res3.StatusCode.Should().Be(HttpStatusCode.OK);
         (await res3.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("currentPhase").GetString().Should().Be("Discussing");
+        await _authFactory.SeedDiscussedGroupsAsync(sprintId);
 
         var res4 = await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
         res4.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -166,8 +170,10 @@ public class SprintEndpointTests : IAsyncLifetime
     {
         var sprintId = await CreateSprintAsync("Advance Reporting Test");
         await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/start", new { });
-        for (var i = 0; i < 4; i++)
+        for (var i = 0; i < 3; i++)
             await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
+        await _authFactory.SeedDiscussedGroupsAsync(sprintId);
+        await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
 
         var res = await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/advance-phase", new { });
         res.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -247,6 +253,7 @@ public class SprintEndpointTests : IAsyncLifetime
         await using var factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -268,6 +275,7 @@ public class SprintEndpointTests : IAsyncLifetime
             });
 
         var client = factory.CreateClient();
+        await factory.SeedTestUserAsync();
         var teamRes = await client.PostAsJsonAsync("/api/teams", new { name = "Empty Team" });
         var teamBody = await teamRes.Content.ReadFromJsonAsync<JsonElement>();
         var teamId = teamBody.GetProperty("id").GetInt32();

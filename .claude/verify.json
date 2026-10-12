@@ -1,0 +1,25 @@
+{
+  "roles": {
+    "build": "dotnet build Reflekt.slnx",
+    "unit": "dotnet test tests/Reflekt.UnitTests/Reflekt.UnitTests.csproj --filter \"Speed!=Slow\"",
+    "full": "dotnet test Reflekt.slnx && npm --prefix web/reflekt-web ci && npm --prefix web/reflekt-web run build"
+  },
+  "slow": {
+    "thresholdMs": 2000,
+    "runner": "vstest",
+    "targets": [
+      "Reflekt.slnx"
+    ]
+  },
+  "stepLimitSeconds": 30,
+  "measured": {
+    "unit": {
+      "ms": 8474,
+      "at": "2026-10-13"
+    },
+    "full": {
+      "ms": 67817,
+      "at": "2026-10-13"
+    }
+  }
+}

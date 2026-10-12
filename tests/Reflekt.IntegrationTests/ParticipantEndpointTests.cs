@@ -32,6 +32,7 @@ public class ParticipantEndpointTests : IAsyncLifetime
         _authFactory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -62,6 +63,7 @@ public class ParticipantEndpointTests : IAsyncLifetime
         _anonFactory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -72,6 +74,7 @@ public class ParticipantEndpointTests : IAsyncLifetime
 
         _client = _authFactory.CreateClient();
         _anonClient = _anonFactory.CreateClient();
+        await _authFactory.SeedTestUserAsync();
 
         var res = await _client.PostAsJsonAsync("/api/teams", new { name = "Test Team" });
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();

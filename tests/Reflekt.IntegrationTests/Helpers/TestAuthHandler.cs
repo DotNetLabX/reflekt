@@ -15,11 +15,13 @@ public sealed class TestAuthHandler(
     public const string SchemeName = "Test";
     public static string TestEmail { get; set; } = "test@example.com";
     public static string TestDisplayName { get; set; } = "Test User";
+    public const int TestUserId = 1;
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var claims = new[]
         {
+            new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()),
             new Claim(ClaimTypes.Email, TestEmail),
             new Claim(ClaimTypes.Name, TestDisplayName),
         };

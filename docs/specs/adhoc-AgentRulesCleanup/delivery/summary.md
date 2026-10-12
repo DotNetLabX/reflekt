@@ -15,5 +15,5 @@ Cleaned up `.claude/agents/` and `.claude/rules/` files: deleted 3 stale/duplica
 - Reviewer found one additional file (`create-implementation-plan/SKILL.md`) that needed the auto-approve rule update — not in original plan but correctly identified as a consistency gap
 
 ## Notes
-- The `docs/kb/` knowledge base referenced by `kb-maintenance.md` and `kb-navigation.md` still needs to be built (separate task, following fokus format)
+- The `docs/kb/` knowledge base referenced by `kb-maintenance.md` and `kb-navigation.md` still needs to be built (separate task, following a sibling app's format)
 - `architect.md` line 100 references `docs/product/v1.md` in a read-on-demand context — not updated to include v2.md since the architect reads both via the spec cross-check workflow, not via `@` directive

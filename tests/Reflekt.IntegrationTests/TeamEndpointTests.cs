@@ -28,11 +28,12 @@ public class TeamEndpointTests : IAsyncLifetime
     private HttpClient _client = null!;
     private HttpClient _anonClient = null!;
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         _authFactory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -58,6 +59,7 @@ public class TeamEndpointTests : IAsyncLifetime
         _anonFactory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -68,8 +70,7 @@ public class TeamEndpointTests : IAsyncLifetime
 
         _client = _authFactory.CreateClient();
         _anonClient = _anonFactory.CreateClient();
-
-        return Task.CompletedTask;
+        await _authFactory.SeedTestUserAsync();
     }
 
     [Fact]
@@ -90,16 +91,6 @@ public class TeamEndpointTests : IAsyncLifetime
         var response = await _anonClient.PostAsJsonAsync("/api/teams", new { name = "My Team" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-    [Fact]
-    public async Task CreateTeam_DuplicateCreator_Returns409()
-    {
-        await _client.PostAsJsonAsync("/api/teams", new { name = "First Team" });
-
-        var response = await _client.PostAsJsonAsync("/api/teams", new { name = "Second Team" });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]

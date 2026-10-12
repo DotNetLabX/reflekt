@@ -4,7 +4,7 @@ Programming conventions for C# / .NET specific to this codebase. Referenced by d
 
 ## Namespace Imports
 
-- C# does not auto-import parent namespaces. When a class in `Fokus.API.Features.Sync.SyncSprints` consumes a class in `Fokus.API.Features.Sync`, an explicit `using` is required.
+- C# does not auto-import parent namespaces. When a class in `Reflekt.API.Features.Sprints.CreateSprint` consumes a class in `Reflekt.API.Features.Sprints`, an explicit `using` is required.
 - `GlobalUsings.cs` should exist in all three service projects (API, Domain, Persistence), not just API. Each project has its own frequently-used namespaces.
 
 ## Error Handling in Handlers

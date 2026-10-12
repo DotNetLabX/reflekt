@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
+using Reflekt.IntegrationTests.Helpers;
 
 namespace Reflekt.IntegrationTests;
 
@@ -18,6 +19,7 @@ public class FoundationSmokeTests : IAsyncLifetime
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                 {
                     config.AddInMemoryCollection(new Dictionary<string, string?>

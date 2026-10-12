@@ -7,14 +7,14 @@ Architectural guardrails, repo structure, and conventions. Referenced by all age
 Source files are files that contain application code. Agents restricted from writing source code must not create or modify these files:
 
 - `src/**/*.cs` — all C# files under the services, modules, and building blocks tree
-- `client/src/**/*.ts` — TypeScript files
-- `client/src/**/*.vue` — Vue single-file components
-- `client/src/**/*.css` — stylesheets
+- `web/reflekt-web/src/**/*.ts` — TypeScript files
+- `web/reflekt-web/src/**/*.vue` — Vue single-file components
+- `web/reflekt-web/src/**/*.css` — stylesheets
 
 These are NOT source files (agents may read/write them freely):
 - `docs/**` — documentation, specs, plans, KB entries
 - `.claude/**` — agent definitions, rules, skills
-- `client/index.html`, `client/*.config.*` — frontend build config
+- `web/reflekt-web/index.html`, `web/reflekt-web/*.config.*` — frontend build config
 - Root config files (`*.slnx`, `docker-compose.*`, `*.json`, `*.md`)
 
 ## Guardrails — DO NOT
@@ -74,7 +74,7 @@ API  ──▶  Domain
 ## Build Verification
 
 - `dotnet build` — run after every backend implementation step. Fresh output, not assumed.
-- `npm run build` (from `client/`) — run after frontend changes. Must exit 0 with no TypeScript errors.
-- `npx vitest run` (from `client/`) — run frontend tests when they exist.
+- `npm run build` (from `web/reflekt-web/`) — run after frontend changes. Must exit 0 with no TypeScript errors.
+- `npx vitest run` (from `web/reflekt-web/`) — run frontend tests when they exist.
 - **File-lock MSB errors (MSB3026/MSB3027/MSB3492) on Windows are not compilation errors** — they mean the app or dev server is holding output DLLs. Filter with `error CS` to confirm zero actual compiler errors. Don't chase these as build failures.
 - Debug artifact grep: `Console.WriteLine` (debugging), `TODO`, `HACK`, `FIXME`, commented-out code.

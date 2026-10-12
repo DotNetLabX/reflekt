@@ -418,8 +418,9 @@ FodyWeavers.xsd
 *.msp
 
 # SQLite data files
-data/*.db
-data/*.db-*
+*.db
+*.db-shm
+*.db-wal
 
 # Environment-specific settings (may contain secrets)
 appsettings.Development.json
@@ -428,9 +429,20 @@ appsettings.Development.json
 web/reflekt-web/node_modules/
 web/reflekt-web/dist/
 
-# Claude Plugins
-/.omc
+# Deploy package (may contain secrets)
+deploy.zip
+
+# Agent tool state (local, machine-specific)
+.omc/
+.claude/settings.local.json
+.claude/audit/
+.claude/.current-agent
+.claude/.worktree-target
+.claude/.approval-scope
+.claude/.pipeline-state
 
 # Graphify
 graphify-out/cache/
 graphify-out/graph.html
+graphify-out/.graphify_chunk_*
+graphify-out/cost.json

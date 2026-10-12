@@ -4,7 +4,7 @@ Service DI registration — layer structure, where each dependency type goes, Ho
 
 ## Reference
 
-`src/Services/` — all services follow this pattern. Fokus (FastEndpoints) demonstrates the standard DI structure with API + Persistence layers (no Application project).
+`src/Services/` — all services follow this pattern. Reflekt (FastEndpoints) demonstrates the standard DI structure with API + Persistence layers (no Application project).
 
 ## Layer Structure
 
@@ -156,18 +156,18 @@ public static WebApplication Map{Service}Endpoints(this WebApplication app)
 ```csharp
 // Host/Program.cs — Add section
 builder.Services.AddIdentityModule(builder.Configuration);
-builder.Services.AddFokusModule(builder.Configuration);
+builder.Services.Add{App}Module(builder.Configuration);
 
 // Host/Program.cs — InitData section
 app.Migrate<IdentityDbContext>();
-app.Migrate<FokusDbContext>();
+app.Migrate<{App}DbContext>();
 
 // Host/Program.cs — Use section (shared pipeline)
 // ... middleware ...
 // ... endpoint framework with multi-assembly scanning ...
 
 app.MapIdentityEndpoints();
-app.MapFokusEndpoints();
+app.Map{App}Endpoints();
 ```
 
 ### FastEndpoints multi-assembly scanning

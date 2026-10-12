@@ -32,6 +32,7 @@ public class CardEndpointTests : IAsyncLifetime
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -65,6 +66,7 @@ public class CardEndpointTests : IAsyncLifetime
         _anonFactory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -75,6 +77,7 @@ public class CardEndpointTests : IAsyncLifetime
 
         _client = _factory.CreateClient();
         _anonClient = _anonFactory.CreateClient();
+        await _factory.SeedTestUserAsync();
 
         var res = await _client.PostAsJsonAsync("/api/teams", new { name = "Card Test Team" });
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
@@ -97,13 +100,13 @@ public class CardEndpointTests : IAsyncLifetime
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
 
-        var res = await PostCard(token, sprintId, new { text = "Great teamwork", columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(token, sprintId, new { text = "Great teamwork", columnType = "Column1", cardType = "Note" });
 
         res.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("id").GetInt32().Should().BeGreaterThan(0);
         body.GetProperty("sprintId").GetInt32().Should().Be(sprintId);
-        body.GetProperty("columnType").GetString().Should().Be("WentWell");
+        body.GetProperty("columnType").GetString().Should().Be("Column1");
         body.GetProperty("cardType").GetString().Should().Be("Note");
         body.GetProperty("text").GetString().Should().Be("Great teamwork");
     }
@@ -117,7 +120,7 @@ public class CardEndpointTests : IAsyncLifetime
         await AdvancePhaseAsync(sprintId);
         await AdvancePhaseAsync(sprintId);
 
-        var res = await PostCard(token, sprintId, new { text = "Update docs", columnType = "ActionItems", cardType = "ActionItem", assigneeName = "Ana" });
+        var res = await PostCardAsScrumMaster(token, sprintId, new { text = "Update docs", columnType = "ActionItems", cardType = "ActionItem", assigneeName = "Ana" });
 
         res.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
@@ -128,7 +131,7 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task CreateCard_EmptyText_Returns400()
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
-        var res = await PostCard(token, sprintId, new { text = "", columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(token, sprintId, new { text = "", columnType = "Column1", cardType = "Note" });
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -136,7 +139,7 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task CreateCard_TextTooLong_Returns400()
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
-        var res = await PostCard(token, sprintId, new { text = new string('A', 2001), columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(token, sprintId, new { text = new string('A', 2001), columnType = "Column1", cardType = "Note" });
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -148,7 +151,7 @@ public class CardEndpointTests : IAsyncLifetime
         await AdvancePhaseAsync(sprintId);
         await AdvancePhaseAsync(sprintId);
         await AdvancePhaseAsync(sprintId);
-        var res = await PostCard(token, sprintId, new { text = "Fix bug", columnType = "ActionItems", cardType = "ActionItem" });
+        var res = await PostCardAsScrumMaster(token, sprintId, new { text = "Fix bug", columnType = "ActionItems", cardType = "ActionItem" });
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -160,7 +163,7 @@ public class CardEndpointTests : IAsyncLifetime
         await AdvancePhaseAsync(sprintId);
         await AdvancePhaseAsync(sprintId);
         await AdvancePhaseAsync(sprintId);
-        var res = await PostCard(token, sprintId, new { text = "Fix bug", columnType = "WentWell", cardType = "ActionItem", assigneeName = "Ana" });
+        var res = await PostCardAsScrumMaster(token, sprintId, new { text = "Fix bug", columnType = "Column1", cardType = "ActionItem", assigneeName = "Ana" });
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -176,7 +179,7 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task CreateCard_NoGuestToken_Returns401()
     {
         var res = await _anonClient.PostAsJsonAsync("/api/sprints/1/cards",
-            new { text = "Test", columnType = "WentWell", cardType = "Note" });
+            new { text = "Test", columnType = "Column1", cardType = "Note" });
         res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -187,7 +190,7 @@ public class CardEndpointTests : IAsyncLifetime
         var sprintB = await CreateActiveSprintAsync("Sprint B");
         var (_, tokenA) = await JoinSprintAsync(sprintA, "Ana");
 
-        var res = await PostCard(tokenA, sprintB, new { text = "Test", columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(tokenA, sprintB, new { text = "Test", columnType = "Column1", cardType = "Note" });
         res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -197,7 +200,7 @@ public class CardEndpointTests : IAsyncLifetime
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
         await _client.PostAsJsonAsync($"/api/teams/{_teamId}/sprints/{sprintId}/close", new { });
 
-        var res = await PostCard(token, sprintId, new { text = "Too late", columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(token, sprintId, new { text = "Too late", columnType = "Column1", cardType = "Note" });
         res.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
@@ -205,7 +208,7 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task CreateCard_NonexistentSprint_Returns401()
     {
         var (_, token) = await SetupActiveSprintWithParticipantAsync("Ana");
-        var res = await PostCard(token, 9999, new { text = "Test", columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(token, 9999, new { text = "Test", columnType = "Column1", cardType = "Note" });
         res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -330,9 +333,9 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task ListCards_ReturnsAllCardsInSprint()
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
-        await PostCard(token, sprintId, new { text = "Card 1", columnType = "WentWell", cardType = "Note" });
-        await PostCard(token, sprintId, new { text = "Card 2", columnType = "DidntGoWell", cardType = "Note" });
-        await PostCard(token, sprintId, new { text = "Card 3", columnType = "WentWell", cardType = "Note" });
+        await PostCard(token, sprintId, new { text = "Card 1", columnType = "Column1", cardType = "Note" });
+        await PostCard(token, sprintId, new { text = "Card 2", columnType = "Column2", cardType = "Note" });
+        await PostCard(token, sprintId, new { text = "Card 3", columnType = "Column1", cardType = "Note" });
 
         var res = await GetCardsAsync(token, sprintId);
 
@@ -345,9 +348,9 @@ public class CardEndpointTests : IAsyncLifetime
     public async Task ListCards_OrderedByCreatedAtDescending()
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
-        await PostCard(token, sprintId, new { text = "First", columnType = "WentWell", cardType = "Note" });
+        await PostCard(token, sprintId, new { text = "First", columnType = "Column1", cardType = "Note" });
         await Task.Delay(10);
-        await PostCard(token, sprintId, new { text = "Second", columnType = "WentWell", cardType = "Note" });
+        await PostCard(token, sprintId, new { text = "Second", columnType = "Column1", cardType = "Note" });
 
         var res = await GetCardsAsync(token, sprintId);
         var body = await res.Content.ReadFromJsonAsync<JsonElement[]>();
@@ -408,7 +411,7 @@ public class CardEndpointTests : IAsyncLifetime
     private async Task<(int sprintId, string token, int cardId)> SetupSprintWithCardAsync(string name)
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync(name);
-        var res = await PostCard(token, sprintId, new { text = "Initial card", columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(token, sprintId, new { text = "Initial card", columnType = "Column1", cardType = "Note" });
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
         return (sprintId, token, body.GetProperty("id").GetInt32());
     }
@@ -420,6 +423,17 @@ public class CardEndpointTests : IAsyncLifetime
             Content = JsonContent.Create(payload),
         };
         req.Headers.Add("X-Guest-Token", token);
+        return _client.SendAsync(req);
+    }
+
+    private Task<HttpResponseMessage> PostCardAsScrumMaster(string token, int sprintId, object payload)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, $"/api/sprints/{sprintId}/cards")
+        {
+            Content = JsonContent.Create(payload),
+        };
+        req.Headers.Add("X-Guest-Token", token);
+        req.Headers.Add("Cookie", _factory.CreateScrumMasterCookie());
         return _client.SendAsync(req);
     }
 

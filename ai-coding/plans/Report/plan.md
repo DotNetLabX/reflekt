@@ -160,8 +160,8 @@ Run `dotnet build` for the solution and `npm run build` (or `npx vue-tsc --noEmi
 
 **Commands:**
 ```bash
-dotnet build D:/src/reflekt/Reflekt.sln
-cd D:/src/reflekt/web/reflekt-web && npx vue-tsc --noEmit
+dotnet build Reflekt.sln
+cd web/reflekt-web && npx vue-tsc --noEmit
 ```
 
 ## Cross-Service Changes

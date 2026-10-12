@@ -1,0 +1,27 @@
+# F33 Publish Cleanup — Lessons
+
+## Developer Lessons
+- **Repairing a red suite: check the green neighbours too.** After a rule change, a test asserting a shared status code can pass for the wrong reason — here two budget tests got their 409 from the newer one-vote-per-group check, and a Reporting-phase test got its 409 from the discussed-groups gate, not from being in Reporting. When restoring tests, read each passing test that asserts a 409/400 next to a changed rule and confirm which branch produced it.
+- **Check the dispatch's do-not-touch list against the plan's file list before starting.** Here the plan's step 5 listed `docs/backlog.md` while the dispatch made it coordinator-owned; it surfaced only at the step and cost a hand-back round. A one-line note in the analyze or first hand-back avoids it.
+- **A file deletion the dispatch does not name as a `git rm` is a plain delete.** `git rm` stages, which is a git write; reaching for it on a step other than the sanctioned one breaks the no-git-write rule even when the end state is the same.
+- **Scripts holding backslashes go through the Write tool, not a bash heredoc.** In this environment a quoted heredoc still collapsed `\\` to `\`, breaking a perl and a node script that edited Windows paths; writing the script file with Write and building backslashes with `String.fromCharCode(92)` worked first time.
+- **The verify runner's `--files` excerpt keeps only the output's tail.** With several failures in one class, the stack trace shown is the last one; the `[FAIL]` lines at the very end still list every failing test name, so read those first.
+- **A green suite on the build machine is not a clean-clone proof when the app reads secrets.** The integration hosts kept the production Google handler and passed only because this machine has the API's user secrets; the review caught it. When restoring or adding `WebApplicationFactory` hosts, give every host placeholder values for each setting the app validates at startup, and prove it by blanking those settings with empty environment variables on the runner command (an empty value does reach the test host's process here).
+- **A `--files` run over a whole integration project exceeds the light-lane limit.** The build plus eight classes was cut at 45 s; one class per call stays well inside it (8–36 s each).
+
+## Architect Lessons
+
+- Done check: the `test-entry` hook flags a raw test command by substring, so a loop that greps a README for the literal `dotnet test …` (a doc acceptance check) logs an unblocked test-entry line though no test ran. Read the logged command before scoring a test slip; a plan whose acceptance greps doc text for test-command literals should run them as `grep -F` from a file of patterns, not inline. **Evidence:** [F33-PublishCleanup]
+- **Measure the baseline before planning a cleanup.** Declaring verify roles exposed a red backend suite and, in review, a red frontend build — both invisible from the file inventory. A cleanup plan's first check is "does the starting point build and test green"; a red baseline turns into the plan's first step, not a surprise at the close. **Evidence:** [F33-PublishCleanup]
+- **A cleanup plan must not contain what it removes.** The first draft quoted the employer and sibling-app names and its own grep patterns matched themselves; both reviewers caught it. Write the patterns with character classes (`o[m]ni…`) and describe the removed data in every delivery artifact. **Evidence:** [F33-PublishCleanup]
+- **"Passes here" is not "passes on a clean clone" when the app reads user-secrets.** The test hosts relied on this machine's stored Google credentials; only the Codex code review saw it. For any repo that reads secrets, the complete run for a publish-readiness feature runs with those settings blanked. **Evidence:** [F33-PublishCleanup]
+- **Before ruling a developer's `Bug found`, search the bug log.** The "bug" (one vote per group) was a deliberate fix recorded as BUG-007; the product spec was the stale side. **Evidence:** [F33-PublishCleanup]
+- **The approval-scope stamp needs exact file paths; directory entries do not match** — the gate blocked the coordinator's own writes until exact files (in both path spellings) were stamped. **Evidence:** [F33-PublishCleanup]
+
+### Skill Gaps
+- **Gap:** no skill covers restoring a stale test suite to a changed domain (fixture seeding, auth-claim setup for `WebApplicationFactory` hosts, placeholder settings for startup-validated options). **Steps:** F33 step 1 and fix row 1 (Skill: None). **Proposed skill:** an integration-test-host skill for this stack. **Evidence:** [F33-PublishCleanup]
+
+## Reviewer Lessons
+
+- **A zero-result acceptance grep goes stale the moment the next artifact is written.** The done check reported the machine-path grep clean "with `--untracked`", then recorded the worktree's absolute path in its own table; the grep was green when run and red once the file existed. For a cleanup feature whose acceptance is "no X anywhere", re-run the sweep as the last act before the close commit, over the delivery folder too, and describe locations in artifacts ("the worktree") instead of printing them.
+- **A "must return 409" test needs its setup call asserted.** After a rule change, a rewritten negative test that no longer asserts the first call's success passes for any 409; assert the precondition (one line, not a new case) so the rejection can only come from the rule under test.

@@ -113,7 +113,7 @@ Recommended dependency order. Each gets its own spec at `docs/features/{FeatureN
 These don't block anything but are worth cleaning up before or during the feature plans.
 
 ### 14. §12 "Open Technical Questions for CC" is mostly obsolete
-Most of spec §12 was resolved by `docs/architecture/v1.md`. Recommend editing `docs/specs/v1.md` §12 to mark each item as "Resolved — see architecture v1.md §X" so the Developer doesn't treat them as live questions during feature implementation.
+Most of spec §12 was resolved by `docs/architecture/v1.md`. Recommend editing `docs/product/v1.md` §12 to mark each item as "Resolved — see architecture v1.md §X" so the Developer doesn't treat them as live questions during feature implementation.
 
 ### 15. §3.1 + §12.6 — allowlist and SM-only gating overlap
 - §3.1: "Sprint creation is gated to team creator."
@@ -181,55 +181,55 @@ SM accidentally advancing a phase has no undo. Potential approach: snapshot spri
 
 ## E. V2 Features
 
-Non-AI enhancements: proper identity model, multi-team support, and sprint UX improvements. All features build on v1's data model. Full spec at `docs/specs/v2.md`.
+Non-AI enhancements: proper identity model, multi-team support, and sprint UX improvements. All features build on v1's data model. Full spec at `docs/product/v2.md`.
 
 **Migration dependency:** #23 must land first — it creates the `User` entity that #24, #25, and #26 depend on. Sprint UX features (#27–30) are independent of Identity and can be built in parallel. #29 depends on #28 (timer controls live in the same top bar as inline phase controls).
 
 ### 23. User Entity & Team Ownership Migration
 **Status: Done** | **Feature Spec:** `docs/features/TeamManagement/spec.md`
-**Epic:** Identity | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.0
+**Epic:** Identity | **Priority:** Must | **Spec:** `docs/product/v2.md` §4.0
 **Dependencies:** None (prerequisite for #24, #25, #26)
 Create a `User` entity (Id, Email, Name, GivenName, CreatedAt). Migrate `Team.CreatorEmail` string to `CreatedByUserId` FK. Upsert User on Google sign-in. Update all SM authorization checks to use the FK relationship. Data migration: create User rows from existing `CreatorEmail` values.
 
 ### 24. Multi-Team Support
 **Status: Done** | **Feature Spec:** `docs/features/TeamManagement/spec.md`
-**Epic:** Teams | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.1
+**Epic:** Teams | **Priority:** Must | **Spec:** `docs/product/v2.md` §4.1
 **Dependencies:** #23
 Up to 10 teams per user (configurable). Drop the unique-team-per-email constraint. Team names unique per user, not globally. SM dashboard shows all owned teams with sprint counts and last-activity timestamps.
 
 ### 25. Team Deletion with Cascade
 **Status: Done** | **Feature Spec:** `docs/features/TeamManagement/spec.md`
-**Epic:** Teams | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.2
+**Epic:** Teams | **Priority:** Must | **Spec:** `docs/product/v2.md` §4.2
 **Dependencies:** #23
 Hard delete with full cascade (Team → Sprints → Participants, CardGroups → Cards → Votes, EvidenceLinks). Single transaction. Type-to-confirm dialog. Cannot delete a team with an active (non-closed) sprint.
 
 ### 26. Google Auth for Participants (Dual Path)
 **Status: Done** | **Feature Spec:** `docs/features/GoogleAuthParticipants/spec.md`
-**Epic:** Identity | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.3
+**Epic:** Identity | **Priority:** Must | **Spec:** `docs/product/v2.md` §4.3
 **Dependencies:** #23
 Participants choose: Google sign-in (persistent identity, cross-device rejoin) or guest join (v1 behavior). `Participant` gains optional `UserId` FK to `User`. Google-authed participants are matched by `UserId + SprintId` across devices.
 
 ### 27. Configurable Reflection Columns
 **Status: Done** | **Feature Spec:** `docs/features/ConfigurableColumns/spec.md`
-**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.4
+**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/product/v2.md` §4.4
 **Dependencies:** None
 3 configurable reflection columns + 1 fixed Action Items column. SM sets column names at sprint creation (max 30 chars, defaults: "Went Well" / "Didn't Go Well" / "Start Doing"). `ColumnType` enum migrates from semantic (`WentWell`, `DidntGoWell`) to positional (`Column1`, `Column2`, `Column3`). Per-sprint, not per-team.
 
 ### 28. Inline Phase Controls
 **Status: Done** | **Feature Spec:** `docs/features/InlinePhaseControls/spec.md` | **Plan:** `docs/plans/InlinePhaseControls/plan.md`
-**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.5
+**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/product/v2.md` §4.5
 **Dependencies:** None
 Move phase advancement from the sprint manager page into the sprint board top bar. All participants see the current phase; only SM sees the "Next: {phase}" button. Close Sprint is a separate action (state transition, not phase advance), shown only during Reporting. Existing advance gates preserved.
 
 ### 29. Timer per Phase
 **Status: Done** | **Feature Spec:** `docs/features/TimerPerPhase/spec.md` | **Plan:** `docs/specs/F29-TimerPerPhase/delivery/plan.md`
-**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.6
+**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/product/v2.md` §4.6
 **Dependencies:** #28
 Optional countdown timer for Writing (5min default), Voting (3min), Discussing (10min). No timer for Grouping or Reporting. SM controls: start, pause, reset, +time. Timer state is ephemeral (SignalR group state, not persisted). Default durations stored as JSON on Sprint. Timer expiry alerts but does not auto-advance.
 
 ### 30. Open Actions from Previous Retro
 **Status: Done** | **Feature Spec:** `docs/features/OpenActions/spec.md` | **Plan:** `docs/specs/F30-OpenActions/delivery/plan.md`
-**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/specs/v2.md` §4.7
+**Epic:** Sprint UX | **Priority:** Must | **Spec:** `docs/product/v2.md` §4.7
 **Dependencies:** None
 During Writing phase, show action items from the most recently closed sprint in the same team. SM marks each as Done / Carried Over / Dropped. Status persisted on the original card (`ReviewStatus` enum + `ReviewedInSprintId` FK). No card duplication. Collapsible section, SM-only interaction.
 
@@ -244,6 +244,22 @@ Dark/light theme with shared token system, dark default, localStorage persistenc
 **Epic:** Visual Polish | **Priority:** Must
 **Dependencies:** #31
 Fixes WCAG AA contrast failures and visual hierarchy issues in dark mode: muted text token too dim, cards invisible against column backgrounds, "I'm done" button too subtle, phase stepper labels failing contrast, input field borders missing.
+
+## F. Publish Readiness
+
+Prepares the repo to be shared publicly as a teaching example ("a full app built with agents"). **Scope limit for every item in this section (owner, 2026-10-13):** cleanup, code quality, architecture reference/map and code conventions only — no new features, no new tests, no business-rule registries unless they already exist. The local agent setup (`.claude/`) and the old feature docs (`ai-coding/`, `docs/features/`, `docs/plans/`) are kept as evidence of how the app was built; only what does not belong in the repo is removed. Baseline tag: `pre-cleanup`. The credential scrub of git history runs last, before publishing, into a fresh copy.
+
+### 33. Publish Cleanup
+**Status: Done** | **Plan:** `docs/specs/F33-PublishCleanup/delivery/plan.md`
+**Epic:** Publish Readiness | **Priority:** Must
+**Dependencies:** None
+Remove junk and personal/machine files from the repo (untrack `.claude/settings.local.json`, ignore `.claude/audit/`), fix `.gitignore`, parameterize `deploy.ps1`, rewrite the README (the story, the .NET version, how to run). Keeps the local agent setup and old feature docs as evidence.
+
+### 34. Conventions & Architecture Audit
+**Status: Backlog** | **Plan:** None
+**Epic:** Publish Readiness | **Priority:** Must
+**Dependencies:** #33
+Audit the code against the repo's own conventions (`docs/conventions/`) and skills (`.claude/skills/`), and the architecture docs (`docs/architecture/`) against the code. Also triage the dependency advisories found in F33's plan review (AngleSharp 1.2.0, SQLitePCLRaw.lib.e_sqlite3 2.1.10). Findings become fix features (code quality, convention conformance, architecture reference/map), built afterwards — in parallel where they are independent.
 
 ---
 

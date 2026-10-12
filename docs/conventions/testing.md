@@ -45,7 +45,7 @@ Use static factory methods in `TestData.cs` — not builders, not object mothers
 ```csharp
 TestData.ActiveSprint(startDate: ..., endDate: ...)
 TestData.ActiveDeveloper("dev-1", "Dev One", subTeam: "Alpha")
-TestData.FeatureTicket("FOK-1", assigneeId: "dev-1")
+TestData.FeatureTicket("RET-1", assigneeId: "dev-1")
 TestData.Membership(sprintId, ticketId, storyPoints: 5m, ticket: ticket)
 TestData.Transition(ticketId, "Done", timestamp, "In Progress")
 ```
@@ -64,7 +64,7 @@ Direct instantiation for pure computation services (`new()`). No mocking for sta
 
 ### File Location
 
-Co-located with source: `client/src/**/*.spec.ts`
+Co-located with source: `web/reflekt-web/src/**/*.spec.ts`
 
 ### Framework
 

@@ -10,16 +10,16 @@
 
 ## Purpose
 
-Reflekt's interface is functional but visually plain — a white, flat design that lacks personality and feels dated next to modern collaboration tools. Adding a dark/light theme with dark as the default modernizes the look, reduces eye strain during long retro sessions, and establishes visual cohesion with Fokus (the companion app in the same suite). The theme system uses shared foundational tokens across the suite while preserving each app's identity through its own accent color.
+Reflekt's interface is functional but visually plain — a white, flat design that lacks personality and feels dated next to modern collaboration tools. Adding a dark/light theme with dark as the default modernizes the look, reduces eye strain during long retro sessions, and establishes visual cohesion with a sibling app in the same suite. The theme system uses shared foundational tokens across the suite while preserving each app's identity through its own accent color.
 
 ## Design System
 
 ### Suite Cohesion Principle
 
-Reflekt and Fokus are part of the same product suite. Users navigating between them should feel they're in the same family without confusing which app they're in. This is achieved by:
+Reflekt and a sibling app are part of the same product suite. Users navigating between them should feel they're in the same family without confusing which app they're in. This is achieved by:
 
 - **Shared foundation:** Surface colors, border system, text hierarchy, and toggle mechanism are identical across the suite.
-- **Distinct accent:** Reflekt uses indigo; Fokus uses periwinkle. The accent color is the primary "you are here" signal.
+- **Distinct accent:** Reflekt uses indigo; the sibling app uses periwinkle. The accent color is the primary "you are here" signal.
 - **Domain-specific personality:** Reflekt's retro column colors (green, red, amber, etc.) are unique to Reflekt and provide additional differentiation.
 
 ### Dark Theme Palette

@@ -40,7 +40,7 @@ The user has an idea, scattered messages, or verbal description. No existing tic
 
 ### From Jira ticket
 A single ticket/story already exists. Pull it via Jira MCP, pre-fill a spec draft, then refine.
-1. Ask the user for the ticket key (e.g., `FOK-123`)
+1. Ask the user for the ticket key (e.g., `RET-123`)
 2. Fetch the ticket via the Atlassian MCP tools (summary, description, acceptance criteria, comments)
 3. Pre-fill a draft spec from the ticket content — map ticket fields to the feature spec template
 4. Identify gaps: what's missing, ambiguous, or underspecified compared to what the full template requires
@@ -51,7 +51,7 @@ The Jira ticket gives you a head start — the discussion is shorter because som
 
 ### From Jira epic
 An epic groups multiple stories. The epic has business requirements in Confluence; stories have ACs in Jira.
-1. Ask the user for the epic key (e.g., `PD-5234`)
+1. Ask the user for the epic key (e.g., `RET-100`)
 2. Fetch the epic via Atlassian MCP (summary, description, linked issues)
 3. Search for the linked Confluence page (business requirements, technical specs) — use `search` or ask the user for the Confluence URL if not linked
 4. Write the epic-level spec to `docs/specs/{epic-slug}/definition/epic.md` — captures business problem, success metrics, story breakdown from Confluence content
@@ -63,8 +63,8 @@ The `epic.md` uses the same template as `spec.md` but is named `epic.md` to avoi
 ## Slug Assignment
 
 Before writing any spec, confirm the slug with the user. The slug follows the naming convention in `agents-workflow.md` § Slug and Path Resolution:
-- Jira ticket: `{KEY}-{2-3-word-summary}` (e.g., `PD-5226-split-config`)
-- Jira epic: `{KEY}-{2-3-word-title}` (e.g., `PD-5234-shelf-compliance-kpis`)
+- Jira ticket: `{KEY}-{2-3-word-summary}` (e.g., `RET-101-board-export`)
+- Jira epic: `{KEY}-{2-3-word-title}` (e.g., `RET-100-retro-insights`)
 - New feature: `F{N}-{Name}` where N follows the last F-number in `docs/backlog.md` (e.g., `F5-SprintSummaryCard`)
 - Bug: `BUG-{N}-{name}` (e.g., `BUG-1-bug-count-zero`)
 - Gap: `GAP-{N}-{name}` (e.g., `GAP-3-sub-team-management-ui`)

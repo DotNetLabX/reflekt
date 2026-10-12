@@ -20,52 +20,60 @@ az login --tenant <YOUR_TENANT_ID>
 
 ```powershell
 # Resource group
-az group create --name reflekt-rg --location polandcentral
+az group create --name <RESOURCE_GROUP> --location polandcentral
 
 # App Service plan (F1 = free, B1 = ~$13/mo with Always On)
-az appservice plan create --name reflekt-plan --resource-group reflekt-rg --sku F1 --is-linux
+az appservice plan create --name <PLAN_NAME> --resource-group <RESOURCE_GROUP> --sku F1 --is-linux
 
 # Web app
-az webapp create --name reflekt --resource-group reflekt-rg --plan reflekt-plan --runtime "DOTNETCORE:10.0"
+az webapp create --name <APP_NAME> --resource-group <RESOURCE_GROUP> --plan <PLAN_NAME> --runtime "DOTNETCORE:10.0"
 ```
 
-> `reflekt` must be globally unique — it becomes `reflekt.azurewebsites.net`.
+> Pick your own names: `<RESOURCE_GROUP>` and `<PLAN_NAME>` are yours to choose; `<APP_NAME>` must be globally unique — it becomes `<APP_NAME>.azurewebsites.net`.
 
 ## 3. Configure the App
 
 ```powershell
 # Enable WebSockets (required for SignalR)
-az webapp config set --name reflekt --resource-group reflekt-rg --web-sockets-enabled true
+az webapp config set --name <APP_NAME> --resource-group <RESOURCE_GROUP> --web-sockets-enabled true
 
 # Set startup command
-az webapp config set --name reflekt --resource-group reflekt-rg --startup-file "dotnet Reflekt.API.dll"
+az webapp config set --name <APP_NAME> --resource-group <RESOURCE_GROUP> --startup-file "dotnet Reflekt.API.dll"
 
 # Disable Kudu build (we publish pre-built artifacts)
-az webapp config appsettings set --name reflekt --resource-group reflekt-rg --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false
+az webapp config appsettings set --name <APP_NAME> --resource-group <RESOURCE_GROUP> --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false
 
 # SQLite connection string — uses persistent /home/ path so data survives redeploys
-az webapp config connection-string set --name reflekt --resource-group reflekt-rg --connection-string-type Custom --settings Reflekt="Data Source=/home/data/reflekt.db"
+az webapp config connection-string set --name <APP_NAME> --resource-group <RESOURCE_GROUP> --connection-string-type Custom --settings Reflekt="Data Source=/home/data/reflekt.db"
 
 # Google OAuth credentials
-az webapp config appsettings set --name reflekt --resource-group reflekt-rg --settings Auth__Google__ClientId="<YOUR_CLIENT_ID>" Auth__Google__ClientSecret="<YOUR_CLIENT_SECRET>"
+az webapp config appsettings set --name <APP_NAME> --resource-group <RESOURCE_GROUP> --settings Auth__Google__ClientId="<YOUR_CLIENT_ID>" Auth__Google__ClientSecret="<YOUR_CLIENT_SECRET>"
 ```
 
 ## 4. Google OAuth Setup
 
 In [Google Cloud Console](https://console.cloud.google.com/) → Credentials → your OAuth 2.0 Client ID, add:
 
-- **Authorized JavaScript origins:** `https://reflekt.azurewebsites.net`
-- **Authorized redirect URIs:** `https://reflekt.azurewebsites.net/signin-google`
+- **Authorized JavaScript origins:** `https://<APP_NAME>.azurewebsites.net`
+- **Authorized redirect URIs:** `https://<APP_NAME>.azurewebsites.net/signin-google`
 
 ## 5. Build & Deploy
 
+From the repo root, the script does all of it — build the frontend, publish the API, zip it, deploy:
+
+```powershell
+.\deploy.ps1 -AppName <APP_NAME> -ResourceGroup <RESOURCE_GROUP>
+```
+
+Both parameters are mandatory and have no defaults. The manual equivalent, from the repo root:
+
 ```powershell
 # Build Vue frontend (outputs to API's wwwroot/)
-cd D:\src\reflekt\web\reflekt-web
+cd web\reflekt-web
 npm run build
 
 # Publish .NET API
-cd D:\src\reflekt\src\Services\Reflekt\Reflekt.API
+cd ..\..\src\Services\Reflekt\Reflekt.API
 Remove-Item -Recurse -Force ./publish, ./deploy.zip -ErrorAction SilentlyContinue
 dotnet publish -c Release -o ./publish
 
@@ -75,33 +83,33 @@ tar -a -cf ../deploy.zip *
 
 # Deploy
 cd ..
-az webapp deploy --name reflekt --resource-group reflekt-rg --src-path deploy.zip --type zip --clean true
+az webapp deploy --name <APP_NAME> --resource-group <RESOURCE_GROUP> --src-path deploy.zip --type zip --clean true
 ```
 
 > **Why `tar` instead of `Compress-Archive`?** PowerShell's `Compress-Archive` creates zip entries with Windows backslashes (`runtimes\linux-x64\...`). Azure Linux rsync can't handle those. `tar -a -cf` creates proper forward-slash paths.
 
 ## 6. Verify
 
-Open `https://reflekt.azurewebsites.net` in a browser.
+Open `https://<APP_NAME>.azurewebsites.net` in a browser.
 
 Check logs if something is wrong:
 
 ```powershell
-az webapp log config --name reflekt --resource-group reflekt-rg --docker-container-logging filesystem
-az webapp log tail --name reflekt --resource-group reflekt-rg
+az webapp log config --name <APP_NAME> --resource-group <RESOURCE_GROUP> --docker-container-logging filesystem
+az webapp log tail --name <APP_NAME> --resource-group <RESOURCE_GROUP>
 ```
 
 ## Redeployment (subsequent deploys)
 
-Run these from the repo root:
+Run `.\deploy.ps1 -AppName <APP_NAME> -ResourceGroup <RESOURCE_GROUP>` from the repo root, or the steps by hand:
 
 ```powershell
 # 1. Build frontend
-cd D:\src\reflekt\web\reflekt-web
+cd web\reflekt-web
 npm run build
 
 # 2. Clean previous publish artifacts
-cd D:\src\reflekt\src\Services\Reflekt\Reflekt.API
+cd ..\..\src\Services\Reflekt\Reflekt.API
 Remove-Item -Recurse -Force ./publish, ./deploy.zip -ErrorAction SilentlyContinue
 
 # 3. Publish API
@@ -113,7 +121,7 @@ tar -a -cf ../deploy.zip *
 
 # 5. Deploy
 cd ..
-az webapp deploy --name reflekt --resource-group reflekt-rg --src-path deploy.zip --type zip --clean true
+az webapp deploy --name <APP_NAME> --resource-group <RESOURCE_GROUP> --src-path deploy.zip --type zip --clean true
 ```
 
 No config changes needed — app settings and connection strings persist between deploys.
@@ -122,19 +130,19 @@ No config changes needed — app settings and connection strings persist between
 
 ```powershell
 # Restart the app
-az webapp restart --name reflekt --resource-group reflekt-rg
+az webapp restart --name <APP_NAME> --resource-group <RESOURCE_GROUP>
 
 # View app settings
-az webapp config appsettings list --name reflekt --resource-group reflekt-rg
+az webapp config appsettings list --name <APP_NAME> --resource-group <RESOURCE_GROUP>
 
 # View connection strings
-az webapp config connection-string list --name reflekt --resource-group reflekt-rg
+az webapp config connection-string list --name <APP_NAME> --resource-group <RESOURCE_GROUP>
 
 # Stream live logs
-az webapp log tail --name reflekt --resource-group reflekt-rg
+az webapp log tail --name <APP_NAME> --resource-group <RESOURCE_GROUP>
 
 # Upgrade/downgrade plan (see section below)
-az appservice plan update --name reflekt-plan --resource-group reflekt-rg --sku B1
+az appservice plan update --name <PLAN_NAME> --resource-group <RESOURCE_GROUP> --sku B1
 ```
 
 ## Switching Between F1 (Free) and B1 (Paid)
@@ -142,7 +150,7 @@ az appservice plan update --name reflekt-plan --resource-group reflekt-rg --sku 
 **Upgrade to B1** (~$13/month, billed hourly at ~$0.018/hr):
 
 ```powershell
-az appservice plan update --name reflekt-plan --resource-group reflekt-rg --sku B1
+az appservice plan update --name <PLAN_NAME> --resource-group <RESOURCE_GROUP> --sku B1
 ```
 
 B1 gives you:
@@ -154,7 +162,7 @@ B1 gives you:
 **Downgrade to F1** (free):
 
 ```powershell
-az appservice plan update --name reflekt-plan --resource-group reflekt-rg --sku F1
+az appservice plan update --name <PLAN_NAME> --resource-group <RESOURCE_GROUP> --sku F1
 ```
 
 > **Tip:** You can upgrade to B1 temporarily for a deploy or demo, then downgrade back to F1. At ~$0.018/hr, a few hours costs less than $0.10.

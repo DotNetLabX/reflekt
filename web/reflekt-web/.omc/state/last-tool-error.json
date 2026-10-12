@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd /d/src/reflekt && sqlite3 src/Services/Reflekt/Reflekt.API/data/reflekt.db \\\"SELECT Id, SprintId, DisplayName, GuestToken FROM Participants ORDER BY Id DESC LIMIT 5\\\" 2>&1\",\"description...",
-  "error": "Exit code 127\n/usr/bin/bash: line 3: sqlite3: command not found",
-  "timestamp": "2026-04-21T13:10:26.137Z",
-  "retry_count": 1
-}

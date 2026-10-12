@@ -1,3 +1,11 @@
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$AppName,
+
+    [Parameter(Mandatory = $true)]
+    [string]$ResourceGroup
+)
+
 $ErrorActionPreference = "Stop"
 
 $repoRoot = $PSScriptRoot
@@ -21,7 +29,7 @@ tar -a -cf ../deploy.zip *
 Pop-Location
 
 Write-Host "Deploying to Azure..." -ForegroundColor Cyan
-az webapp deploy --name reflekt --resource-group reflekt-rg --src-path "$apiDir\deploy.zip" --type zip --clean true
+az webapp deploy --name $AppName --resource-group $ResourceGroup --src-path "$apiDir\deploy.zip" --type zip --clean true
 if ($LASTEXITCODE -ne 0) { throw "Azure deploy failed" }
 
-Write-Host "Done! https://reflekt.azurewebsites.net" -ForegroundColor Green
+Write-Host "Done! https://$AppName.azurewebsites.net" -ForegroundColor Green

@@ -230,7 +230,7 @@ Developer must set real values to test locally:
 cd src/Services/Reflekt/Reflekt.API
 dotnet user-secrets set "Auth:Google:ClientId" "..."
 dotnet user-secrets set "Auth:Google:ClientSecret" "..."
-dotnet user-secrets set "Auth:AllowedEmails:0" "dumitrescu.laurentiu@gmail.com"
+dotnet user-secrets set "Auth:AllowedEmails:0" "you@example.com"
 ```
 
 The Google OAuth app needs redirect URI `http://localhost:4001/signin-google` registered in Google Cloud Console. Document this in `done.md` so future setup is reproducible; no code change needed here — `/signin-google` is the Google middleware default `CallbackPath`.

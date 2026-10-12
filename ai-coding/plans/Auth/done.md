@@ -33,7 +33,7 @@
 cd src/Services/Reflekt/Reflekt.API
 dotnet user-secrets set "Auth:Google:ClientId" "<your-client-id>"
 dotnet user-secrets set "Auth:Google:ClientSecret" "<your-client-secret>"
-dotnet user-secrets set "Auth:AllowedEmails:0" "dumitrescu.laurentiu@gmail.com"
+dotnet user-secrets set "Auth:AllowedEmails:0" "you@example.com"
 ```
 
 ## Manual verification status (§7)

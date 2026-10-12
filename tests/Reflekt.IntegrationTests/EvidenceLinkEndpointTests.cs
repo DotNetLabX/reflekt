@@ -32,6 +32,7 @@ public class EvidenceLinkEndpointTests : IAsyncLifetime
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -65,6 +66,7 @@ public class EvidenceLinkEndpointTests : IAsyncLifetime
         _anonFactory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UsePlaceholderGoogleCredentials();
                 builder.ConfigureAppConfiguration((_, config) =>
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
@@ -75,6 +77,7 @@ public class EvidenceLinkEndpointTests : IAsyncLifetime
 
         _client = _factory.CreateClient();
         _anonClient = _anonFactory.CreateClient();
+        await _factory.SeedTestUserAsync();
 
         var res = await _client.PostAsJsonAsync("/api/teams", new { name = "EvidenceLink Test Team" });
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
@@ -294,7 +297,7 @@ public class EvidenceLinkEndpointTests : IAsyncLifetime
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync("Ana");
 
-        var res = await PostCard(token, sprintId, new { text = "New card", columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(token, sprintId, new { text = "New card", columnType = "Column1", cardType = "Note" });
 
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("evidenceLinks").GetArrayLength().Should().Be(0);
@@ -345,7 +348,7 @@ public class EvidenceLinkEndpointTests : IAsyncLifetime
     private async Task<(int sprintId, string token, int cardId)> SetupSprintWithCardAsync(string name)
     {
         var (sprintId, token) = await SetupActiveSprintWithParticipantAsync(name);
-        var res = await PostCard(token, sprintId, new { text = "Initial card", columnType = "WentWell", cardType = "Note" });
+        var res = await PostCard(token, sprintId, new { text = "Initial card", columnType = "Column1", cardType = "Note" });
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();
         return (sprintId, token, body.GetProperty("id").GetInt32());
     }

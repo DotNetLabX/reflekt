@@ -18,13 +18,13 @@ These files demonstrate the established pattern:
 
 | File | What it shows |
 |------|---------------|
-| `Fokus.API/Features/Analytics/BugRatioService.cs` | Multi/single split, delta helpers, alert evaluation |
-| `Fokus.API/Features/Analytics/QaWorkloadService.cs` | Delta + direction + polarity triplet per column |
-| `Fokus.API/Features/Analytics/QaMetricsService.cs` | Sparkline builders, metric card pattern |
-| `Fokus.API/Features/Analytics/TestTimelineService.cs` | Per-day computation, static helper extraction |
-| `Fokus.API/Features/Analytics/DeveloperProgressService.cs` | Gap delta, stall detection, direction derivation |
-| `Fokus.API/Features/Analytics/DeveloperDetailService.cs` | Cross-service composition, rolling average |
-| `Fokus.API/Features/Analytics/LeaderboardService.cs` | Ranked entries, capacity-aware skip |
+| `{App}.API/Features/Analytics/BugRatioService.cs` | Multi/single split, delta helpers, alert evaluation |
+| `{App}.API/Features/Analytics/QaWorkloadService.cs` | Delta + direction + polarity triplet per column |
+| `{App}.API/Features/Analytics/QaMetricsService.cs` | Sparkline builders, metric card pattern |
+| `{App}.API/Features/Analytics/TestTimelineService.cs` | Per-day computation, static helper extraction |
+| `{App}.API/Features/Analytics/DeveloperProgressService.cs` | Gap delta, stall detection, direction derivation |
+| `{App}.API/Features/Analytics/DeveloperDetailService.cs` | Cross-service composition, rolling average |
+| `{App}.API/Features/Analytics/LeaderboardService.cs` | Ranked entries, capacity-aware skip |
 
 ## Service structure
 

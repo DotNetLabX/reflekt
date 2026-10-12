@@ -46,7 +46,7 @@
 - **Bulk namespace replace via PowerShell:** Rather than editing 24+ domain files individually, used `Get-ChildItem | Set-Content` with regex replace. Safer and faster than per-file edits.
 - **Transitive references:** `Reflekt.API` accesses `Blocks.Exceptions` and `Blocks.Domain` transitively through its existing project references — no new `ProjectReference` needed in `Reflekt.API.csproj`.
 - **`FindByIdAsync` vs `GetByIdAsync`:** Both use `FindAsync` in the current codebase. Added `FindByIdAsync` as an alias per plan; `RepositoryExtensions` uses it for `FindByIdOrThrowAsync` and `GetByIdAsync` for `GetByIdOrThrowAsync`.
-- **Reference project unavailable:** `D:\src\dotnet-microservices` was not accessible. Proceeded with plan-provided signatures, which were complete and unambiguous.
+- **Reference project unavailable:** the reference template project was not accessible. Proceeded with plan-provided signatures, which were complete and unambiguous.
 
 ## Deviations from Plan
 
