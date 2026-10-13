@@ -256,10 +256,19 @@ Prepares the repo to be shared publicly as a teaching example ("a full app built
 Remove junk and personal/machine files from the repo (untrack `.claude/settings.local.json`, ignore `.claude/audit/`), fix `.gitignore`, parameterize `deploy.ps1`, rewrite the README (the story, the .NET version, how to run). Keeps the local agent setup and old feature docs as evidence.
 
 ### 34. Conventions & Architecture Audit
-**Status: Backlog** | **Plan:** None
+**Status: Done** | **Report:** `docs/specs/F34-ConventionsAudit/delivery/audit-report.md`
 **Epic:** Publish Readiness | **Priority:** Must
 **Dependencies:** #33
 Audit the code against the repo's own conventions (`docs/conventions/`) and skills (`.claude/skills/`), and the architecture docs (`docs/architecture/`) against the code. Also triage the dependency advisories found in F33's plan review (AngleSharp 1.2.0, SQLitePCLRaw.lib.e_sqlite3 2.1.10). Findings become fix features (code quality, convention conformance, architecture reference/map), built afterwards — in parallel where they are independent.
+
+### Proposed fix features from the F34 audit — IDs pending owner confirmation
+Grouping and rationale: `docs/specs/F34-ConventionsAudit/delivery/audit-report.md` § Proposed fix features. Same scope limit as this section. **Not planned until the owner confirms the IDs.**
+- **35. Backend Correctness & Security Fixes** — Proposed. Event-interceptor lifetime, Writing-phase card-text leak over SignalR, domain errors returned as 500 and raw exception text, participant kick vs restrict FKs, non-atomic saves, edits on closed sprints, open redirect, SSRF guard. Depends on #33.
+- **36. Frontend Visual & UX Defects** — Proposed. Dropped rounded corners, light-theme page background, lost note text on failed save, endless loading on fetch failure, missing card tint, silent timer chime, dark-theme focus contrast. Depends on #33.
+- **37. Dependency Security Upgrades** — Proposed. AngleSharp, SQLitePCLRaw pin, npm audit fix; Microsoft.* 10.0.x family bump (owner decision). Depends on #33.
+- **38. Backend Conventions Conformance** — Proposed. One error-handling idiom on the exceptions building block, domain events instead of inline hub sends, a shared resource-authorization check, rules moved into aggregates, endpoint-type layout, validators, dead code. Depends on #35, #37.
+- **39. Frontend Conventions Conformance** — Proposed. API client layer, setup stores, optimistic UI in stores, component splits, typed domain unions, `Base*` components, dead code. Depends on #36.
+- **40. Architecture Reference & Conventions Docs** — Proposed. As-built architecture doc + one-page map, root CLAUDE.md (owner decision), conventions index, `testing.md`, `known-deviations.md`, graph refresh. Depends on #38, #39.
 
 ---
 

@@ -1,0 +1,69 @@
+{
+  "format_version": 1,
+  "feature": "F34-ConventionsAudit",
+  "kind_of_run": "architect-led run",
+  "state": "partial",
+  "started": "2026-10-13T00:08:25.304Z",
+  "closed": "2026-10-13T00:11:04.832Z",
+  "plugin_versions": [],
+  "claude_code_versions": [
+    "2.1.296"
+  ],
+  "spawns": [
+    {
+      "role": "architect",
+      "name": "architect-1",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 7,
+      "tokens": {
+        "input": 14,
+        "cache_written_5m": 0,
+        "cache_written_1h": 14308,
+        "cache_read": 2765916,
+        "output": 9797
+      },
+      "peak_context": 400863,
+      "compactions": 0,
+      "first_activity": "2026-10-13T00:08:25.304Z",
+      "last_activity": "2026-10-13T00:11:00.460Z",
+      "active_ms": 169943
+    }
+  ],
+  "plan_steps": "steps not marked",
+  "review_rounds": {
+    "spec": [],
+    "plan": [],
+    "code": []
+  },
+  "fix_cycles": 0,
+  "test_build_runs": {
+    "count": 1,
+    "total_duration_ms": 52858,
+    "runs": [
+      {
+        "runner": "close",
+        "duration_ms": 52858
+      }
+    ]
+  },
+  "owner_touches": {
+    "question_box_answered": 0,
+    "typed_message": 0
+  },
+  "completeness": {
+    "spawns": [],
+    "fields": [
+      {
+        "spawn": "architect-1",
+        "field": "plugin_versions",
+        "reason": "field unreadable"
+      }
+    ]
+  },
+  "output_tokens_note": "output tokens are as the platform recorded them, which can fall short of what the model produced"
+}
