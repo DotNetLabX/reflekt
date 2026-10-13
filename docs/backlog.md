@@ -261,14 +261,44 @@ Remove junk and personal/machine files from the repo (untrack `.claude/settings.
 **Dependencies:** #33
 Audit the code against the repo's own conventions (`docs/conventions/`) and skills (`.claude/skills/`), and the architecture docs (`docs/architecture/`) against the code. Also triage the dependency advisories found in F33's plan review (AngleSharp 1.2.0, SQLitePCLRaw.lib.e_sqlite3 2.1.10). Findings become fix features (code quality, convention conformance, architecture reference/map), built afterwards — in parallel where they are independent.
 
-### Proposed fix features from the F34 audit — IDs pending owner confirmation
-Grouping and rationale: `docs/specs/F34-ConventionsAudit/delivery/audit-report.md` § Proposed fix features. Same scope limit as this section. **Not planned until the owner confirms the IDs.**
-- **35. Backend Correctness & Security Fixes** — Proposed. Event-interceptor lifetime, Writing-phase card-text leak over SignalR, domain errors returned as 500 and raw exception text, participant kick vs restrict FKs, non-atomic saves, edits on closed sprints, open redirect, SSRF guard. Depends on #33.
-- **36. Frontend Visual & UX Defects** — Proposed. Dropped rounded corners, light-theme page background, lost note text on failed save, endless loading on fetch failure, missing card tint, silent timer chime, dark-theme focus contrast. Depends on #33.
-- **37. Dependency Security Upgrades** — Proposed. AngleSharp, SQLitePCLRaw pin, npm audit fix; Microsoft.* 10.0.x family bump (owner decision). Depends on #33.
-- **38. Backend Conventions Conformance** — Proposed. One error-handling idiom on the exceptions building block, domain events instead of inline hub sends, a shared resource-authorization check, rules moved into aggregates, endpoint-type layout, validators, dead code. Depends on #35, #37.
-- **39. Frontend Conventions Conformance** — Proposed. API client layer, setup stores, optimistic UI in stores, component splits, typed domain unions, `Base*` components, dead code. Depends on #36.
-- **40. Architecture Reference & Conventions Docs** — Proposed. As-built architecture doc + one-page map, root CLAUDE.md (owner decision), conventions index, `testing.md`, `known-deviations.md`, graph refresh. Depends on #38, #39.
+### Fix features from the F34 audit — confirmed by the owner 2026-10-13
+Grouping and rationale: `docs/specs/F34-ConventionsAudit/delivery/audit-report.md` § Proposed fix features; finding IDs in `findings/`. Same scope limit as this section: cleanup, code quality, architecture reference, conventions — no new product behaviour, no new tests (existing tests updated where a fix changes an asserted behaviour). To be built as a campaign: backend lane #37 → #35 → #38 and frontend lane #36 → #39 in parallel, #40 last.
+
+### 35. Backend Correctness & Security Fixes
+**Status: Not Started**
+**Epic:** Publish Readiness | **Priority:** Must
+**Dependencies:** #33, #37
+Event-interceptor lifetime, Writing-phase card-text leak over SignalR, domain errors returned as 500 and raw exception text, participant kick vs restrict FKs, non-atomic saves, edits on closed sprints, open redirect, SSRF guard. The login allowlist is **not** enforced in code — owner decision 2026-10-13: any Google account may sign in; the docs are corrected in #40.
+
+### 36. Frontend Visual & UX Defects
+**Status: Not Started**
+**Epic:** Publish Readiness | **Priority:** Must
+**Dependencies:** #33
+Dropped rounded corners, light-theme page background, lost note text on failed save, endless loading on fetch failure, missing card tint, silent timer chime, dark-theme focus contrast.
+
+### 37. Dependency Security Upgrades
+**Status: Not Started**
+**Epic:** Publish Readiness | **Priority:** Must
+**Dependencies:** #33
+AngleSharp 1.2.0 → 1.8.4, SQLitePCLRaw.lib.e_sqlite3 pinned to 2.1.13, `npm audit fix` (no major bumps). Microsoft.* 9.0.4 → 10.0.x family bump included — owner decision 2026-10-13 — as its own step behind the full suite. FastEndpoints 5 → 8 is out of scope.
+
+### 38. Backend Conventions Conformance
+**Status: Not Started**
+**Epic:** Publish Readiness | **Priority:** Should
+**Dependencies:** #35, #37
+One error-handling idiom on the exceptions building block, domain events instead of inline hub sends, a shared resource-authorization check, rules moved into aggregates, endpoint-type layout, validators, dead code. No behaviour change.
+
+### 39. Frontend Conventions Conformance
+**Status: Not Started**
+**Epic:** Publish Readiness | **Priority:** Should
+**Dependencies:** #36
+API client layer, setup stores, optimistic UI in stores, component splits, typed domain unions, `Base*` components, dead code. No behaviour change.
+
+### 40. Architecture Reference & Conventions Docs
+**Status: Not Started**
+**Epic:** Publish Readiness | **Priority:** Must
+**Dependencies:** #38, #39
+As-built architecture doc + one-page map, root `CLAUDE.md` rewritten for this app (owner decision 2026-10-13; the template text stays in history), login docs corrected to open Google sign-in (owner decision 2026-10-13), conventions index, `testing.md`, `known-deviations.md`, graph refresh.
 
 ---
 
