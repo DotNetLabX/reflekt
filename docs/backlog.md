@@ -268,7 +268,7 @@ Grouping and rationale: `docs/specs/F34-ConventionsAudit/delivery/audit-report.m
 **Status: Spec Ready** | **Spec:** `docs/specs/F35-BackendCorrectnessFixes/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Must
 **Dependencies:** #33, #37
-Event-interceptor lifetime, Writing-phase card-text leak over SignalR, domain errors returned as 500 and raw exception text, participant kick vs restrict FKs, non-atomic saves, edits on closed sprints, open redirect, SSRF guard. Kick is a soft kick (owner decision 2026-10-22): the participant is marked removed, their access ends, their cards and votes stay. The login allowlist is **not** enforced in code — owner decision 2026-10-13: any Google account may sign in; the docs are corrected in #40.
+Event-interceptor lifetime, Writing-phase card-text leak over SignalR, domain errors returned as 500 and raw exception text, participant kick vs restrict FKs, non-atomic saves (transaction-aware event publication), edits on closed sprints, display-name uniqueness, input validation, open redirect, SSRF guard, query-string token only on the hub. Kick is a soft kick (owner decision 2026-10-22): the participant is marked removed, their access ends, their cards and votes stay. The login allowlist is **not** enforced in code — owner decision 2026-10-13: any Google account may sign in; the docs are corrected in #40.
 
 ### 36. Frontend Visual & UX Defects
 **Status: Spec Ready** | **Spec:** `docs/specs/F36-FrontendDefects/definition/spec.md`
@@ -286,13 +286,13 @@ AngleSharp 1.2.0 → 1.8.4, SQLitePCLRaw.lib.e_sqlite3 pinned to 2.1.13, `npm au
 **Status: Spec Ready** | **Spec:** `docs/specs/F38-BackendConventions/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Should
 **Dependencies:** #35, #37
-One error-handling idiom on the exceptions building block, domain events instead of inline hub sends, a shared resource-authorization check, rules moved into aggregates, endpoint-type layout, validators, dead code. No behaviour change.
+One error-handling idiom on the exceptions building block, domain events instead of inline hub sends, a shared resource-authorization check, rules moved into aggregates, endpoint-type layout, validators, dead code. No status-code or SignalR change; two disclosed behaviour changes (one error body shape; a broadcast failure no longer fails a committed request).
 
 ### 39. Frontend Conventions Conformance
 **Status: Spec Ready** | **Spec:** `docs/specs/F39-FrontendConventions/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Should
 **Dependencies:** #36, #38 (F38 changes the error body the API client reads)
-API client layer, setup stores, optimistic UI in stores, component splits, typed domain unions, `Base*` components, dead code. No behaviour change.
+API client layer, setup stores, optimistic UI in stores, component splits, typed domain unions, `Base*` components, accessibility, dead code, ESLint + Prettier. The visible changes are listed in the spec.
 
 ### 40. Architecture Reference & Conventions Docs
 **Status: Spec Ready** | **Spec:** `docs/specs/F40-ArchitectureDocs/definition/spec.md`
