@@ -262,40 +262,40 @@ Remove junk and personal/machine files from the repo (untrack `.claude/settings.
 Audit the code against the repo's own conventions (`docs/conventions/`) and skills (`.claude/skills/`), and the architecture docs (`docs/architecture/`) against the code. Also triage the dependency advisories found in F33's plan review (AngleSharp 1.2.0, SQLitePCLRaw.lib.e_sqlite3 2.1.10). Findings become fix features (code quality, convention conformance, architecture reference/map), built afterwards — in parallel where they are independent.
 
 ### Fix features from the F34 audit — confirmed by the owner 2026-10-13
-Grouping and rationale: `docs/specs/F34-ConventionsAudit/delivery/audit-report.md` § Proposed fix features; finding IDs in `findings/`. Same scope limit as this section: cleanup, code quality, architecture reference, conventions — no new product behaviour, no new tests (existing tests updated where a fix changes an asserted behaviour). To be built as a campaign: backend lane #37 → #35 → #38 and frontend lane #36 → #39 in parallel, #40 last.
+Grouping and rationale: `docs/specs/F34-ConventionsAudit/delivery/audit-report.md` § Proposed fix features; finding IDs in `findings/`. Same scope limit as this section: cleanup, code quality, architecture reference, conventions — no new product behaviour, no new test projects or frameworks (existing test classes are updated, or extended with a regression case where a fix changes behaviour). To be built as a campaign: backend lane #37 → #35 → #38 and frontend #36 in parallel; #39 after #36 and #38; #40 last.
 
 ### 35. Backend Correctness & Security Fixes
-**Status: Not Started**
+**Status: Spec Ready** | **Spec:** `docs/specs/F35-BackendCorrectnessFixes/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Must
 **Dependencies:** #33, #37
-Event-interceptor lifetime, Writing-phase card-text leak over SignalR, domain errors returned as 500 and raw exception text, participant kick vs restrict FKs, non-atomic saves, edits on closed sprints, open redirect, SSRF guard. The login allowlist is **not** enforced in code — owner decision 2026-10-13: any Google account may sign in; the docs are corrected in #40.
+Event-interceptor lifetime, Writing-phase card-text leak over SignalR, domain errors returned as 500 and raw exception text, participant kick vs restrict FKs, non-atomic saves, edits on closed sprints, open redirect, SSRF guard. Kick is a soft kick (owner decision 2026-10-22): the participant is marked removed, their access ends, their cards and votes stay. The login allowlist is **not** enforced in code — owner decision 2026-10-13: any Google account may sign in; the docs are corrected in #40.
 
 ### 36. Frontend Visual & UX Defects
-**Status: Not Started**
+**Status: Spec Ready** | **Spec:** `docs/specs/F36-FrontendDefects/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Must
 **Dependencies:** #33
 Dropped rounded corners, light-theme page background, lost note text on failed save, endless loading on fetch failure, missing card tint, silent timer chime, dark-theme focus contrast.
 
 ### 37. Dependency Security Upgrades
-**Status: Not Started**
+**Status: Spec Ready** | **Spec:** `docs/specs/F37-DependencyUpgrades/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Must
 **Dependencies:** #33
 AngleSharp 1.2.0 → 1.8.4, SQLitePCLRaw.lib.e_sqlite3 pinned to 2.1.13, `npm audit fix` (no major bumps). Microsoft.* 9.0.4 → 10.0.x family bump included — owner decision 2026-10-13 — as its own step behind the full suite. FastEndpoints 5 → 8 is out of scope.
 
 ### 38. Backend Conventions Conformance
-**Status: Not Started**
+**Status: Spec Ready** | **Spec:** `docs/specs/F38-BackendConventions/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Should
 **Dependencies:** #35, #37
 One error-handling idiom on the exceptions building block, domain events instead of inline hub sends, a shared resource-authorization check, rules moved into aggregates, endpoint-type layout, validators, dead code. No behaviour change.
 
 ### 39. Frontend Conventions Conformance
-**Status: Not Started**
+**Status: Spec Ready** | **Spec:** `docs/specs/F39-FrontendConventions/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Should
-**Dependencies:** #36
+**Dependencies:** #36, #38 (F38 changes the error body the API client reads)
 API client layer, setup stores, optimistic UI in stores, component splits, typed domain unions, `Base*` components, dead code. No behaviour change.
 
 ### 40. Architecture Reference & Conventions Docs
-**Status: Not Started**
+**Status: Spec Ready** | **Spec:** `docs/specs/F40-ArchitectureDocs/definition/spec.md`
 **Epic:** Publish Readiness | **Priority:** Must
 **Dependencies:** #38, #39
 As-built architecture doc + one-page map, root `CLAUDE.md` rewritten for this app (owner decision 2026-10-13; the template text stays in history), login docs corrected to open Google sign-in (owner decision 2026-10-13), conventions index, `testing.md`, `known-deviations.md`, graph refresh.
