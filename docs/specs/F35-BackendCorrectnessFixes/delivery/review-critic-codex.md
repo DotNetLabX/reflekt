@@ -82,3 +82,61 @@ Line numbers refer to [F35’s spec](docs/specs/F35-BackendCorrectnessFixes/defi
    `CreateGroupEndpoint.cs:95` and `DissolveGroupEndpoint.cs:67` send SignalR messages directly; their group creation events are explicitly cleared. Holding intercepted domain events therefore cannot defer these sends. Wrapping the existing bodies in transactions can still notify clients before commit, and the SPA immediately refetches on both messages (`useSprintHub.ts:107,119`). Require commit before these inline sends in F35, with rollback producing no notification; F38’s later broadcast refactor cannot supply that guarantee retroactively.
 
 Read-only review completed. No files were modified; no builds or tests were run.
+
+
+# Plan review, round 1 — 2026-10-23 — Codex (primary)
+
+Persisted by team-lead session 0ac2548c from job task-mvkiap30-p0ko8a.
+
+## Verdict: NO-GO
+
+1. **HIGH — [plan.md:84](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:84): Step 1 lacks a required dependency.** `IDbTransactionInterceptor` belongs to `Microsoft.EntityFrameworkCore.Relational`, but `Blocks.Persistence.csproj` references only base EF Core. The downstream SQLite reference cannot supply compilation references upstream. The plan excludes the project/package changes needed to build. Add the dependency work to the inventory and reconcile the close-out restrictions. [EF Core interface source](https://github.com/dotnet/efcore/blob/v10.0.0/src/EFCore.Relational/Diagnostics/IDbTransactionInterceptor.cs).
+
+2. **HIGH — [plan.md:291](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:291): Joining can race with kick revocation.** A connection can read an active participant, pause before registration, then register and join both groups after the kick handler has finished eviction. The initial database check and one-time connection enumeration do not prevent this. Step 9 needs coordination between joining and revocation, or a compensating check and teardown, to satisfy BE-13.
+
+3. **MEDIUM — [plan.md:504](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:504): P2 does not close R1-18’s author-connection window.** A broadcast can capture author connection IDs and send the full payload before a new author connection joins; that connection can then join the sprint before the redacted send, whose exclusion list is stale. `useSprintHub.ts:75–78` retains the first `CardCreated`. P2 explicitly tolerates an author receiving redaction, contradicting the spec’s unchanged author behavior. P3–P6 otherwise resolve their respective R1-18 items.
+
+4. **MEDIUM — [plan.md:290](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:290): The new participant group lacks a complete leave lifecycle.** Existing `SprintHub.LeaveSprint` removes connection tracking and only the sprint-group membership. Step 9 adds participant-group membership without addressing this method, so a connection that leaves remains subscribed to full author notifications and is absent from `ConnectionState`. Specify participant-group removal and how revocation continues to find such connections.
+
+5. **MEDIUM — [plan.md:142](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:142): Production 5xx bodies retain a forbidden field.** The plan explicitly emits `details: null`; `JsonSerializerDefaults.Web` does not omit null properties. Spec BE-20 and AC3 require no `Details`/`details` outside Development. The implementation instruction and acceptance trace must require omission.
+
+6. **MEDIUM — [plan.md:223](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:223): Step 6 breaks its required build check.** It deletes `ParticipantRepository.Remove`, while `KickParticipantEndpoint.cs:44` continues calling it until Step 8. Line 70 requires a successful build after every step. Move the deletion into Step 8 or explicitly make these changes one buildable step.
+
+7. **MEDIUM — [plan.md:112](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:112), [plan.md:377](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:377): Missing `Adds:` rows.** Step 2 extends transactions to every `AdvancePhase` branch beyond the named Writing transition. Step 12 applies the complete return-URL policy to an additional unescaped representation. These choices need step-local `Adds:` rows identifying their additional behavior and justification; global Decisions entries do not provide the requested accounting.
+
+8. **MEDIUM — [plan.md:34](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:34): Missing `Departs from:` rows.** Step 3 deliberately changes the named error-handling pattern’s status mapping and serialization. Step 1 retains `WaitForNone` against the referenced domain dispatch pattern; Step 8 preserves inline resource checks against the authorization-handler pattern; Step 9 retains a broadcast-only handler name while adding multiple effects. Record these departures locally with their sources and reasons. Marking the steps “Follow” and logging skill gaps does not satisfy the requested rows.
+
+9. **LOW — [plan.md:118](D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:118): The dissolve-loop acceptance check already passes before the fix.** `DissolveGroupEndpoint.cs` currently has two `SaveChangesAsync` sites, at lines 60 and 65, rather than the claimed three. Counting two cannot establish that saving inside the loop was removed. Replace this check with an explicit code trace showing both saves outside the loop; no new test is needed.
+
+
+# Plan review, round 2 — 2026-10-23 — Codex (primary, alone)
+
+Persisted by team-lead session 0ac2548c from job task-mvkj2ttx-ctkrnt.
+
+## Verdict: NO-GO
+
+Line references below are to [plan.md](/D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md).
+
+| Finding | Verification | Plan line(s) | Collateral |
+|---|---|---|---|
+| R1-01 | closed | 85, 474, 618 | Dependency and package restrictions reconciled. |
+| R1-02 | closed | 326–333 | Explicit database re-check and compensating teardown specified. |
+| R1-03 | closed | 88–100, 113 | Collected/held separation covers implicit transactions. |
+| R1-04 | closed | 400–406, 574, 628 | P2 explicitly superseded; no active contradiction. |
+| R1-05 | closed | 326, 334–356 | Leave removes both memberships; registry preserves revocation coverage. |
+| R1-06 | closed | 160–171 | Production `details` omission explicit. |
+| R1-07 | closed | 249, 305 | `Remove` retained until its caller changes. |
+| R1-08 | closed | 192–197 | Hub exception conversion and closed-sprint auto-start behavior defined. |
+| R1-09 | closed | 70, 173, 255 | New Step 6 integration check conflicts with migration ordering: R2-01. |
+| R1-10 | partial | 129, 430–432, 540 | Transaction expansion and configured-origin fallback removed; decoded validation still adds behavior: R2-02. |
+| R1-11 | closed | 547–550 | Four named departures and their sources recorded. |
+| R1-12 | closed | 135 | Loop-save count replaced with a discriminating trace. |
+| R1-13 | closed | 475–479 | Generated graph output excluded from the inventory check. |
+
+1. **R2-01 — MEDIUM — [plan.md:255](/D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:255) — Step 6 cannot pass its newly required integration checks. Tag: `fold`.**  
+   Step 6 changes the participant model, collation and index at line 244, but the migration and snapshot arrive in Step 7. `ParticipantEndpointTests.InitializeAsync` creates the application at [line 75](/D:/src/reflekt-F35-BackendCorrectnessFixes/tests/Reflekt.IntegrationTests/ParticipantEndpointTests.cs:75), whose startup calls `Database.Migrate()` at [DependencyInjection.cs:47](/D:/src/reflekt-F35-BackendCorrectnessFixes/src/Services/Reflekt/Reflekt.Persistence/DependencyInjection.cs:47). EF rejects pending model changes, so these tests fail before exercising Step 6. This contradicts the per-step checks at line 70. Move the migration into the same verification boundary as the model changes, or explicitly combine Steps 6–7. [EF documentation](https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-9.0/breaking-changes#exception-is-thrown-when-applying-migrations-if-there-are-pending-model-changes).
+
+2. **R2-02 — MEDIUM — [plan.md:430](/D:/src/reflekt-F35-BackendCorrectnessFixes/docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md:430) — Additional decoded-value validation still lacks an `Adds:` row. Tag: `fold`.**  
+   The fold calls this preserved behavior, but today’s [LoginEndpoint.cs:36](/D:/src/reflekt-F35-BackendCorrectnessFixes/src/Services/Reflekt/Reflekt.API/Features/Auth/Login/LoginEndpoint.cs:36) checks only a leading slash, a `//` prefix and `://` on the decoded value. Applying the complete rule to both forms additionally rejects values such as `/docs/%09notes`: the received value passes the spec’s rule and today’s implementation accepts it, while the new decoded control-character check rejects it. Preserve the existing decoded predicates exactly, or add the required step-local `Adds:` row explaining the expansion and correct the preservation claim at line 540.
+
+Full-plan review completed against the spec, Q1 and relevant source/tests. No files were modified; no builds or tests were run.
