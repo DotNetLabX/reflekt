@@ -2,110 +2,78 @@ using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Sprints.AdvancePhase;
 
-public sealed record AdvancePhaseCheckResponse(
-    string CurrentPhase,
-    int? NonVotingParticipantCount = null,
-    int? TotalParticipantCount = null,
-    int? DiscussedGroupCount = null,
-    int? FocusedGroupId = null,
-    int? UnreviewedActionCount = null,
-    int? TotalPreviousActionCount = null);
-
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpPost("/api/teams/{teamId}/sprints/{sprintId}/advance-phase/check")]
 [Tags("Sprints")]
 public sealed class AdvancePhaseCheckEndpoint(
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     SprintRepository sprintRepository,
     ParticipantRepository participantRepository,
     CardGroupRepository cardGroupRepository,
-    VoteRepository voteRepository,
     CardRepository cardRepository)
     : Endpoint<SprintRouteRequest, AdvancePhaseCheckResponse>
 {
     public override async Task HandleAsync(SprintRouteRequest request, CancellationToken ct)
     {
-        var userId = User.GetUserId();
+        var access = await sprintAccess.ForTeamAsync(User, request.TeamId, request.SprintId, ct);
+        access.RequireTeam();
+        access.RequireOwner();
+        var sprint = access.RequireSprint();
 
-        var team = await teamRepository.GetByIdAsync(request.TeamId, ct);
-        if (team is null) { await SendNotFoundAsync(ct); return; }
+        sprint.EnsureActive("Sprint must be Active to check phase advancement.");
+        sprint.EnsureCanAdvancePhase("Cannot advance from Reporting phase.");
 
-        if (team.OwnerId != userId)
+        var response = sprint.CurrentPhase switch
         {
-            await SendForbiddenAsync(ct);
-            return;
-        }
+            SprintPhase.Writing => await BuildWritingCheckAsync(sprint, ct),
+            SprintPhase.Voting => await BuildVotingCheckAsync(sprint, ct),
+            SprintPhase.Discussing => await BuildDiscussingCheckAsync(sprint, ct),
+            _ => new AdvancePhaseCheckResponse(sprint.CurrentPhase.ToString()),
+        };
 
-        var sprint = await sprintRepository.GetByIdAsync(request.SprintId, ct);
-        if (sprint is null || sprint.TeamId != request.TeamId) { await SendNotFoundAsync(ct); return; }
+        await SendOkAsync(response, ct);
+    }
 
-        if (sprint.State != SprintState.Active)
-        {
-            AddError("Sprint must be Active to check phase advancement.");
-            await SendErrorsAsync(409, ct);
-            return;
-        }
+    private async Task<AdvancePhaseCheckResponse> BuildWritingCheckAsync(Sprint sprint, CancellationToken ct)
+    {
+        var previousSprint = await sprintRepository.GetMostRecentClosedByTeamIdAsync(sprint.TeamId, ct);
+        if (previousSprint is null)
+            return new AdvancePhaseCheckResponse(sprint.CurrentPhase.ToString());
 
-        if (sprint.CurrentPhase == SprintPhase.Reporting)
-        {
-            AddError("Cannot advance from Reporting phase.");
-            await SendErrorsAsync(409, ct);
-            return;
-        }
+        var unreviewedCount = await cardRepository.CountUnreviewedActionItemsBySprintIdAsync(previousSprint.Id, ct);
+        var reviewedCount = await cardRepository.CountActionItemsReviewedInSprintAsync(previousSprint.Id, ct);
+        var totalCount = unreviewedCount + reviewedCount;
 
-        if (sprint.CurrentPhase == SprintPhase.Writing)
-        {
-            var previousSprint = await sprintRepository.GetMostRecentClosedByTeamIdAsync(sprint.TeamId, ct);
-            if (previousSprint is not null)
-            {
-                var unreviewedItems = await cardRepository.GetUnreviewedActionItemsBySprintIdAsync(previousSprint.Id, ct);
-                var reviewedItems = await cardRepository.GetActionItemsReviewedInSprintAsync(previousSprint.Id, ct);
-                var totalCount = unreviewedItems.Count + reviewedItems.Count;
+        if (totalCount == 0)
+            return new AdvancePhaseCheckResponse(sprint.CurrentPhase.ToString());
 
-                if (totalCount > 0)
-                {
-                    await SendOkAsync(new AdvancePhaseCheckResponse(
-                        sprint.CurrentPhase.ToString(),
-                        UnreviewedActionCount: unreviewedItems.Count,
-                        TotalPreviousActionCount: totalCount), ct);
-                    return;
-                }
-            }
+        return new AdvancePhaseCheckResponse(
+            sprint.CurrentPhase.ToString(),
+            UnreviewedActionCount: unreviewedCount,
+            TotalPreviousActionCount: totalCount);
+    }
 
-            await SendOkAsync(new AdvancePhaseCheckResponse(sprint.CurrentPhase.ToString()), ct);
-            return;
-        }
+    private async Task<AdvancePhaseCheckResponse> BuildVotingCheckAsync(Sprint sprint, CancellationToken ct)
+    {
+        var totalCount = await participantRepository.CountBySprintIdAsync(sprint.Id, ct);
+        var nonVotingCount = await participantRepository.CountWithoutVotesInSprintAsync(sprint.Id, ct);
 
-        if (sprint.CurrentPhase == SprintPhase.Voting)
-        {
-            var participants = await participantRepository.GetBySprintIdAsync(request.SprintId, ct);
-            var participantIdsWithVotes = await voteRepository.GetParticipantIdsWithVotesInSprintAsync(request.SprintId, ct);
-            var votingSet = participantIdsWithVotes.ToHashSet();
-            var nonVotingCount = participants.Count(p => !votingSet.Contains(p.Id));
+        return new AdvancePhaseCheckResponse(
+            sprint.CurrentPhase.ToString(),
+            NonVotingParticipantCount: nonVotingCount,
+            TotalParticipantCount: totalCount);
+    }
 
-            await SendOkAsync(new AdvancePhaseCheckResponse(
-                sprint.CurrentPhase.ToString(),
-                NonVotingParticipantCount: nonVotingCount,
-                TotalParticipantCount: participants.Count), ct);
-            return;
-        }
+    private async Task<AdvancePhaseCheckResponse> BuildDiscussingCheckAsync(Sprint sprint, CancellationToken ct)
+    {
+        var discussedCount = await cardGroupRepository.CountDiscussedBySprintIdAsync(sprint.Id, ct);
 
-        if (sprint.CurrentPhase == SprintPhase.Discussing)
-        {
-            var groups = await cardGroupRepository.GetBySprintIdAsync(request.SprintId, ct);
-            var discussedCount = groups.Count(g => g.DiscussedAt.HasValue);
-
-            await SendOkAsync(new AdvancePhaseCheckResponse(
-                sprint.CurrentPhase.ToString(),
-                DiscussedGroupCount: discussedCount,
-                FocusedGroupId: sprint.FocusedGroupId), ct);
-            return;
-        }
-
-        await SendOkAsync(new AdvancePhaseCheckResponse(sprint.CurrentPhase.ToString()), ct);
+        return new AdvancePhaseCheckResponse(
+            sprint.CurrentPhase.ToString(),
+            DiscussedGroupCount: discussedCount,
+            FocusedGroupId: sprint.FocusedGroupId);
     }
 }

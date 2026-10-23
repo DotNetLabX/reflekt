@@ -2,28 +2,20 @@ using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Sprints.CreateSprint;
 
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpPost("/api/teams/{teamId}/sprints")]
 [Tags("Sprints")]
-public sealed class CreateSprintEndpoint(TeamRepository teamRepository, SprintRepository sprintRepository)
+public sealed class CreateSprintEndpoint(SprintAccess sprintAccess, SprintRepository sprintRepository)
     : Endpoint<CreateSprintCommand, SprintResponse>
 {
     public override async Task HandleAsync(CreateSprintCommand command, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-
-        var team = await teamRepository.GetByIdAsync(command.TeamId, ct);
-        if (team is null) { await SendNotFoundAsync(ct); return; }
-
-        if (team.OwnerId != userId)
-        {
-            await SendForbiddenAsync(ct);
-            return;
-        }
+        var access = await sprintAccess.ForTeamAsync(User, command.TeamId, sprintId: null, ct);
+        access.RequireTeam();
+        access.RequireOwner();
 
         // Resolve column config: explicit values take precedence; fallback to most recent sprint in team
         string? col1Name = command.Column1Name;

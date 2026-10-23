@@ -1,70 +1,37 @@
-using FluentValidation;
+using Blocks.Core;
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.PreviousActions.SetReviewStatus;
 
-public sealed record SetReviewStatusCommand(int TeamId, int SprintId, int CardId, string ReviewStatus);
-
-public sealed class SetReviewStatusCommandValidator : Validator<SetReviewStatusCommand>
-{
-    private static readonly HashSet<string> ValidStatuses =
-        ["Done", "CarriedOver", "Dropped"];
-
-    public SetReviewStatusCommandValidator()
-    {
-        RuleFor(x => x.ReviewStatus)
-            .NotEmpty()
-            .Must(s => ValidStatuses.Contains(s))
-            .WithMessage("ReviewStatus must be one of: Done, CarriedOver, Dropped.");
-    }
-}
-
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpPatch("/api/teams/{teamId}/sprints/{sprintId}/previous-actions/{cardId}")]
 [Tags("PreviousActions")]
 public sealed class SetReviewStatusEndpoint(
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     SprintRepository sprintRepository,
     CardRepository cardRepository)
     : Endpoint<SetReviewStatusCommand, PreviousActionItemResponse>
 {
     public override async Task HandleAsync(SetReviewStatusCommand command, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-
-        var team = await teamRepository.GetByIdAsync(command.TeamId, ct);
-        if (team is null) { await SendNotFoundAsync(ct); return; }
-
-        if (team.OwnerId != userId)
-        {
-            await SendForbiddenAsync(ct);
-            return;
-        }
-
-        var sprint = await sprintRepository.GetByIdAsync(command.SprintId, ct);
-        if (sprint is null || sprint.TeamId != command.TeamId) { await SendNotFoundAsync(ct); return; }
+        var access = await sprintAccess.ForTeamAsync(User, command.TeamId, command.SprintId, ct);
+        access.RequireTeam();
+        access.RequireOwner();
+        var sprint = access.RequireSprint();
 
         if (sprint.State != SprintState.Active || sprint.CurrentPhase != SprintPhase.Writing)
-        {
-            AddError("Review status can only be set during the Writing phase.");
-            await SendErrorsAsync(409, ct);
-            return;
-        }
+            throw new ConflictException("Review status can only be set during the Writing phase.");
 
-        var previousSprint = await sprintRepository.GetMostRecentClosedByTeamIdAsync(command.TeamId, ct);
-        if (previousSprint is null) { await SendNotFoundAsync(ct); return; }
+        var previousSprint = Guard.NotFound(await sprintRepository.GetMostRecentClosedByTeamIdAsync(command.TeamId, ct));
 
         var card = await cardRepository.GetByIdAsync(command.CardId, ct);
         if (card is null || card.SprintId != previousSprint.Id || card.CardType != CardType.ActionItem)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+            throw new NotFoundException("Card not found");
 
         var reviewStatus = Enum.Parse<Domain.Cards.ReviewStatus>(command.ReviewStatus);
         card.SetReviewStatus(reviewStatus, command.SprintId);

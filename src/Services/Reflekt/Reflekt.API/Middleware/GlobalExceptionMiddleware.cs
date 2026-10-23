@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Blocks.Domain;
 using Blocks.Exceptions;
 using FluentValidation;
+using FluentValidation.Results;
 
 namespace Reflekt.API.Middleware;
 
@@ -13,6 +14,7 @@ public sealed class GlobalExceptionMiddleware(
     IWebHostEnvironment env)
 {
     private const string ServerErrorMessage = "An unexpected error occurred.";
+    private const string EndpointValidationMessage = "One or more errors occurred!";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -23,6 +25,13 @@ public sealed class GlobalExceptionMiddleware(
         ArgumentException => HttpStatusCode.BadRequest,
         _ => HttpStatusCode.InternalServerError
     };
+
+    public static object BuildEndpointValidationResponse(
+        List<ValidationFailure> failures, HttpContext context, int statusCode)
+        => new ErrorResponse(statusCode, EndpointValidationMessage, context.TraceIdentifier)
+        {
+            Errors = ToErrorItems(failures)
+        };
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -55,6 +64,7 @@ public sealed class GlobalExceptionMiddleware(
         var message = isServerError && !env.IsDevelopment() ? ServerErrorMessage : exception.Message;
         var response = new ErrorResponse((int)statusCode, message, context.TraceIdentifier)
         {
+            Code = (exception as HttpException)?.Code,
             Details = env.IsDevelopment() ? exception.StackTrace : null
         };
 
@@ -68,12 +78,15 @@ public sealed class GlobalExceptionMiddleware(
             "One or more validation errors occurred.",
             context.TraceIdentifier)
         {
-            Errors = exception.Errors.Select(e => new ValidationError(e.PropertyName, e.ErrorMessage)).ToList(),
+            Errors = ToErrorItems(exception.Errors),
             Details = env.IsDevelopment() ? exception.StackTrace : null
         };
 
         return WriteResponseAsync(context, HttpStatusCode.BadRequest, response);
     }
+
+    private static List<ErrorItem> ToErrorItems(IEnumerable<ValidationFailure> failures)
+        => failures.Select(f => new ErrorItem(f.PropertyName, f.ErrorMessage)).ToList();
 
     private static Task WriteResponseAsync(HttpContext context, HttpStatusCode statusCode, ErrorResponse response)
     {
@@ -82,14 +95,17 @@ public sealed class GlobalExceptionMiddleware(
         return context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonOptions));
     }
 
-    private sealed record ErrorResponse(int StatusCode, string Message, string TraceId)
+    public sealed record ErrorResponse(int StatusCode, string Message, string TraceId)
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public IReadOnlyList<ValidationError>? Errors { get; init; }
+        public string? Code { get; init; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IReadOnlyList<ErrorItem>? Errors { get; init; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Details { get; init; }
     }
 
-    private sealed record ValidationError(string PropertyName, string ErrorMessage);
+    public sealed record ErrorItem(string Field, string Message);
 }

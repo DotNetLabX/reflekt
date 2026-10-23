@@ -7,13 +7,15 @@ namespace Reflekt.API.Features.Votes.CastVote;
 
 public sealed class BroadcastVoteCountOnVoteCastHandler(
     IHubContext<SprintHub> hubContext,
-    CardGroupRepository cardGroupRepository,
-    VoteRepository voteRepository)
+    IServiceScopeFactory scopeFactory)
     : IEventHandler<VoteCastEvent>
 {
     public async Task HandleAsync(VoteCastEvent ev, CancellationToken ct)
     {
         var groupId = ev.Vote.GroupId;
+        using var scope = scopeFactory.CreateScope();
+        var cardGroupRepository = scope.ServiceProvider.GetRequiredService<CardGroupRepository>();
+        var voteRepository = scope.ServiceProvider.GetRequiredService<VoteRepository>();
         var group = await cardGroupRepository.GetByIdAsync(groupId, ct);
         if (group is null) return;
 

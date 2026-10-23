@@ -1,15 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Reflekt.API.Auth;
 using Reflekt.IntegrationTests.Helpers;
 
@@ -30,43 +23,8 @@ public class TeamEndpointTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _authFactory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UsePlaceholderGoogleCredentials();
-                builder.ConfigureAppConfiguration((_, config) =>
-                    config.AddInMemoryCollection(new Dictionary<string, string?>
-                    {
-                        ["ConnectionStrings:Reflekt"] = $"Data Source={_testDbPath}",
-                        ["Auth:AllowedEmails:0"] = TestAuthHandler.TestEmail,
-                        ["Seed:Enabled"] = "false",
-                    }));
-
-                builder.ConfigureTestServices(services =>
-                {
-                    services
-                        .AddAuthentication(TestAuthHandler.SchemeName)
-                        .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
-                            TestAuthHandler.SchemeName, _ => { });
-
-                    services.AddAuthorizationBuilder()
-                        .AddPolicy(Policies.ScrumMaster, policy => policy
-                            .AddAuthenticationSchemes(TestAuthHandler.SchemeName)
-                            .RequireAuthenticatedUser());
-                });
-            });
-
-        _anonFactory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UsePlaceholderGoogleCredentials();
-                builder.ConfigureAppConfiguration((_, config) =>
-                    config.AddInMemoryCollection(new Dictionary<string, string?>
-                    {
-                        ["ConnectionStrings:Reflekt"] = $"Data Source={_anonDbPath}",
-                        ["Seed:Enabled"] = "false",
-                    }));
-            });
+        _authFactory = ReflektApiFactory.CreateSignedIn(_testDbPath, Policies.SignedInUser);
+        _anonFactory = ReflektApiFactory.CreateAnonymous(_anonDbPath);
 
         _client = _authFactory.CreateClient();
         _anonClient = _anonFactory.CreateClient();
@@ -99,6 +57,13 @@ public class TeamEndpointTests : IAsyncLifetime
         var response = await _client.PostAsJsonAsync("/api/teams", new { name = "" });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("statusCode").GetInt32().Should().Be(400);
+        body.GetProperty("message").GetString().Should().NotBeNullOrEmpty();
+        body.GetProperty("traceId").GetString().Should().NotBeNullOrEmpty();
+        var errors = body.GetProperty("errors");
+        errors[0].GetProperty("field").GetString().Should().Be("name");
+        errors[0].GetProperty("message").GetString().Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -136,20 +101,6 @@ public class TeamEndpointTests : IAsyncLifetime
     {
         await _authFactory.DisposeAsync();
         await _anonFactory.DisposeAsync();
-        SqliteConnection.ClearAllPools();
-        for (var attempt = 1; ; attempt++)
-        {
-            try
-            {
-                if (File.Exists(_testDbPath)) File.Delete(_testDbPath);
-                if (File.Exists(_anonDbPath)) File.Delete(_anonDbPath);
-                break;
-            }
-            catch (IOException) when (attempt < 20)
-            {
-                await Task.Delay(100);
-                SqliteConnection.ClearAllPools();
-            }
-        }
+        await ReflektApiFactory.DeleteDatabaseFilesAsync(_testDbPath, _anonDbPath);
     }
 }

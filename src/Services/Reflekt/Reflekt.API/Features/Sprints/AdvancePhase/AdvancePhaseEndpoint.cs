@@ -5,70 +5,34 @@ using Reflekt.Domain.CardGroups;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Sprints.AdvancePhase;
 
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpPost("/api/teams/{teamId}/sprints/{sprintId}/advance-phase")]
 [Tags("Sprints")]
 public sealed class AdvancePhaseEndpoint(
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     SprintRepository sprintRepository,
     CardRepository cardRepository,
     CardGroupRepository cardGroupRepository,
-    PhaseActionCache phaseActionCache)
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<SprintRouteRequest, SprintResponse>
 {
     public override async Task HandleAsync(SprintRouteRequest request, CancellationToken ct)
     {
-        var userId = User.GetUserId();
+        var access = await sprintAccess.ForTeamAsync(User, request.TeamId, request.SprintId, ct);
+        access.RequireTeam();
+        access.RequireOwner();
+        var sprint = access.RequireSprint();
 
-        var team = await teamRepository.GetByIdAsync(request.TeamId, ct);
-        if (team is null) { await SendNotFoundAsync(ct); return; }
-
-        if (team.OwnerId != userId)
-        {
-            await SendForbiddenAsync(ct);
-            return;
-        }
-
-        var sprint = await sprintRepository.GetByIdAsync(request.SprintId, ct);
-        if (sprint is null || sprint.TeamId != request.TeamId) { await SendNotFoundAsync(ct); return; }
-
-        if (sprint.State != SprintState.Active)
-        {
-            AddError("Sprint must be Active to advance phase.");
-            await SendErrorsAsync(409, ct);
-            return;
-        }
-
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.AdvancePhase))
-            ThrowError($"{SprintAction.AdvancePhase} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
+        sprint.EnsureActive("Sprint must be Active to advance phase.");
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, SprintAction.AdvancePhase);
 
         var previousPhase = sprint.CurrentPhase;
 
         if (previousPhase == SprintPhase.Discussing)
-        {
-            var groups = await cardGroupRepository.GetBySprintIdAsync(request.SprintId, ct);
-
-            if (sprint.FocusedGroupId.HasValue)
-            {
-                var focusedGroup = groups.FirstOrDefault(g => g.Id == sprint.FocusedGroupId.Value);
-                if (focusedGroup is not null && !focusedGroup.DiscussedAt.HasValue)
-                    focusedGroup.MarkDiscussed();
-
-                sprint.ClearFocus();
-            }
-
-            var discussedCount = groups.Count(g => g.DiscussedAt.HasValue);
-            if (discussedCount < 2)
-            {
-                AddError("At least 2 groups must be discussed before advancing to Reporting.");
-                await SendErrorsAsync(409, ct);
-                return;
-            }
-        }
+            await CloseDiscussionAsync(sprint, ct);
 
         sprint.AdvancePhase();
 
@@ -80,6 +44,22 @@ public sealed class AdvancePhaseEndpoint(
         await SendOkAsync(sprint.Adapt<SprintResponse>(), ct);
     }
 
+    private async Task CloseDiscussionAsync(Sprint sprint, CancellationToken ct)
+    {
+        var groups = await cardGroupRepository.GetBySprintIdAsync(sprint.Id, ct);
+
+        if (sprint.FocusedGroupId is { } focusedGroupId)
+        {
+            var focusedGroup = groups.FirstOrDefault(g => g.Id == focusedGroupId);
+            if (focusedGroup is not null && !focusedGroup.DiscussedAt.HasValue)
+                focusedGroup.MarkDiscussed();
+
+            sprint.ClearFocus();
+        }
+
+        sprint.EnsureEnoughGroupsDiscussed(groups.Count(g => g.DiscussedAt.HasValue));
+    }
+
     private async Task LeaveWritingAsync(Sprint sprint, CancellationToken ct)
     {
         await using var transaction = await sprintRepository.BeginTransactionAsync(ct);
@@ -87,8 +67,7 @@ public sealed class AdvancePhaseEndpoint(
         var cards = await cardRepository.GetBySprintIdAsync(sprint.Id, ct);
         var noteCards = cards.Where(c => c.CardType == CardType.Note).ToList();
 
-        var groups = noteCards.Select(c => CardGroup.Create(sprint.Id, c.ColumnType)).ToList();
-        foreach (var g in groups) g.ClearDomainEvents();
+        var groups = noteCards.Select(c => CardGroup.CreateSolo(sprint.Id, c.ColumnType)).ToList();
         await cardGroupRepository.AddRangeAsync(groups, ct);
         await sprintRepository.SaveChangesAsync(ct);
 

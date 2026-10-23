@@ -1,10 +1,13 @@
-using FastEndpoints;
-using Microsoft.AspNetCore.SignalR;
 using Reflekt.API.Auth;
+using Reflekt.API.Features.CardGroups;
+using Reflekt.API.Features.EvidenceLinks;
 using Reflekt.API.Features.PhaseActions;
-using Reflekt.API.Features.Sprints.Timer;
+using Reflekt.API.Features.Reports;
 using Reflekt.API.Features.Teams;
+using Reflekt.API.Features.Teams.CreateTeam;
+using Reflekt.API.Features.Votes.CastVote;
 using Reflekt.API.Hubs;
+using Reflekt.API.Middleware;
 using Reflekt.API.OpenGraph;
 using Scalar.AspNetCore;
 
@@ -18,26 +21,52 @@ public static class DependencyInjection
     {
         services.AddFastEndpoints();
         services.AddSignalR();
-        Mapster.TypeAdapterConfig.GlobalSettings.Scan(typeof(DependencyInjection).Assembly);
-        services.AddSingleton(Mapster.TypeAdapterConfig.GlobalSettings);
-        services.AddScoped<MapsterMapper.IMapper, MapsterMapper.ServiceMapper>();
+        TypeAdapterConfig.GlobalSettings.Scan(typeof(DependencyInjection).Assembly);
         services.AddOpenApi();
 
-        services.Configure<SeedOptions>(configuration.GetSection("Seed"));
-        services.Configure<TeamSettings>(configuration.GetSection("TeamSettings"));
-
-        services.AddReflektAuthentication(configuration);
+        services.AddReflektOptions(configuration);
+        services.AddReflektAuthentication();
         services.AddReflektAuthorization();
         services.AddReflektOpenGraph();
-        services.AddSingleton<PhaseActionCache>();
+        services.AddSingleton<PhaseActionPolicyProvider>();
+        services.AddScoped<SprintAccess>();
+        services.AddScoped<TeamLimitCheck>();
+        services.AddScoped<CardRegrouping>();
+        services.AddScoped<FocusHandover>();
+        services.AddScoped<VoteBudget>();
+        services.AddScoped<SprintReportBuilder>();
         services.AddSingleton<TimerService>();
+        services.AddSingleton<ReadinessTracker>();
 
         return services;
     }
 
+    private static void AddReflektOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<AuthSettings>()
+            .Bind(configuration.GetSection("Auth"))
+            .Validate(
+                s => !string.IsNullOrEmpty(s.Google.ClientId) && !string.IsNullOrEmpty(s.Google.ClientSecret),
+                "Auth:Google:ClientId and Auth:Google:ClientSecret must be set.")
+            .ValidateOnStart();
+
+        services.AddOptions<TeamSettings>()
+            .Bind(configuration.GetSection("TeamSettings"))
+            .Validate(s => s.MaxTeamsPerUser >= 1, "TeamSettings:MaxTeamsPerUser must be at least 1.")
+            .ValidateOnStart();
+
+        services.AddOptions<SeedOptions>()
+            .Bind(configuration.GetSection("Seed"))
+            .ValidateOnStart();
+
+        services.AddOptions<EvidenceLinkSettings>()
+            .Bind(configuration.GetSection("EvidenceLinks"))
+            .ValidateOnStart();
+    }
+
     public static WebApplication UseReflektApi(this WebApplication app)
     {
-        app.UseMiddleware<Reflekt.API.Middleware.GlobalExceptionMiddleware>();
+        app.UseMiddleware<GlobalExceptionMiddleware>();
 
         app.UseDefaultFiles();
         app.UseStaticFiles();
@@ -45,21 +74,12 @@ public static class DependencyInjection
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.MapFastEndpoints();
-        app.MapHub<SprintHub>("/hubs/sprint");
-
-        // Wire timer expiry callback: on expiry, broadcast TimerUpdated(expired) to sprint group
-        var timerService = app.Services.GetRequiredService<TimerService>();
-        var hubContext = app.Services.GetRequiredService<IHubContext<SprintHub>>();
-        timerService.RegisterExpiryCallback(async sprintId =>
+        app.MapFastEndpoints(config =>
         {
-            await hubContext.Clients.Group($"sprint:{sprintId}").SendAsync("TimerUpdated", new
-            {
-                status = "expired",
-                remainingSeconds = 0,
-                endTimeUtc = (DateTime?)null,
-            });
+            config.Errors.ResponseBuilder = GlobalExceptionMiddleware.BuildEndpointValidationResponse;
+            config.Errors.ProducesMetadataType = typeof(GlobalExceptionMiddleware.ErrorResponse);
         });
+        app.MapHub<SprintHub>("/hubs/sprint");
 
         if (app.Environment.IsDevelopment())
         {

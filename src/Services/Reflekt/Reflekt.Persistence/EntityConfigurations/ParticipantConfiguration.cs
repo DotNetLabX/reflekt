@@ -1,6 +1,4 @@
 using Blocks.Persistence.EntityConfigurations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Reflekt.Domain.Participants;
 using Reflekt.Domain.Sprints;
 using Reflekt.Domain.Users;
@@ -15,7 +13,7 @@ internal sealed class ParticipantConfiguration : EntityConfiguration<Participant
         builder.ToTable("Participants");
         builder.Property(p => p.SprintId).IsRequired();
         builder.HasOne<Sprint>().WithMany().HasForeignKey(p => p.SprintId).OnDelete(DeleteBehavior.Cascade);
-        builder.Property(p => p.DisplayName).IsRequired().HasMaxLength(50).UseCollation("NOCASE");
+        builder.Property(p => p.DisplayName).IsRequired().HasMaxLength(Participant.DisplayNameMaxLength).UseCollation("NOCASE");
         builder.Property(p => p.RemovedAt).IsRequired(false);
         builder.HasIndex(p => new { p.SprintId, p.DisplayName }).IsUnique().HasFilter("\"RemovedAt\" IS NULL");
         builder.Property(p => p.GuestToken).IsRequired();

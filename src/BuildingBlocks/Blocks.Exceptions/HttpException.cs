@@ -18,4 +18,5 @@ public class HttpException : Exception
 
     public HttpStatusCode HttpStatusCode { get; }
     public int StatusCode => (int)HttpStatusCode;
+    public string? Code { get; init; }
 }

@@ -1,11 +1,9 @@
 using System.Security.Claims;
+using Blocks.Core;
 using Microsoft.AspNetCore.Authorization;
-using Reflekt.API.Auth;
 using Reflekt.Persistence.Repositories;
 
 namespace Reflekt.API.Features.Sprints.GetSprintSummary;
-
-public sealed record GetSprintSummaryRequest(int SprintId);
 
 [AllowAnonymous]
 [HttpGet("/api/sprints/{sprintId}/summary")]
@@ -15,11 +13,10 @@ public sealed class GetSprintSummaryEndpoint(SprintRepository sprintRepository, 
 {
     public override async Task HandleAsync(GetSprintSummaryRequest request, CancellationToken ct)
     {
-        var sprint = await sprintRepository.GetByIdAsync(request.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
+        var sprint = Guard.NotFound(await sprintRepository.GetByIdReadOnlyAsync(request.SprintId, ct));
 
         var participants = await participantRepository.GetBySprintIdAsync(request.SprintId, ct);
-        var participantDtos = participants.Select(p => new SprintSummaryParticipant(p.DisplayName)).ToList();
+        var participantDtos = participants.Select(p => new SprintSummaryParticipantResponse(p.DisplayName)).ToList();
 
         var isScrumMaster = false;
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -29,23 +26,10 @@ public sealed class GetSprintSummaryEndpoint(SprintRepository sprintRepository, 
             isScrumMaster = team is not null && team.OwnerId == userId;
         }
 
-        await SendOkAsync(new SprintSummaryResponse(
-            sprint.Id,
-            sprint.TeamId,
-            sprint.Name,
-            sprint.State.ToString(),
-            sprint.CurrentPhase.ToString(),
-            sprint.VotesPerParticipant,
-            isScrumMaster,
-            participantDtos,
-            sprint.Column1Name,
-            sprint.Column1Color.Value,
-            sprint.Column2Name,
-            sprint.Column2Color.Value,
-            sprint.Column3Name,
-            sprint.Column3Color.Value,
-            sprint.WritingTimerDefault,
-            sprint.VotingTimerDefault,
-            sprint.DiscussingTimerDefault), ct);
+        await SendOkAsync(sprint.Adapt<SprintSummaryResponse>() with
+        {
+            IsScrumMaster = isScrumMaster,
+            Participants = participantDtos,
+        }, ct);
     }
 }

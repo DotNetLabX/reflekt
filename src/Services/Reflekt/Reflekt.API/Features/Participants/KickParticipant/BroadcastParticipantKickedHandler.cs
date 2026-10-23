@@ -5,7 +5,7 @@ using Reflekt.Domain.Participants.Events;
 
 namespace Reflekt.API.Features.Participants.KickParticipant;
 
-public sealed class BroadcastParticipantKickedHandler(IHubContext<SprintHub> hubContext)
+public sealed class BroadcastParticipantKickedHandler(IHubContext<SprintHub> hubContext, ReadinessTracker readinessTracker)
     : IEventHandler<ParticipantKickedEvent>
 {
     public async Task HandleAsync(ParticipantKickedEvent ev, CancellationToken ct)
@@ -36,7 +36,7 @@ public sealed class BroadcastParticipantKickedHandler(IHubContext<SprintHub> hub
 
     private async Task RevokeAsync(int sprintId, int participantId, List<Exception> failures)
     {
-        var connections = SprintHub.GetParticipantConnections(sprintId, participantId);
+        var connections = readinessTracker.GetParticipantConnections(sprintId, participantId);
 
         foreach (var connection in connections)
         {
@@ -48,14 +48,14 @@ public sealed class BroadcastParticipantKickedHandler(IHubContext<SprintHub> hub
 
         await RunAsync(() =>
         {
-            SprintHub.AbortConnections(connections);
+            AbortConnections(connections);
             return Task.CompletedTask;
         }, failures);
 
-        var counts = (ReadyCount: 0, TotalCount: 0);
+        var counts = new ReadinessCounts(0, 0);
         await RunAsync(() =>
         {
-            counts = SprintHub.RemoveParticipantState(sprintId, participantId);
+            counts = readinessTracker.RemoveParticipantState(sprintId, participantId);
             return Task.CompletedTask;
         }, failures);
 
@@ -67,6 +67,25 @@ public sealed class BroadcastParticipantKickedHandler(IHubContext<SprintHub> hub
             readyCount = counts.ReadyCount,
             totalCount = counts.TotalCount,
         }, CancellationToken.None), failures);
+    }
+
+    private static void AbortConnections(IReadOnlyList<HubCallerContext> connections)
+    {
+        var failures = new List<Exception>();
+        foreach (var connection in connections)
+        {
+            try
+            {
+                connection.Abort();
+            }
+            catch (Exception ex)
+            {
+                failures.Add(ex);
+            }
+        }
+
+        if (failures.Count > 0)
+            throw new AggregateException(failures);
     }
 
     private static async Task RunAsync(Func<Task> revocationStep, List<Exception> failures)

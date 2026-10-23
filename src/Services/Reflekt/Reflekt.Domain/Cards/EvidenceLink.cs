@@ -1,9 +1,12 @@
-using Blocks.Domain;
-
 namespace Reflekt.Domain.Cards;
 
 public sealed class EvidenceLink : Entity
 {
+    public const int UrlMaxLength = 2048;
+    public const int TitleMaxLength = 500;
+    public const int DescriptionMaxLength = 1000;
+    public const int ExternalKeyMaxLength = 50;
+
     private EvidenceLink() { }
 
     public required int CardId { get; init; }
@@ -17,7 +20,7 @@ public sealed class EvidenceLink : Entity
     public DateTime? FetchedAt { get; private set; }
     public FetchStatus FetchStatus { get; private set; }
 
-    public static EvidenceLink Create(int cardId, string url, EvidenceLinkSource source, string? externalKey)
+    internal static EvidenceLink Create(int cardId, string url, EvidenceLinkSource source, string? externalKey)
     {
         var link = new EvidenceLink
         {

@@ -27,8 +27,8 @@ public sealed class OpenGraphBackgroundService(
 
                 if (result.Ok)
                 {
-                    var title = result.Title?[..Math.Min(result.Title.Length, 500)];
-                    var description = result.Description?[..Math.Min(result.Description.Length, 1000)];
+                    var title = result.Title?[..Math.Min(result.Title.Length, EvidenceLink.TitleMaxLength)];
+                    var description = result.Description?[..Math.Min(result.Description.Length, EvidenceLink.DescriptionMaxLength)];
                     card.UpdateEvidenceLinkMetadata(job.EvidenceLinkId, title, description, result.IconUrl, result.ImageUrl, FetchStatus.Ok);
                 }
                 else

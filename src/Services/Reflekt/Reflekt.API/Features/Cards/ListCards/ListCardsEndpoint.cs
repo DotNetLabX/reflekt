@@ -1,49 +1,29 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Cards.ListCards;
 
-public sealed record ListCardsRequest(int SprintId);
-
-[Authorize(Policy = AuthPolicies.OwnerOrScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUserOrGuest)]
 [HttpGet("/api/sprints/{sprintId}/cards")]
 [Tags("Cards")]
 public sealed class ListCardsEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
     VoteRepository voteRepository)
-    : Endpoint<ListCardsRequest, List<CardResponse>>
+    : Endpoint<ListCardsRequest, IReadOnlyList<CardResponse>>
 {
     public override async Task HandleAsync(ListCardsRequest req, CancellationToken ct)
     {
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
+        var access = await sprintAccess.ForSprintAsync(User, req.SprintId, ct);
+        var sprint = access.RequireSprint();
 
-        var participantIdClaim = User.FindFirstValue("participantId");
-        if (participantIdClaim is not null)
-        {
-            if (!int.TryParse(User.FindFirstValue("sprintId"), out var claimSprintId) || claimSprintId != req.SprintId)
-            {
-                await SendUnauthorizedAsync(ct);
-                return;
-            }
-        }
+        if (access.IsGuest)
+            access.RequireGuestOf(req.SprintId);
         else
-        {
-            var userId = User.GetUserId();
-            var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-            if (team is null || team.OwnerId != userId)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
-        }
+            access.RequireOwner();
 
-        var cards = await cardRepository.GetBySprintIdAsync(req.SprintId, ct);
+        var cards = await cardRepository.GetBySprintIdReadOnlyAsync(req.SprintId, ct);
         var groupIds = cards.Where(c => c.GroupId.HasValue).Select(c => c.GroupId!.Value).Distinct();
         var voteCounts = await voteRepository.GetVoteCountsByGroupIdsAsync(groupIds, ct);
 

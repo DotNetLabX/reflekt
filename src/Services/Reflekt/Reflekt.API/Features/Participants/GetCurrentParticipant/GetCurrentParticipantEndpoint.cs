@@ -1,37 +1,23 @@
-using System.Security.Claims;
+using Blocks.Core;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Participants.GetCurrentParticipant;
 
-public sealed record GetCurrentParticipantRequest(int SprintId);
-
-[Authorize(Policy = AuthPolicies.Participant)]
+[Authorize(Policy = Auth.Policies.Guest)]
 [HttpGet("/api/sprints/{sprintId}/participants/me")]
 [Tags("Participants")]
-public sealed class GetCurrentParticipantEndpoint(ParticipantRepository participantRepository)
+public sealed class GetCurrentParticipantEndpoint(SprintAccess sprintAccess, ParticipantRepository participantRepository)
     : Endpoint<GetCurrentParticipantRequest, ParticipantResponse>
 {
     public override async Task HandleAsync(GetCurrentParticipantRequest request, CancellationToken ct)
     {
-        var participantIdClaim = User.FindFirstValue("participantId");
-        var sprintIdClaim = User.FindFirstValue("sprintId");
+        var access = await sprintAccess.ForSprintAsync(User, request.SprintId, ct);
+        access.RequireGuestOf(request.SprintId);
+        var participantId = access.RequireParticipant();
 
-        if (!int.TryParse(sprintIdClaim, out var claimSprintId) || claimSprintId != request.SprintId)
-        {
-            await SendUnauthorizedAsync(ct);
-            return;
-        }
-
-        if (!int.TryParse(participantIdClaim, out var participantId))
-        {
-            await SendUnauthorizedAsync(ct);
-            return;
-        }
-
-        var participant = await participantRepository.GetByIdAsync(participantId, ct);
-        if (participant is null) { await SendNotFoundAsync(ct); return; }
+        var participant = Guard.NotFound(await participantRepository.GetByIdAsync(participantId, ct));
 
         await SendOkAsync(participant.Adapt<ParticipantResponse>(), ct);
     }

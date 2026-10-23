@@ -1,9 +1,11 @@
-using Blocks.Domain;
-
 namespace Reflekt.Domain.Users;
 
 public sealed class User : AggregateRoot
 {
+    public const int EmailMaxLength = 256;
+    public const int NameMaxLength = 256;
+    public const int GivenNameMaxLength = 100;
+
     private User() { }
 
     public required string Email { get; init; }
@@ -28,10 +30,7 @@ public sealed class User : AggregateRoot
 
     public void UpdateProfile(string name, string givenName)
     {
-        if (!string.Equals(Name, name, StringComparison.Ordinal))
-            Name = name;
-
-        if (!string.Equals(GivenName, givenName, StringComparison.Ordinal))
-            GivenName = givenName;
+        Name = name;
+        GivenName = givenName;
     }
 }

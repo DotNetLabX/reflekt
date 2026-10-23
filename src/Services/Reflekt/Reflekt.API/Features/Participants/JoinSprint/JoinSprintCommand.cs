@@ -1,4 +1,5 @@
 using FluentValidation;
+using Reflekt.Domain.Participants;
 
 namespace Reflekt.API.Features.Participants.JoinSprint;
 
@@ -8,6 +9,6 @@ public sealed class JoinSprintCommandValidator : Validator<JoinSprintCommand>
 {
     public JoinSprintCommandValidator()
     {
-        RuleFor(x => x.DisplayName).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.DisplayName).NotEmpty().MaximumLength(Participant.DisplayNameMaxLength);
     }
 }

@@ -14,6 +14,9 @@ public abstract class RepositoryBase<TContext, TEntity, TId>(TContext db)
     public virtual Task AddAsync(TEntity entity, CancellationToken ct)
         => Db.Set<TEntity>().AddAsync(entity, ct).AsTask();
 
+    public virtual void Remove(TEntity entity)
+        => Db.Set<TEntity>().Remove(entity);
+
     public virtual Task<int> SaveChangesAsync(CancellationToken ct)
         => Db.SaveChangesAsync(ct);
 
@@ -23,14 +26,8 @@ public abstract class RepositoryBase<TContext, TEntity, TId>(TContext db)
     public virtual async Task<TEntity?> GetByIdAsync(TId id, CancellationToken ct)
         => await Db.Set<TEntity>().FindAsync([id], ct);
 
-    public virtual IQueryable<TEntity> Query()
+    protected virtual IQueryable<TEntity> Query()
         => Db.Set<TEntity>().AsQueryable();
-
-    public virtual async Task<TEntity?> FindByIdAsync(TId id, CancellationToken ct = default)
-        => await Db.Set<TEntity>().FindAsync([id], ct);
-
-    public virtual async Task<bool> ExistsAsync(TId id, CancellationToken ct = default)
-        => await Db.Set<TEntity>().FindAsync([id], ct) is not null;
 }
 
 public abstract class RepositoryBase<TContext, TEntity>(TContext db)

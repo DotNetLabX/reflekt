@@ -1,4 +1,5 @@
 using FluentValidation;
+using Reflekt.Domain.Cards;
 
 namespace Reflekt.API.Features.EvidenceLinks.AttachEvidenceLink;
 
@@ -10,7 +11,7 @@ public sealed class AttachEvidenceLinkValidator : Validator<AttachEvidenceLinkCo
     {
         RuleFor(x => x.Url)
             .NotEmpty()
-            .MaximumLength(2048)
+            .MaximumLength(EvidenceLink.UrlMaxLength)
             .Must(url => Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
                          (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
             .WithMessage("Url must be a valid absolute HTTP or HTTPS URL.");

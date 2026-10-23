@@ -16,9 +16,9 @@ public sealed class UpdateColumnsCommandValidator : Validator<UpdateColumnsComma
 {
     public UpdateColumnsCommandValidator()
     {
-        RuleFor(x => x.Column1Name).NotEmpty().MaximumLength(30);
-        RuleFor(x => x.Column2Name).NotEmpty().MaximumLength(30);
-        RuleFor(x => x.Column3Name).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.Column1Name).NotEmpty().MaximumLength(Sprint.ColumnNameMaxLength);
+        RuleFor(x => x.Column2Name).NotEmpty().MaximumLength(Sprint.ColumnNameMaxLength);
+        RuleFor(x => x.Column3Name).NotEmpty().MaximumLength(Sprint.ColumnNameMaxLength);
         RuleFor(x => x.Column1Color).NotEmpty().Must(ColumnColor.IsValid).WithMessage("Column1Color must be one of the allowed palette values.");
         RuleFor(x => x.Column2Color).NotEmpty().Must(ColumnColor.IsValid).WithMessage("Column2Color must be one of the allowed palette values.");
         RuleFor(x => x.Column3Color).NotEmpty().Must(ColumnColor.IsValid).WithMessage("Column3Color must be one of the allowed palette values.");

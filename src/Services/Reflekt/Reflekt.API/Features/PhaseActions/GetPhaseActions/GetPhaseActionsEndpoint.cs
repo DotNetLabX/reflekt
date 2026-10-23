@@ -5,16 +5,16 @@ namespace Reflekt.API.Features.PhaseActions.GetPhaseActions;
 [AllowAnonymous]
 [HttpGet("/api/phase-actions")]
 [Tags("PhaseActions")]
-public sealed class GetPhaseActionsEndpoint(PhaseActionCache phaseActionCache)
-    : EndpointWithoutRequest<List<PhaseActionsEntry>>
+public sealed class GetPhaseActionsEndpoint(PhaseActionPolicyProvider phaseActionPolicyProvider)
+    : EndpointWithoutRequest<IReadOnlyList<PhaseActionsResponse>>
 {
-    public override Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        var matrix = phaseActionCache.GetMatrix();
-        var response = matrix
+        var policy = await phaseActionPolicyProvider.GetAsync();
+        var response = policy.GetActionsByPhase()
             .OrderBy(kvp => kvp.Key)
-            .Select(kvp => new PhaseActionsEntry(kvp.Key.ToString(), kvp.Value.Select(a => a.ToString()).ToList()))
+            .Select(kvp => new PhaseActionsResponse(kvp.Key.ToString(), kvp.Value.Select(a => a.ToString()).ToList()))
             .ToList();
-        return SendOkAsync(response, ct);
+        await SendOkAsync(response, ct);
     }
 }

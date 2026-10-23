@@ -1,9 +1,17 @@
-using Blocks.Domain;
-
 namespace Reflekt.Domain.Sprints;
 
 public sealed partial class Sprint : AggregateRoot
 {
+    public const int NameMaxLength = 100;
+    public const int ColumnNameMaxLength = 30;
+    public const int MinVotesPerParticipant = 1;
+    public const int WritingTimerMinMinutes = 1;
+    public const int WritingTimerMaxMinutes = 60;
+    public const int VotingTimerMinMinutes = 1;
+    public const int VotingTimerMaxMinutes = 60;
+    public const int DiscussingTimerMinMinutes = 1;
+    public const int DiscussingTimerMaxMinutes = 60;
+
     private Sprint() { }
 
     public required int TeamId { get; init; }

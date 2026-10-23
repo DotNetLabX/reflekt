@@ -1,75 +1,56 @@
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
-using Microsoft.AspNetCore.SignalR;
 using Reflekt.API.Features.PhaseActions;
-using Reflekt.API.Hubs;
 using Reflekt.Domain.CardGroups;
-using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.CardGroups.DissolveGroup;
 
-public sealed record DissolveGroupRequest(int SprintId, int GroupId);
-
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpDelete("/api/sprints/{sprintId}/card-groups/{groupId}")]
 [Tags("CardGroups")]
 public sealed class DissolveGroupEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
     CardGroupRepository cardGroupRepository,
-    PhaseActionCache phaseActionCache,
-    IHubContext<SprintHub> hubContext)
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<DissolveGroupRequest>
 {
     public override async Task HandleAsync(DissolveGroupRequest req, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
-
-        var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-        if (team is null || team.OwnerId != userId)
-        {
-            await SendForbiddenAsync(ct);
-            return;
-        }
+        var access = await sprintAccess.ForSprintAsync(User, req.SprintId, ct);
+        var sprint = access.RequireSprint();
+        access.RequireOwner();
 
         sprint.EnsureOpen();
 
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.UngroupCards))
-            ThrowError($"{SprintAction.UngroupCards} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, SprintAction.UngroupCards);
 
         var group = await cardGroupRepository.GetByIdAsync(req.GroupId, ct);
-        if (group is null || group.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
+        if (group is null || group.SprintId != req.SprintId)
+            throw new NotFoundException("CardGroup not found");
 
         var groupCards = (await cardRepository.GetBySprintIdAsync(req.SprintId, ct))
             .Where(c => c.GroupId == req.GroupId)
             .ToList();
 
-        if (groupCards.Count < 2)
-            ThrowError("Cannot dissolve a solo group.", StatusCodes.Status400BadRequest);
+        group.EnsureCanDissolve(groupCards.Count);
 
         await using var transaction = await cardGroupRepository.BeginTransactionAsync(ct);
 
-        var soloGroups = groupCards.Select(c => CardGroup.Create(req.SprintId, c.ColumnType)).ToList();
-        foreach (var soloGroup in soloGroups) soloGroup.ClearDomainEvents();
+        var soloGroups = groupCards.Select(c => CardGroup.CreateSolo(req.SprintId, c.ColumnType)).ToList();
         await cardGroupRepository.AddRangeAsync(soloGroups, ct);
         await cardGroupRepository.SaveChangesAsync(ct);
 
         for (var i = 0; i < groupCards.Count; i++)
             groupCards[i].SetGroupId(soloGroups[i].Id);
 
+        group.Dissolve();
         cardGroupRepository.Remove(group);
         await cardGroupRepository.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
-
-        await hubContext.Clients.Group($"sprint:{req.SprintId}")
-            .SendAsync("GroupDissolved", new { groupId = req.GroupId }, ct);
 
         await SendNoContentAsync(ct);
     }

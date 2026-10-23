@@ -2,11 +2,10 @@ namespace Reflekt.Domain.Sprints;
 
 public sealed partial class Sprint
 {
-    private const int WritingTimerMin = 1;
-    private const int WritingTimerMax = 60;
     private const int DefaultWritingTimer = 5;
     private const int DefaultVotingTimer = 3;
     private const int DefaultDiscussingTimer = 10;
+    private const int MinDiscussedGroupsForReporting = 2;
 
     public static Sprint Create(
         string name,
@@ -23,14 +22,14 @@ public sealed partial class Sprint
         int? discussingTimerDefault = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentOutOfRangeException.ThrowIfLessThan(votesPerParticipant, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(votesPerParticipant, MinVotesPerParticipant);
 
         if (writingTimerDefault.HasValue)
-            ValidateTimerRange(writingTimerDefault.Value, nameof(writingTimerDefault));
+            ValidateTimerRange(writingTimerDefault.Value, WritingTimerMinMinutes, WritingTimerMaxMinutes, nameof(writingTimerDefault));
         if (votingTimerDefault.HasValue)
-            ValidateTimerRange(votingTimerDefault.Value, nameof(votingTimerDefault));
+            ValidateTimerRange(votingTimerDefault.Value, VotingTimerMinMinutes, VotingTimerMaxMinutes, nameof(votingTimerDefault));
         if (discussingTimerDefault.HasValue)
-            ValidateTimerRange(discussingTimerDefault.Value, nameof(discussingTimerDefault));
+            ValidateTimerRange(discussingTimerDefault.Value, DiscussingTimerMinMinutes, DiscussingTimerMaxMinutes, nameof(discussingTimerDefault));
 
         var sprint = new Sprint
         {
@@ -42,8 +41,6 @@ public sealed partial class Sprint
             VotingTimerDefault = votingTimerDefault ?? DefaultVotingTimer,
             DiscussingTimerDefault = discussingTimerDefault ?? DefaultDiscussingTimer,
         };
-        sprint.State = SprintState.Draft;
-        sprint.CurrentPhase = SprintPhase.Writing;
 
         if (column1Name is not null) sprint.Column1Name = ValidateColumnName(column1Name, nameof(column1Name));
         if (column1Color is not null) sprint.Column1Color = ColumnColor.Create(column1Color);
@@ -56,6 +53,8 @@ public sealed partial class Sprint
         return sprint;
     }
 
+    public bool HasTimer => CurrentPhase is SprintPhase.Writing or SprintPhase.Voting or SprintPhase.Discussing;
+
     public int GetTimerDefaultForPhase() => CurrentPhase switch
     {
         SprintPhase.Writing => WritingTimerDefault,
@@ -64,11 +63,11 @@ public sealed partial class Sprint
         _ => throw new InvalidOperationException($"Phase {CurrentPhase} does not have a timer default."),
     };
 
-    private static void ValidateTimerRange(int value, string paramName)
+    private static void ValidateTimerRange(int value, int minMinutes, int maxMinutes, string paramName)
     {
-        if (value < WritingTimerMin || value > WritingTimerMax)
+        if (value < minMinutes || value > maxMinutes)
             throw new ArgumentOutOfRangeException(paramName, value,
-                $"Timer default must be between {WritingTimerMin} and {WritingTimerMax} minutes.");
+                $"Timer default must be between {minMinutes} and {maxMinutes} minutes.");
     }
 
     public void UpdateColumnConfig(
@@ -87,11 +86,11 @@ public sealed partial class Sprint
 
     private static string ValidateColumnName(string name, string paramName)
     {
-        var trimmed = name?.Trim() ?? string.Empty;
+        var trimmed = name.Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
             throw new ArgumentException("Column name cannot be empty or whitespace.", paramName);
-        if (trimmed.Length > 30)
-            throw new ArgumentException("Column name cannot exceed 30 characters.", paramName);
+        if (trimmed.Length > ColumnNameMaxLength)
+            throw new ArgumentException($"Column name cannot exceed {ColumnNameMaxLength} characters.", paramName);
         return trimmed;
     }
 
@@ -99,6 +98,25 @@ public sealed partial class Sprint
     {
         if (State == SprintState.Closed)
             throw new DomainException("Sprint is closed.");
+    }
+
+    public void EnsureActive(string message)
+    {
+        if (State != SprintState.Active)
+            throw new DomainException(message);
+    }
+
+    public void EnsureCanAdvancePhase(string message)
+    {
+        if (CurrentPhase == SprintPhase.Reporting)
+            throw new DomainException(message);
+    }
+
+    public void EnsureEnoughGroupsDiscussed(int discussedCount)
+    {
+        if (discussedCount < MinDiscussedGroupsForReporting)
+            throw new DomainException(
+                $"At least {MinDiscussedGroupsForReporting} groups must be discussed before advancing to Reporting.");
     }
 
     public void Start()
@@ -111,8 +129,7 @@ public sealed partial class Sprint
 
     public void AdvancePhase()
     {
-        if (State != SprintState.Active)
-            throw new DomainException("Sprint must be Active to advance phase.");
+        EnsureActive("Sprint must be Active to advance phase.");
         CurrentPhase = CurrentPhase switch
         {
             SprintPhase.Writing => SprintPhase.Grouping,
@@ -127,8 +144,7 @@ public sealed partial class Sprint
 
     public void Close()
     {
-        if (State != SprintState.Active)
-            throw new DomainException("Sprint must be Active to close.");
+        EnsureActive("Sprint must be Active to close.");
         State = SprintState.Closed;
         ClosedAt = DateTime.UtcNow;
         AddDomainEvent(new Events.SprintClosedEvent(this));
@@ -136,8 +152,7 @@ public sealed partial class Sprint
 
     public void SetFocus(int groupId)
     {
-        if (State != SprintState.Active)
-            throw new DomainException("Sprint must be Active to set focus.");
+        EnsureActive("Sprint must be Active to set focus.");
         if (CurrentPhase != SprintPhase.Discussing)
             throw new DomainException("Sprint must be in Discussing phase to set focus.");
 
@@ -148,8 +163,7 @@ public sealed partial class Sprint
 
     public void ClearFocus()
     {
-        if (State != SprintState.Active)
-            throw new DomainException("Sprint must be Active to clear focus.");
+        EnsureActive("Sprint must be Active to clear focus.");
         if (CurrentPhase != SprintPhase.Discussing)
             throw new DomainException("Sprint must be in Discussing phase to clear focus.");
 

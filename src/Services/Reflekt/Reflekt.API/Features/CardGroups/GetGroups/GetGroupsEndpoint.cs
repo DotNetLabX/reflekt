@@ -1,54 +1,34 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.Cards;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.CardGroups.GetGroups;
 
-public sealed record GetGroupsRequest(int SprintId);
-
-[Authorize(Policy = AuthPolicies.OwnerOrScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUserOrGuest)]
 [HttpGet("/api/sprints/{sprintId}/card-groups")]
 [Tags("CardGroups")]
 public sealed class GetGroupsEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
     CardGroupRepository cardGroupRepository,
     VoteRepository voteRepository)
-    : Endpoint<GetGroupsRequest, List<CardGroupResponse>>
+    : Endpoint<GetGroupsRequest, IReadOnlyList<CardGroupResponse>>
 {
     public override async Task HandleAsync(GetGroupsRequest req, CancellationToken ct)
     {
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
+        var access = await sprintAccess.ForSprintAsync(User, req.SprintId, ct);
+        var sprint = access.RequireSprint();
 
-        var participantIdClaim = User.FindFirstValue("participantId");
-        if (participantIdClaim is not null)
-        {
-            if (!int.TryParse(User.FindFirstValue("sprintId"), out var claimSprintId) || claimSprintId != req.SprintId)
-            {
-                await SendUnauthorizedAsync(ct);
-                return;
-            }
-        }
+        if (access.IsGuest)
+            access.RequireGuestOf(req.SprintId);
         else
-        {
-            var userId = User.GetUserId();
-            var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-            if (team is null || team.OwnerId != userId)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
-        }
+            access.RequireOwner();
 
-        var groups = await cardGroupRepository.GetBySprintIdAsync(req.SprintId, ct);
-        var cards = await cardRepository.GetBySprintIdAsync(req.SprintId, ct);
+        var groups = await cardGroupRepository.GetBySprintIdReadOnlyAsync(req.SprintId, ct);
+        var cards = await cardRepository.GetBySprintIdReadOnlyAsync(req.SprintId, ct);
         var noteCards = cards.Where(c => c.CardType == CardType.Note && c.GroupId.HasValue);
         var cardsByGroup = noteCards.GroupBy(c => c.GroupId!.Value).ToDictionary(g => g.Key, g => g.OrderBy(c => c.CreatedAt).ToList());
 
@@ -59,16 +39,14 @@ public sealed class GetGroupsEndpoint(
             : new Dictionary<int, int>();
 
         await SendOkAsync(
-            groups.Select(g => g.Adapt<CardGroupResponse>() with
-            {
-                Cards = cardsByGroup.GetValueOrDefault(g.Id, [])
+            groups.Select(g => CardGroupResponseBuilder.Build(
+                g,
+                cardsByGroup.GetValueOrDefault(g.Id, [])
                     .Select(c => WritingPhaseRedaction.IsRedacted(c, sprint, viewerParticipantId)
-                        ? WritingPhaseRedaction.Redact(c.Adapt<CardGroupCardEntry>())
-                        : c.Adapt<CardGroupCardEntry>())
-                    .ToList(),
-                VoteCount = voteCounts.GetValueOrDefault(g.Id, 0),
-                IsFocused = sprint.FocusedGroupId == g.Id
-            }).ToList(),
+                        ? WritingPhaseRedaction.Redact(c.Adapt<CardGroupCardResponse>())
+                        : c.Adapt<CardGroupCardResponse>()),
+                sprint,
+                voteCounts.GetValueOrDefault(g.Id, 0))).ToList(),
             ct);
     }
 }

@@ -1,15 +1,13 @@
+using Blocks.Core;
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.Domain.Participants;
-using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Participants.JoinSprintGoogle;
 
-public sealed record JoinSprintGoogleRequest(int SprintId);
-
-[Authorize(Policy = AuthPolicies.GoogleUser)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpPost("/api/sprints/{sprintId}/join/google")]
 [Tags("Participants")]
 public sealed class JoinSprintGoogleEndpoint(
@@ -22,24 +20,20 @@ public sealed class JoinSprintGoogleEndpoint(
     {
         var userId = User.GetUserId();
 
-        var sprint = await sprintRepository.GetByIdAsync(request.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
-
-        if (sprint.State != SprintState.Active)
-            ThrowError("Sprint is not accepting participants.", StatusCodes.Status409Conflict);
+        var sprint = Guard.NotFound(await sprintRepository.GetByIdAsync(request.SprintId, ct));
+        sprint.EnsureActive("Sprint is not accepting participants.");
 
         var existing = await participantRepository.GetByUserAndSprintAsync(userId, request.SprintId, ct);
         if (existing is not null)
         {
             if (existing.IsRemoved)
-                ThrowError("You were removed from this sprint.", StatusCodes.Status409Conflict);
+                throw new ConflictException("You were removed from this sprint.");
 
             await SendAsync(existing.Adapt<JoinSprintResponse>(), 200, ct);
             return;
         }
 
-        var user = await userRepository.GetByIdAsync(userId, ct);
-        if (user is null) { await SendNotFoundAsync(ct); return; }
+        var user = Guard.NotFound(await userRepository.GetByIdAsync(userId, ct));
 
         var resolvedName = await ResolveDisplayNameAsync(request.SprintId, user.GivenName, ct);
 
@@ -52,7 +46,7 @@ public sealed class JoinSprintGoogleEndpoint(
 
     private async Task<string> ResolveDisplayNameAsync(int sprintId, string baseName, CancellationToken ct)
     {
-        const int maxLength = 50;
+        const int maxLength = Participant.DisplayNameMaxLength;
         var truncated = baseName.Length > maxLength ? baseName[..maxLength] : baseName;
 
         if (!await participantRepository.ExistsByDisplayNameAsync(sprintId, truncated, ct))
@@ -69,7 +63,6 @@ public sealed class JoinSprintGoogleEndpoint(
                 return candidate;
         }
 
-        ThrowError("Unable to assign a unique display name. Too many participants with the same given name.", StatusCodes.Status409Conflict);
-        return default!; // unreachable — ThrowError throws
+        throw new ConflictException("Unable to assign a unique display name. Too many participants with the same given name.");
     }
 }

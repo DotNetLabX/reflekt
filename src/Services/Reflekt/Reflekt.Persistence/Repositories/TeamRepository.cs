@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using Reflekt.Domain.Sprints;
 using Reflekt.Domain.Teams;
 
 namespace Reflekt.Persistence.Repositories;
 
-public sealed class TeamRepository(ReflektDbContext db) : Repository<Team>(db)
+public sealed class TeamRepository(ReflektDbContext db) : RepositoryBase<ReflektDbContext, Team>(db)
 {
     public Task<int> CountByOwnerIdAsync(int ownerId, CancellationToken ct)
         => Db.Teams.CountAsync(t => t.OwnerId == ownerId, ct);
@@ -14,10 +13,10 @@ public sealed class TeamRepository(ReflektDbContext db) : Repository<Team>(db)
             t => t.OwnerId == ownerId && EF.Functions.Collate(t.Name, "NOCASE") == name,
             ct);
 
-    public async Task<List<TeamSummaryDto>> GetTeamSummariesByOwnerAsync(int ownerId, CancellationToken ct)
+    public async Task<IReadOnlyList<TeamSummaryResponse>> GetTeamSummariesByOwnerAsync(int ownerId, CancellationToken ct)
         => await Db.Teams
             .Where(t => t.OwnerId == ownerId)
-            .Select(t => new TeamSummaryDto(
+            .Select(t => new TeamSummaryResponse(
                 t.Id,
                 t.Name,
                 t.CreatedAt,
@@ -26,6 +25,8 @@ public sealed class TeamRepository(ReflektDbContext db) : Repository<Team>(db)
                 Db.Sprints.Any(s => s.TeamId == t.Id && s.State == SprintState.Active)))
             .ToListAsync(ct);
 
+    // Votes and cards reference participants through Restrict foreign keys, so the sprint's
+    // cascade alone would refuse to delete participants still referenced; rows go leaf-first.
     public async Task DeleteTeamWithCascadeAsync(int teamId, CancellationToken ct)
     {
         await using var tx = await Db.Database.BeginTransactionAsync(ct);
@@ -65,7 +66,7 @@ public sealed class TeamRepository(ReflektDbContext db) : Repository<Team>(db)
     }
 }
 
-public sealed record TeamSummaryDto(
+public sealed record TeamSummaryResponse(
     int Id,
     string Name,
     DateTime CreatedAt,

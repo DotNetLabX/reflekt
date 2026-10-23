@@ -1,6 +1,4 @@
 using Blocks.Persistence.EntityConfigurations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Reflekt.Domain.CardGroups;
 using Reflekt.Domain.Sprints;
 
@@ -15,7 +13,7 @@ internal sealed class CardGroupConfiguration : EntityConfiguration<CardGroup>
         builder.Property(g => g.SprintId).IsRequired();
         builder.HasOne<Sprint>().WithMany().HasForeignKey(g => g.SprintId).OnDelete(DeleteBehavior.Cascade);
         builder.Property(g => g.ColumnType).IsRequired();
-        builder.Property(g => g.Title).HasMaxLength(100);
+        builder.Property(g => g.Title).HasMaxLength(CardGroup.TitleMaxLength);
         builder.Property(g => g.CreatedAt).IsRequired();
         builder.Property(g => g.DiscussedAt);
         builder.HasIndex(g => g.SprintId);

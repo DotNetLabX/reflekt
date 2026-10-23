@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using Reflekt.API.Hubs;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
@@ -10,21 +9,21 @@ namespace Reflekt.API.Features.Cards;
 public static class CardBroadcast
 {
     public static async Task BroadcastAsync(
-        IHubContext<SprintHub> hubContext, IServiceScopeFactory scopeFactory, Card card, string message, CancellationToken ct)
+        IHubClients clients, IServiceScopeFactory scopeFactory, Card card, string message, CancellationToken ct)
     {
         var payload = card.Adapt<CardResponse>();
 
         var recipients = await ReadRecipientsAsync(scopeFactory, card, ct);
         if (!recipients.IsWritingPhase)
         {
-            await hubContext.Clients.Group($"sprint:{card.SprintId}").SendAsync(message, payload, ct);
+            await clients.Group($"sprint:{card.SprintId}").SendAsync(message, payload, ct);
             return;
         }
 
-        await hubContext.Clients.Group(SprintHub.ParticipantGroup(card.ParticipantId))
+        await clients.Group(SprintHub.ParticipantGroup(card.ParticipantId))
             .SendAsync(message, payload, ct);
         if (recipients.RedactedGroups.Count > 0)
-            await hubContext.Clients.Groups(recipients.RedactedGroups)
+            await clients.Groups(recipients.RedactedGroups)
                 .SendAsync(message, WritingPhaseRedaction.Redact(payload), ct);
     }
 
@@ -52,9 +51,7 @@ public static class CardBroadcast
     }
 
     private static Task<Sprint?> FindSprintAsync(IServiceProvider services, Card card, CancellationToken ct)
-        => services.GetRequiredService<SprintRepository>()
-            .Query().AsNoTracking()
-            .SingleOrDefaultAsync(s => s.Id == card.SprintId, ct);
+        => services.GetRequiredService<SprintRepository>().GetByIdReadOnlyAsync(card.SprintId, ct);
 
     private sealed record CardRecipients(bool IsWritingPhase, IReadOnlyList<string> RedactedGroups);
 }

@@ -1,60 +1,43 @@
-using System.Security.Claims;
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.EvidenceLinks.DetachEvidenceLink;
 
-public sealed record DetachEvidenceLinkRequest(int SprintId, int CardId, int EvidenceLinkId);
-
-[Authorize(Policy = AuthPolicies.OwnerOrScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUserOrGuest)]
 [HttpDelete("/api/sprints/{sprintId}/cards/{cardId}/evidence-links/{evidenceLinkId}")]
 [Tags("EvidenceLinks")]
 public sealed class DetachEvidenceLinkEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
-    PhaseActionCache phaseActionCache)
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<DetachEvidenceLinkRequest, EmptyResponse>
 {
     public override async Task HandleAsync(DetachEvidenceLinkRequest req, CancellationToken ct)
     {
         var card = await cardRepository.GetByIdAsync(req.CardId, ct);
-        if (card is null || card.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
+        if (card is null || card.SprintId != req.SprintId)
+            throw new NotFoundException("Card not found");
 
-        if (!card.EvidenceLinks.Any(e => e.Id == req.EvidenceLinkId)) { await SendNotFoundAsync(ct); return; }
+        if (!card.EvidenceLinks.Any(e => e.Id == req.EvidenceLinkId))
+            throw new NotFoundException("EvidenceLink not found");
 
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
+        var access = await sprintAccess.ForSprintAsync(User, req.SprintId, ct);
+        var sprint = access.RequireSprint();
+        sprint.EnsureOpen();
 
-        if (sprint.State == SprintState.Closed)
-            ThrowError("Sprint is closed.", StatusCodes.Status409Conflict);
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, SprintAction.DetachEvidenceLink);
 
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.DetachEvidenceLink))
-            ThrowError($"{SprintAction.DetachEvidenceLink} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
-
-        var participantIdClaim = User.FindFirstValue("participantId");
-        if (participantIdClaim is not null)
+        if (access.IsGuest)
         {
-            if (!int.TryParse(participantIdClaim, out var claimParticipantId) || claimParticipantId != card.ParticipantId)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
+            if (access.ParticipantId != card.ParticipantId)
+                throw new ForbiddenException("You are not the author of this card.");
         }
         else
-        {
-            var userId = User.GetUserId();
-            var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-            if (team is null || team.OwnerId != userId)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
-        }
+            access.RequireOwner();
 
         card.DetachEvidenceLink(req.EvidenceLinkId);
         await cardRepository.SaveChangesAsync(ct);

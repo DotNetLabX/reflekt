@@ -1,4 +1,3 @@
-using Mapster;
 using Reflekt.API.Features.Participants;
 using Reflekt.Domain.Participants;
 
