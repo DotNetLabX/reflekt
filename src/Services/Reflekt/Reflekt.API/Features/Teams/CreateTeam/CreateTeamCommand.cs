@@ -1,4 +1,5 @@
 using FluentValidation;
+using Reflekt.Domain.Teams;
 
 namespace Reflekt.API.Features.Teams.CreateTeam;
 
@@ -9,6 +10,6 @@ public sealed class CreateTeamCommandValidator : Validator<CreateTeamCommand>
 {
     public CreateTeamCommandValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(Team.NameMaxLength);
     }
 }

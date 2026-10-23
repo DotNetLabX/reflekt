@@ -1,6 +1,7 @@
+using Blocks.Core;
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.Domain.Participants;
-using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 
 namespace Reflekt.API.Features.Participants.JoinSprint;
@@ -13,14 +14,11 @@ public sealed class JoinSprintEndpoint(SprintRepository sprintRepository, Partic
 {
     public override async Task HandleAsync(JoinSprintCommand command, CancellationToken ct)
     {
-        var sprint = await sprintRepository.GetByIdAsync(command.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
-
-        if (sprint.State != SprintState.Active)
-            ThrowError("Sprint is not accepting participants.", StatusCodes.Status409Conflict);
+        var sprint = Guard.NotFound(await sprintRepository.GetByIdAsync(command.SprintId, ct));
+        sprint.EnsureActive("Sprint is not accepting participants.");
 
         if (await participantRepository.ExistsByDisplayNameAsync(command.SprintId, command.DisplayName, ct))
-            ThrowError("Name already taken.", StatusCodes.Status409Conflict);
+            throw new ConflictException("Name already taken.");
 
         var participant = Participant.Join(command.DisplayName, command.SprintId);
         await participantRepository.AddAsync(participant, ct);

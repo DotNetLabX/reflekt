@@ -1,4 +1,3 @@
-using Mapster;
 using Reflekt.API.Features.CardGroups;
 using Reflekt.Domain.CardGroups;
 using Reflekt.Domain.Cards;
@@ -9,7 +8,7 @@ public class CardGroupMappings : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Card, CardGroupCardEntry>();
+        config.NewConfig<Card, CardGroupCardResponse>();
 
         config.NewConfig<CardGroup, CardGroupResponse>()
             .Map(d => d.ColumnType, s => s.ColumnType.ToString())

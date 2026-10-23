@@ -1,9 +1,9 @@
-using Blocks.Domain;
-
 namespace Reflekt.Domain.Teams;
 
 public sealed partial class Team : AggregateRoot
 {
+    public const int NameMaxLength = 100;
+
     private Team() { }
 
     public required string Name { get; init; }

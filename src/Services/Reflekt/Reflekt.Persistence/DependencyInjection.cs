@@ -1,10 +1,8 @@
-using Blocks.Persistence;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Reflekt.Persistence.Repositories;
 
 namespace Reflekt.Persistence;
@@ -30,25 +28,27 @@ public static class DependencyInjection
         services.AddScoped<CardRepository>();
         services.AddScoped<VoteRepository>();
         services.AddScoped<CardGroupRepository>();
+        services.AddScoped<PhaseActionRepository>();
 
         return services;
     }
 
-    public static WebApplication UseReflektPersistence(this WebApplication app)
+    public static async Task MigrateAndSeedAsync(this IServiceProvider services, CancellationToken ct)
     {
-        var connectionString = app.Configuration.GetConnectionString("Reflekt")!;
+        var configuration = services.GetRequiredService<IConfiguration>();
+        var connectionString = configuration.GetConnectionString("Reflekt")!;
         var dataSource = new SqliteConnectionStringBuilder(connectionString).DataSource;
         var directory = Path.GetDirectoryName(dataSource);
         if (!string.IsNullOrEmpty(directory))
             Directory.CreateDirectory(directory);
 
-        using var scope = app.Services.CreateScope();
+        await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ReflektDbContext>();
-        db.Database.Migrate();
+        await db.Database.MigrateAsync(ct);
 
-        if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Seed:Enabled"))
-            DbInitializer.SeedAsync(db, app.Configuration).GetAwaiter().GetResult();
-
-        return app;
+        var environment = services.GetRequiredService<IHostEnvironment>();
+        var seedOptions = services.GetRequiredService<IOptions<SeedOptions>>().Value;
+        if (environment.IsDevelopment() && seedOptions.Enabled)
+            await DbInitializer.SeedAsync(db, seedOptions, ct);
     }
 }

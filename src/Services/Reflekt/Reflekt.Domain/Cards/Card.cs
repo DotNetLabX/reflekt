@@ -1,9 +1,10 @@
-using Blocks.Domain;
-
 namespace Reflekt.Domain.Cards;
 
 public sealed partial class Card : AggregateRoot
 {
+    public const int TextMaxLength = 2000;
+    public const int AssigneeNameMaxLength = 50;
+
     private Card() { }
 
     public required int SprintId { get; init; }

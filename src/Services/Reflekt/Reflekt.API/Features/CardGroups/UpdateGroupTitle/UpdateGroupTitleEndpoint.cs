@@ -1,70 +1,41 @@
-using FluentValidation;
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
-using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.CardGroups.UpdateGroupTitle;
 
-public sealed record UpdateGroupTitleRequest(int SprintId, int GroupId, string? Title);
-
-public sealed class UpdateGroupTitleRequestValidator : Validator<UpdateGroupTitleRequest>
-{
-    public UpdateGroupTitleRequestValidator()
-    {
-        RuleFor(x => x.Title).MaximumLength(100).When(x => x.Title is not null);
-    }
-}
-
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpPatch("/api/sprints/{sprintId}/card-groups/{groupId}")]
 [Tags("CardGroups")]
 public sealed class UpdateGroupTitleEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
     CardGroupRepository cardGroupRepository,
-    PhaseActionCache phaseActionCache)
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<UpdateGroupTitleRequest, CardGroupResponse>
 {
     public override async Task HandleAsync(UpdateGroupTitleRequest req, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
-
-        var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-        if (team is null || team.OwnerId != userId)
-        {
-            await SendForbiddenAsync(ct);
-            return;
-        }
+        var access = await sprintAccess.ForSprintAsync(User, req.SprintId, ct);
+        var sprint = access.RequireSprint();
+        access.RequireOwner();
 
         sprint.EnsureOpen();
 
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.RenameGroup))
-            ThrowError($"{SprintAction.RenameGroup} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, SprintAction.RenameGroup);
 
         var group = await cardGroupRepository.GetByIdAsync(req.GroupId, ct);
-        if (group is null || group.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
+        if (group is null || group.SprintId != req.SprintId)
+            throw new NotFoundException("CardGroup not found");
 
         group.SetTitle(req.Title);
 
         await cardGroupRepository.SaveChangesAsync(ct);
 
-        var groupCards = (await cardRepository.GetBySprintIdAsync(req.SprintId, ct))
-            .Where(c => c.GroupId == group.Id)
-            .OrderBy(c => c.CreatedAt)
-            .ToList();
-
-        await SendOkAsync(group.Adapt<CardGroupResponse>() with
-        {
-            Cards = groupCards.Select(c => c.Adapt<CardGroupCardEntry>()).ToList(),
-            IsFocused = sprint.FocusedGroupId == group.Id
-        }, ct);
+        var sprintCards = await cardRepository.GetBySprintIdAsync(req.SprintId, ct);
+        await SendOkAsync(CardGroupResponseBuilder.BuildFromSprintCards(group, sprintCards, sprint), ct);
     }
 }

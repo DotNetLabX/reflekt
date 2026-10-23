@@ -1,0 +1,291 @@
+{
+  "format_version": 1,
+  "feature": "F38-BackendConventions",
+  "kind_of_run": "team run",
+  "state": "partial",
+  "started": "2026-10-22T20:16:46.345Z",
+  "closed": "2026-10-23T17:07:01.200Z",
+  "plugin_versions": [],
+  "claude_code_versions": [
+    "2.1.308"
+  ],
+  "spawns": [
+    {
+      "role": "architect",
+      "name": "architect-1",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "calls": 3,
+      "tokens": {
+        "input": 6,
+        "cache_written_5m": 0,
+        "cache_written_1h": 12532,
+        "cache_read": 1538706,
+        "output": 14456
+      },
+      "peak_context": 568422,
+      "compactions": 0,
+      "first_activity": "2026-10-22T20:16:46.345Z",
+      "last_activity": "2026-10-22T20:40:49.886Z",
+      "active_ms": 122890
+    },
+    {
+      "role": "critic",
+      "name": "spec-round-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      }
+    },
+    {
+      "role": "critic",
+      "name": "critic-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      }
+    },
+    {
+      "role": "critic",
+      "name": "spec-round-2",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 2
+      }
+    },
+    {
+      "role": "critic",
+      "name": "plan-round-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "plan",
+        "round": 1
+      }
+    },
+    {
+      "role": "critic",
+      "name": "plan-round-2",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "plan",
+        "round": 2
+      }
+    },
+    {
+      "role": "reviewer",
+      "name": "code-round-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 1
+      }
+    },
+    {
+      "role": "reviewer",
+      "name": "code-round-2",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 2
+      }
+    },
+    {
+      "role": "reviewer",
+      "name": "reviewer-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 1
+      }
+    },
+    {
+      "role": "reviewer",
+      "name": "reviewer-2",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 2
+      }
+    }
+  ],
+  "plan_steps": "steps not marked",
+  "review_rounds": {
+    "spec": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "spec-round-1",
+            "models": [
+              "model unknown"
+            ]
+          },
+          {
+            "name": "critic-1",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "readers": [
+          {
+            "name": "spec-round-2",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      }
+    ],
+    "plan": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "plan-round-1",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "readers": [
+          {
+            "name": "plan-round-2",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      }
+    ],
+    "code": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "code-round-1",
+            "models": [
+              "model unknown"
+            ]
+          },
+          {
+            "name": "reviewer-1",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "readers": [
+          {
+            "name": "code-round-2",
+            "models": [
+              "model unknown"
+            ]
+          },
+          {
+            "name": "reviewer-2",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "fix_cycles": 0,
+  "test_build_runs": {
+    "count": 0,
+    "total_duration_ms": 0,
+    "runs": []
+  },
+  "owner_touches": {
+    "question_box_answered": 0,
+    "typed_message": 0
+  },
+  "completeness": {
+    "spawns": [
+      {
+        "name": "spec-round-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "critic-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "spec-round-2",
+        "reason": "out of reach"
+      },
+      {
+        "name": "plan-round-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "plan-round-2",
+        "reason": "out of reach"
+      },
+      {
+        "name": "code-round-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "code-round-2",
+        "reason": "out of reach"
+      },
+      {
+        "name": "reviewer-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "reviewer-2",
+        "reason": "out of reach"
+      },
+      {
+        "name": "developer-1",
+        "reason": "out of reach"
+      }
+    ],
+    "fields": [
+      {
+        "spawn": "architect-1",
+        "field": "plugin_versions",
+        "reason": "field unreadable"
+      }
+    ]
+  },
+  "output_tokens_note": "output tokens are as the platform recorded them, which can fall short of what the model produced"
+}

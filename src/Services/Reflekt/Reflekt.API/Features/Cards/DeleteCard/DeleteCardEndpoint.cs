@@ -1,69 +1,48 @@
 using System.Security.Claims;
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Cards.DeleteCard;
 
-public sealed record DeleteCardRequest(int SprintId, int CardId);
-
-[Authorize(Policy = AuthPolicies.OwnerOrScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUserOrGuest)]
 [HttpDelete("/api/sprints/{sprintId}/cards/{cardId}")]
 [Tags("Cards")]
 public sealed class DeleteCardEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
-    PhaseActionCache phaseActionCache)
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<DeleteCardRequest, EmptyResponse>
 {
     public override async Task HandleAsync(DeleteCardRequest req, CancellationToken ct)
     {
         var card = await cardRepository.GetByIdAsync(req.CardId, ct);
-        if (card is null || card.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
+        if (card is null || card.SprintId != req.SprintId)
+            throw new NotFoundException("Card not found");
 
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
+        var access = await sprintAccess.ForSprintAsync(User, req.SprintId, ct);
+        var sprint = access.RequireSprint();
+        sprint.EnsureOpen();
 
-        if (sprint.State == SprintState.Closed)
-            ThrowError("Sprint is closed.", StatusCodes.Status409Conflict);
-
-        var participantIdClaim = User.FindFirstValue("participantId");
-        if (participantIdClaim is not null)
+        if (access.IsGuest)
         {
-            if (!int.TryParse(participantIdClaim, out var claimParticipantId) || claimParticipantId != card.ParticipantId)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
+            if (access.ParticipantId != card.ParticipantId)
+                throw new ForbiddenException("You are not the author of this card.");
         }
         else
-        {
-            var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-            var userId = User.GetUserId();
-            if (team is null || team.OwnerId != userId)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
-        }
+            access.RequireOwner();
 
         var action = card.CardType == CardType.ActionItem ? SprintAction.DeleteActionItem : SprintAction.DeleteNote;
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, action))
-            ThrowError($"{action} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, action);
 
-        if (sprint.CurrentPhase == SprintPhase.Discussing && card.CardType == CardType.ActionItem)
-        {
-            if (User.FindFirstValue(ClaimTypes.NameIdentifier) is null)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
-        }
+        if (sprint.CurrentPhase == SprintPhase.Discussing
+            && card.CardType == CardType.ActionItem
+            && User.FindFirstValue(ClaimTypes.NameIdentifier) is null)
+            throw new ForbiddenException("Only a signed-in user can delete action items while discussing.");
 
         card.MarkDeleted();
         cardRepository.Remove(card);

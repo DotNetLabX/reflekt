@@ -1,84 +1,50 @@
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
-using Reflekt.Domain.CardGroups.Events;
-using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.CardGroups.AddCardToGroup;
 
-public sealed record AddCardToGroupRequest(int SprintId, int GroupId, int CardId);
-
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpPost("/api/sprints/{sprintId}/card-groups/{groupId}/cards")]
 [Tags("CardGroups")]
 public sealed class AddCardToGroupEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
     CardGroupRepository cardGroupRepository,
-    PhaseActionCache phaseActionCache)
+    CardRegrouping cardRegrouping,
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<AddCardToGroupRequest, CardGroupResponse>
 {
     public override async Task HandleAsync(AddCardToGroupRequest req, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
-
-        var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-        if (team is null || team.OwnerId != userId)
-        {
-            await SendForbiddenAsync(ct);
-            return;
-        }
+        var access = await sprintAccess.ForSprintAsync(User, req.SprintId, ct);
+        var sprint = access.RequireSprint();
+        access.RequireOwner();
 
         sprint.EnsureOpen();
 
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.GroupCards))
-            ThrowError($"{SprintAction.GroupCards} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, SprintAction.GroupCards);
 
         var group = await cardGroupRepository.GetByIdAsync(req.GroupId, ct);
-        if (group is null || group.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
+        if (group is null || group.SprintId != req.SprintId)
+            throw new NotFoundException("CardGroup not found");
 
         var card = await cardRepository.GetByIdAsync(req.CardId, ct);
-        if (card is null || card.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
+        if (card is null || card.SprintId != req.SprintId)
+            throw new NotFoundException("Card not found");
 
-        if (card.CardType != CardType.Note)
-            ThrowError("Only Note cards can be grouped.", StatusCodes.Status400BadRequest);
-
-        if (card.ColumnType != group.ColumnType)
-            ThrowError("Card must be in the same column as the group.", StatusCodes.Status400BadRequest);
+        group.EnsureCanAdd(card);
 
         var sourceGroupId = card.GroupId ?? 0;
-        card.SetGroupId(group.Id);
+        await cardRegrouping.MoveCardsAsync(req.SprintId, [card], group, ct);
         group.RecordCardAdded(req.CardId, sourceGroupId);
-
-        if (sourceGroupId != 0 && sourceGroupId != group.Id)
-        {
-            var allCards = await cardRepository.GetBySprintIdAsync(req.SprintId, ct);
-            if (!allCards.Any(c => c.GroupId == sourceGroupId))
-            {
-                var sourceGroup = await cardGroupRepository.GetByIdAsync(sourceGroupId, ct);
-                if (sourceGroup is not null)
-                    cardGroupRepository.Remove(sourceGroup);
-            }
-        }
 
         await cardGroupRepository.SaveChangesAsync(ct);
 
-        var groupCards = (await cardRepository.GetBySprintIdAsync(req.SprintId, ct))
-            .Where(c => c.GroupId == group.Id)
-            .OrderBy(c => c.CreatedAt)
-            .ToList();
-
-        await SendOkAsync(group.Adapt<CardGroupResponse>() with
-        {
-            Cards = groupCards.Select(c => c.Adapt<CardGroupCardEntry>()).ToList(),
-            IsFocused = sprint.FocusedGroupId == group.Id
-        }, ct);
+        var sprintCards = await cardRepository.GetBySprintIdAsync(req.SprintId, ct);
+        await SendOkAsync(CardGroupResponseBuilder.BuildFromSprintCards(group, sprintCards, sprint), ct);
     }
 }

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.Extensions.Options;
 using Reflekt.Domain.Users;
 using Reflekt.Persistence.Repositories;
 
@@ -9,9 +10,7 @@ namespace Reflekt.API.Auth;
 
 public static class AuthenticationConfiguration
 {
-    public static IServiceCollection AddReflektAuthentication(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static IServiceCollection AddReflektAuthentication(this IServiceCollection services)
     {
         services
             .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -33,8 +32,6 @@ public static class AuthenticationConfiguration
             })
             .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
             {
-                options.ClientId = configuration["Auth:Google:ClientId"] ?? "";
-                options.ClientSecret = configuration["Auth:Google:ClientSecret"] ?? "";
                 options.Scope.Clear();
                 options.Scope.Add("openid");
                 options.Scope.Add("email");
@@ -44,6 +41,13 @@ public static class AuthenticationConfiguration
             })
             .AddScheme<AuthenticationSchemeOptions, GuestTokenAuthenticationHandler>(
                 GuestTokenDefaults.AuthenticationScheme, _ => { });
+
+        services.AddOptions<GoogleOptions>(GoogleDefaults.AuthenticationScheme)
+            .Configure<IOptions<AuthSettings>>((options, authSettings) =>
+            {
+                options.ClientId = authSettings.Value.Google.ClientId;
+                options.ClientSecret = authSettings.Value.Google.ClientSecret;
+            });
 
         return services;
     }

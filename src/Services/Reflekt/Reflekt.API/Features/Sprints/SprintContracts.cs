@@ -19,7 +19,7 @@ public sealed record SprintResponse(
     int VotingTimerDefault,
     int DiscussingTimerDefault);
 
-public sealed record SprintSummaryParticipant(string DisplayName);
+public sealed record SprintSummaryParticipantResponse(string DisplayName);
 
 public sealed record SprintSummaryResponse(
     int Id,
@@ -29,7 +29,7 @@ public sealed record SprintSummaryResponse(
     string CurrentPhase,
     int VotesPerParticipant,
     bool IsScrumMaster,
-    List<SprintSummaryParticipant> Participants,
+    IReadOnlyList<SprintSummaryParticipantResponse> Participants,
     string Column1Name,
     string Column1Color,
     string Column2Name,

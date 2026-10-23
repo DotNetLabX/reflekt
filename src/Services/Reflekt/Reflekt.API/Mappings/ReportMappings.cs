@@ -1,4 +1,3 @@
-using Mapster;
 using Reflekt.API.Features.Reports;
 using Reflekt.Domain.Cards;
 
@@ -8,10 +7,10 @@ public class ReportMappings : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<EvidenceLink, ReportEvidenceLinkEntry>()
+        config.NewConfig<EvidenceLink, ReportEvidenceLinkResponse>()
             .Map(d => d.Source, s => s.Source.ToString());
 
-        config.NewConfig<Card, ReportCardEntry>();
-        config.NewConfig<Card, ReportActionItemEntry>();
+        config.NewConfig<Card, ReportCardResponse>();
+        config.NewConfig<Card, ReportActionItemResponse>();
     }
 }

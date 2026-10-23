@@ -5,9 +5,9 @@ builder.Services.AddReflektApi(builder.Configuration);
 
 var app = builder.Build();
 
-app.UseReflektPersistence();
+await app.Services.MigrateAndSeedAsync(app.Lifetime.ApplicationStopping);
 app.UseReflektApi();
 
-app.Run();
+await app.RunAsync();
 
 public partial class Program { }

@@ -3,10 +3,12 @@ using System.Reflection;
 using Blocks.Domain;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace Blocks.Persistence;
 
-public class DomainEventPublishingInterceptor : SaveChangesInterceptor, IDbTransactionInterceptor
+public class DomainEventPublishingInterceptor(ILogger<DomainEventPublishingInterceptor> logger)
+    : SaveChangesInterceptor, IDbTransactionInterceptor
 {
     // FastEndpoints' PublishAsync<TEvent> extension dispatches by compile-time T.
     // When events are typed as IDomainEvent, T resolves to IDomainEvent and no concrete
@@ -60,7 +62,7 @@ public class DomainEventPublishingInterceptor : SaveChangesInterceptor, IDbTrans
             return result;
         }
 
-        await PublishAsync(events, cancellationToken);
+        await PublishInOrderAsync(events);
         return result;
     }
 
@@ -101,7 +103,7 @@ public class DomainEventPublishingInterceptor : SaveChangesInterceptor, IDbTrans
     {
         var events = _heldEvents;
         _heldEvents = [];
-        return PublishAsync(events, cancellationToken);
+        return PublishInOrderAsync(events);
     }
 
     public Task TransactionRolledBackAsync(
@@ -122,21 +124,45 @@ public class DomainEventPublishingInterceptor : SaveChangesInterceptor, IDbTrans
         return Task.CompletedTask;
     }
 
-    private static Task PublishAsync(IReadOnlyList<IDomainEvent> events, CancellationToken cancellationToken)
+    // Handlers get CancellationToken.None, not the save's token: a client that aborts after the commit
+    // must not stop the broadcast of data that is already committed.
+    private async Task PublishInOrderAsync(IReadOnlyList<IDomainEvent> events)
     {
-        if (events.Count == 0)
-            return Task.CompletedTask;
+        foreach (var ev in events)
+        {
+            var publication = StartPublish(ev);
+            await publication.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+            LogFailures(ev, publication);
+        }
+    }
 
-        var tasks = events.Select(ev =>
+    private static Task StartPublish(IDomainEvent ev)
+    {
+        try
         {
             var typed = PublishEventMethod.MakeGenericMethod(ev.GetType());
-            return (Task)typed.Invoke(null, [ev, cancellationToken])!;
-        });
+            return (Task)typed.Invoke(null, [ev, CancellationToken.None])!;
+        }
+        catch (TargetInvocationException ex)
+        {
+            return Task.FromException(ex.InnerException ?? ex);
+        }
+    }
 
-        return Task.WhenAll(tasks);
+    private void LogFailures(IDomainEvent ev, Task publication)
+    {
+        if (publication.Exception is { } failure)
+        {
+            foreach (var handlerFailure in failure.InnerExceptions)
+                logger.LogError(handlerFailure, "Domain event handler failed for {EventType}.", ev.GetType().Name);
+        }
+        else if (publication.IsCanceled)
+        {
+            logger.LogError("Domain event publication was cancelled for {EventType}.", ev.GetType().Name);
+        }
     }
 
     private static Task PublishEvent<TEvent>(TEvent ev, CancellationToken ct)
         where TEvent : class, IEvent
-        => ev.PublishAsync(Mode.WaitForNone, ct);
+        => ev.PublishAsync(Mode.WaitForAll, ct);
 }

@@ -1,30 +1,20 @@
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Sprints.GetTeamSprints;
 
-public sealed record GetTeamSprintsRequest(int TeamId);
-
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpGet("/api/teams/{teamId}/sprints")]
 [Tags("Sprints")]
-public sealed class GetTeamSprintsEndpoint(TeamRepository teamRepository, SprintRepository sprintRepository)
-    : Endpoint<GetTeamSprintsRequest, List<SprintResponse>>
+public sealed class GetTeamSprintsEndpoint(SprintAccess sprintAccess, SprintRepository sprintRepository)
+    : Endpoint<GetTeamSprintsRequest, IReadOnlyList<SprintResponse>>
 {
     public override async Task HandleAsync(GetTeamSprintsRequest request, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-
-        var team = await teamRepository.GetByIdAsync(request.TeamId, ct);
-        if (team is null) { await SendNotFoundAsync(ct); return; }
-
-        if (team.OwnerId != userId)
-        {
-            await SendForbiddenAsync(ct);
-            return;
-        }
+        var access = await sprintAccess.ForTeamAsync(User, request.TeamId, sprintId: null, ct);
+        access.RequireTeam();
+        access.RequireOwner();
 
         var sprints = await sprintRepository.GetByTeamIdAsync(request.TeamId, ct);
         await SendOkAsync(sprints.Select(s => s.Adapt<SprintResponse>()).ToList(), ct);

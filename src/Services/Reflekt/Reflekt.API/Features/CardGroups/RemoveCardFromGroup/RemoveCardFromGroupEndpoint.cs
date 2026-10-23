@@ -1,56 +1,44 @@
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.CardGroups;
-using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.CardGroups.RemoveCardFromGroup;
 
-public sealed record RemoveCardFromGroupRequest(int SprintId, int GroupId, int CardId);
-
-[Authorize(Policy = AuthPolicies.ScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUser)]
 [HttpDelete("/api/sprints/{sprintId}/card-groups/{groupId}/cards/{cardId}")]
 [Tags("CardGroups")]
 public sealed class RemoveCardFromGroupEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
     CardGroupRepository cardGroupRepository,
-    PhaseActionCache phaseActionCache)
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<RemoveCardFromGroupRequest>
 {
     public override async Task HandleAsync(RemoveCardFromGroupRequest req, CancellationToken ct)
     {
-        var userId = User.GetUserId();
-
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
-
-        var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-        if (team is null || team.OwnerId != userId)
-        {
-            await SendForbiddenAsync(ct);
-            return;
-        }
+        var access = await sprintAccess.ForSprintAsync(User, req.SprintId, ct);
+        var sprint = access.RequireSprint();
+        access.RequireOwner();
 
         sprint.EnsureOpen();
 
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.UngroupCards))
-            ThrowError($"{SprintAction.UngroupCards} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, SprintAction.UngroupCards);
 
         var group = await cardGroupRepository.GetByIdAsync(req.GroupId, ct);
-        if (group is null || group.SprintId != req.SprintId) { await SendNotFoundAsync(ct); return; }
+        if (group is null || group.SprintId != req.SprintId)
+            throw new NotFoundException("CardGroup not found");
 
         var card = await cardRepository.GetByIdAsync(req.CardId, ct);
-        if (card is null || card.GroupId != req.GroupId) { await SendNotFoundAsync(ct); return; }
+        if (card is null || card.GroupId != req.GroupId)
+            throw new NotFoundException("Card not found");
 
         await using var transaction = await cardGroupRepository.BeginTransactionAsync(ct);
 
-        var soloGroup = CardGroup.Create(req.SprintId, card.ColumnType);
-        soloGroup.ClearDomainEvents();
+        var soloGroup = CardGroup.CreateSolo(req.SprintId, card.ColumnType);
         await cardGroupRepository.AddAsync(soloGroup, ct);
         await cardGroupRepository.SaveChangesAsync(ct);
 

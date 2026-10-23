@@ -1,7 +1,6 @@
 // Note: Stays in Reflekt.API — carries Reflekt-specific policy (5s timeout, SSRF ranges).
 // Extract to BuildingBlocks.Api if a second service needs SSRF-guarded HTTP fetching.
 using AngleSharp;
-using AngleSharp.Html.Dom;
 
 namespace Reflekt.API.OpenGraph;
 

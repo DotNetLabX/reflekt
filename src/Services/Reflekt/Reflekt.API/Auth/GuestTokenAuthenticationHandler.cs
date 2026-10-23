@@ -30,9 +30,9 @@ public class GuestTokenAuthenticationHandler(
 
         var claims = new[]
         {
-            new Claim("participantId", participant.Id.ToString()),
-            new Claim("sprintId", participant.SprintId.ToString()),
-            new Claim("displayName", participant.DisplayName),
+            new Claim(GuestClaims.ParticipantId, participant.Id.ToString()),
+            new Claim(GuestClaims.SprintId, participant.SprintId.ToString()),
+            new Claim(GuestClaims.DisplayName, participant.DisplayName),
         };
         var identity = new ClaimsIdentity(claims, GuestTokenDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);

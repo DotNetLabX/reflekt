@@ -1,5 +1,3 @@
-using Blocks.Domain;
-
 namespace Reflekt.Domain.Votes;
 
 public sealed partial class Vote : AggregateRoot

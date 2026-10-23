@@ -7,15 +7,16 @@ namespace Reflekt.API.Features.CardGroups.CreateGroup;
 
 public sealed class BroadcastGroupCreatedHandler(
     IHubContext<SprintHub> hubContext,
-    CardRepository cardRepository)
+    IServiceScopeFactory scopeFactory)
     : IEventHandler<CardGroupCreatedEvent>
 {
     public async Task HandleAsync(CardGroupCreatedEvent ev, CancellationToken ct)
     {
         var group = ev.Group;
-        var cards = (await cardRepository.GetBySprintIdAsync(group.SprintId, ct))
+        using var scope = scopeFactory.CreateScope();
+        var cardRepository = scope.ServiceProvider.GetRequiredService<CardRepository>();
+        var cards = (await cardRepository.GetBySprintIdReadOnlyAsync(group.SprintId, ct))
             .Where(c => c.GroupId == group.Id)
-            .OrderBy(c => c.CreatedAt)
             .ToList();
 
         await hubContext.Clients.Group($"sprint:{group.SprintId}")

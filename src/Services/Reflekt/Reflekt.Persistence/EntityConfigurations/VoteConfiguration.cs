@@ -1,6 +1,4 @@
 using Blocks.Persistence.EntityConfigurations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Reflekt.Domain.CardGroups;
 using Reflekt.Domain.Participants;
 using Reflekt.Domain.Votes;

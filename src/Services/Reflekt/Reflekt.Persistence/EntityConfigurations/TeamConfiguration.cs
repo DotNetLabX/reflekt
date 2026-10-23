@@ -10,7 +10,7 @@ internal sealed class TeamConfiguration : EntityConfiguration<Team>
     {
         base.Configure(builder);
         builder.ToTable("Teams");
-        builder.Property(t => t.Name).IsRequired().HasMaxLength(100);
+        builder.Property(t => t.Name).IsRequired().HasMaxLength(Team.NameMaxLength);
         builder.Property(t => t.OwnerId).IsRequired();
         builder.HasOne<User>().WithMany().HasForeignKey(t => t.OwnerId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(t => new { t.OwnerId, t.Name }).IsUnique().HasDatabaseName("IX_Teams_OwnerId_Name");

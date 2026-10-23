@@ -7,13 +7,15 @@ namespace Reflekt.API.Features.Votes.RetractVote;
 
 public sealed class BroadcastVoteCountOnVoteRetractedHandler(
     IHubContext<SprintHub> hubContext,
-    CardGroupRepository cardGroupRepository,
-    VoteRepository voteRepository)
+    IServiceScopeFactory scopeFactory)
     : IEventHandler<VoteRetractedEvent>
 {
     public async Task HandleAsync(VoteRetractedEvent ev, CancellationToken ct)
     {
         var groupId = ev.Vote.GroupId;
+        using var scope = scopeFactory.CreateScope();
+        var cardGroupRepository = scope.ServiceProvider.GetRequiredService<CardGroupRepository>();
+        var voteRepository = scope.ServiceProvider.GetRequiredService<VoteRepository>();
         var group = await cardGroupRepository.GetByIdAsync(groupId, ct);
         if (group is null) return;
 

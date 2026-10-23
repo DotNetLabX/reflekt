@@ -25,5 +25,5 @@ public sealed record CardResponse(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     int VoteCount = 0,
-    List<EvidenceLinkResponse>? EvidenceLinks = null);
+    IReadOnlyList<EvidenceLinkResponse>? EvidenceLinks = null);
 

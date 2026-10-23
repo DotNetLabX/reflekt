@@ -7,17 +7,19 @@ namespace Reflekt.API.Features.PreviousActions.SetReviewStatus;
 
 public sealed class BroadcastReviewStatusChangedHandler(
     IHubContext<SprintHub> hubContext,
-    CardRepository cardRepository)
+    IServiceScopeFactory scopeFactory)
     : IEventHandler<ReviewStatusChangedEvent>
 {
     public async Task HandleAsync(ReviewStatusChangedEvent ev, CancellationToken ct)
     {
         var card = ev.Card;
         var previousSprintId = card.SprintId;
+        using var scope = scopeFactory.CreateScope();
+        var cardRepository = scope.ServiceProvider.GetRequiredService<CardRepository>();
 
         var totalCount = await cardRepository.CountActionItemsBySprintIdAsync(previousSprintId, ct);
-        var unreviewedItems = await cardRepository.GetUnreviewedActionItemsBySprintIdAsync(previousSprintId, ct);
-        var reviewedCount = totalCount - unreviewedItems.Count;
+        var unreviewedCount = await cardRepository.CountUnreviewedActionItemsBySprintIdAsync(previousSprintId, ct);
+        var reviewedCount = totalCount - unreviewedCount;
 
         await hubContext.Clients
             .Group($"sprint:{card.ReviewedInSprintId}")

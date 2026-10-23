@@ -9,5 +9,5 @@ public sealed class BroadcastCardUpdatedOnEvidenceLinkDetachedHandler(IHubContex
     : IEventHandler<EvidenceLinkDetachedEvent>
 {
     public Task HandleAsync(EvidenceLinkDetachedEvent ev, CancellationToken ct)
-        => CardBroadcast.BroadcastAsync(hubContext, scopeFactory, ev.Card, "CardUpdated", ct);
+        => CardBroadcast.BroadcastAsync(hubContext.Clients, scopeFactory, ev.Card, "CardUpdated", ct);
 }

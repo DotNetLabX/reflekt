@@ -8,5 +8,5 @@ public sealed class BroadcastCardCreatedHandler(IHubContext<SprintHub> hubContex
     : IEventHandler<CardCreatedEvent>
 {
     public Task HandleAsync(CardCreatedEvent ev, CancellationToken ct)
-        => CardBroadcast.BroadcastAsync(hubContext, scopeFactory, ev.Card, "CardCreated", ct);
+        => CardBroadcast.BroadcastAsync(hubContext.Clients, scopeFactory, ev.Card, "CardCreated", ct);
 }

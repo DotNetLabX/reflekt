@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "suite": {
+    "result": "pass",
+    "record": "docs/specs/F38-BackendConventions/delivery/summary.md"
+  },
+  "doneCheck": "PASS",
+  "review": {
+    "verdict": "APPROVED",
+    "highestFixed": "HIGH"
+  },
+  "headline": "The backend now follows one set of conventions for errors, access checks, events, reads, limits and endpoint layout, with no change to what users see.",
+  "presumed": [
+    {
+      "id": "C1",
+      "story": null,
+      "what": "Read the owner's pause directive d3 as fulfilled after the restart and resumed at step 17.",
+      "confidence": "high",
+      "why": "The directive asked for a pause for a machine restart and named a later launch resuming from the next step.",
+      "where": "docs/specs/F38-BackendConventions/delivery/communication-log.md"
+    },
+    {
+      "id": "C2",
+      "story": null,
+      "what": "Solo fix 1 turned off parallel running of the integration test classes (one test-config file) to stop a host-start race.",
+      "confidence": "medium",
+      "why": "The race is in FastEndpoints' process-wide JSON options and pre-dates F38; the owner's no-new-tests rule is read as not covering test configuration. Integration project now takes ~45–100 s longer.",
+      "where": "docs/specs/F38-BackendConventions/delivery/implementation.md"
+    }
+  ],
+  "deferredRows": {
+    "count": 10,
+    "where": "docs/specs/F38-BackendConventions/delivery/implementation.md"
+  },
+  "retirements": {
+    "count": 0,
+    "where": null
+  },
+  "pluginFindings": [
+    {
+      "finding": "verify-run's output excerpt cut off the exception message of a failing .NET test, so the cause could only be found by re-running with a TRX logger.",
+      "where": "docs/specs/F38-BackendConventions/delivery/implementation.md"
+    },
+    {
+      "finding": "verify-run --files cannot target a single .NET test file, so every by-name re-run became a whole-project or complete run.",
+      "where": "docs/specs/F38-BackendConventions/delivery/communication-log.md"
+    }
+  ]
+}

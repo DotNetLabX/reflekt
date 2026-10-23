@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Reflekt.API.Auth;
 using Reflekt.API.Features.CardGroups;
 using Reflekt.API.Features.Reports;
 using Reflekt.Domain.Cards;
@@ -9,7 +10,7 @@ namespace Reflekt.API.Features.Cards;
 public static class WritingPhaseRedaction
 {
     public static int? GetViewerParticipantId(ClaimsPrincipal user)
-        => int.TryParse(user.FindFirstValue("participantId"), out var participantId) ? participantId : null;
+        => user.GetParticipantId();
 
     public static bool IsWritingPhaseCard(Card card, Sprint sprint)
         => card.SprintId == sprint.Id && sprint.CurrentPhase == SprintPhase.Writing;
@@ -22,13 +23,13 @@ public static class WritingPhaseRedaction
     public static CardResponse Redact(CardResponse card)
         => card with { Text = "", AssigneeName = null, EvidenceLinks = [] };
 
-    public static CardGroupCardEntry Redact(CardGroupCardEntry card)
+    public static CardGroupCardResponse Redact(CardGroupCardResponse card)
         => card with { Text = "", EvidenceLinks = [] };
 
-    public static ReportCardEntry Redact(ReportCardEntry card)
+    public static ReportCardResponse Redact(ReportCardResponse card)
         => card with { Text = "", EvidenceLinks = [] };
 
-    public static ReportActionItemEntry Redact(ReportActionItemEntry card)
+    public static ReportActionItemResponse Redact(ReportActionItemResponse card)
         => card with { Text = "", AssigneeName = null, EvidenceLinks = [] };
 
     public static string GetReportGroupTitle(string? title, Card? firstCard, Sprint sprint, int? viewerParticipantId)

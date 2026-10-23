@@ -1,61 +1,45 @@
-using System.Security.Claims;
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.Cards;
 using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.EvidenceLinks.AttachEvidenceLink;
 
-[Authorize(Policy = AuthPolicies.OwnerOrScrumMaster)]
+[Authorize(Policy = Auth.Policies.SignedInUserOrGuest)]
 [HttpPost("/api/sprints/{sprintId}/cards/{cardId}/evidence-links")]
 [Tags("EvidenceLinks")]
 public sealed class AttachEvidenceLinkEndpoint(
-    SprintRepository sprintRepository,
-    TeamRepository teamRepository,
+    SprintAccess sprintAccess,
     CardRepository cardRepository,
-    IConfiguration configuration,
-    PhaseActionCache phaseActionCache)
+    IOptions<EvidenceLinkSettings> evidenceLinkSettings,
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<AttachEvidenceLinkCommand, EvidenceLinkResponse>
 {
     public override async Task HandleAsync(AttachEvidenceLinkCommand command, CancellationToken ct)
     {
         var card = await cardRepository.GetByIdAsync(command.CardId, ct);
-        if (card is null || card.SprintId != command.SprintId) { await SendNotFoundAsync(ct); return; }
+        if (card is null || card.SprintId != command.SprintId)
+            throw new NotFoundException("Card not found");
 
-        var sprint = await sprintRepository.GetByIdAsync(command.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
+        var access = await sprintAccess.ForSprintAsync(User, command.SprintId, ct);
+        var sprint = access.RequireSprint();
+        sprint.EnsureOpen();
 
-        if (sprint.State == SprintState.Closed)
-            ThrowError("Sprint is closed.", StatusCodes.Status409Conflict);
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, SprintAction.AttachEvidenceLink);
 
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.AttachEvidenceLink))
-            ThrowError($"{SprintAction.AttachEvidenceLink} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
-
-        var participantIdClaim = User.FindFirstValue("participantId");
-        if (participantIdClaim is not null)
+        if (access.IsGuest)
         {
-            if (!int.TryParse(participantIdClaim, out var claimParticipantId) || claimParticipantId != card.ParticipantId)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
+            if (access.ParticipantId != card.ParticipantId)
+                throw new ForbiddenException("You are not the author of this card.");
         }
         else
-        {
-            var userId = User.GetUserId();
-            var team = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
-            if (team is null || team.OwnerId != userId)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
-        }
+            access.RequireOwner();
 
-        var jiraDomain = configuration["EvidenceLinks:JiraDomain"];
-        var (source, externalKey) = EvidenceLinkSourceDetector.Detect(command.Url, jiraDomain);
+        var (source, externalKey) = EvidenceLinkSourceDetector.Detect(command.Url, evidenceLinkSettings.Value.JiraDomain);
 
         var link = card.AttachEvidenceLink(command.Url, source, externalKey);
         await cardRepository.SaveChangesAsync(ct);

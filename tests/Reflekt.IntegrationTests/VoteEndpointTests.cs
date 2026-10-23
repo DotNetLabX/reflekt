@@ -2,12 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Reflekt.API.Auth;
 using Reflekt.IntegrationTests.Helpers;
 
@@ -29,51 +24,8 @@ public class VoteEndpointTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UsePlaceholderGoogleCredentials();
-                builder.ConfigureAppConfiguration((_, config) =>
-                    config.AddInMemoryCollection(new Dictionary<string, string?>
-                    {
-                        ["ConnectionStrings:Reflekt"] = $"Data Source={_testDbPath}",
-                        ["Auth:AllowedEmails:0"] = TestAuthHandler.TestEmail,
-                        ["Seed:Enabled"] = "false",
-                    }));
-
-                builder.ConfigureTestServices(services =>
-                {
-                    services
-                        .AddAuthentication(TestAuthHandler.SchemeName)
-                        .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
-                            TestAuthHandler.SchemeName, _ => { });
-
-                    services.AddAuthorizationBuilder()
-                        .AddPolicy(Policies.ScrumMaster, policy => policy
-                            .AddAuthenticationSchemes(TestAuthHandler.SchemeName)
-                            .RequireAuthenticatedUser())
-                        .AddPolicy(Policies.OwnerOrScrumMaster, policy => policy
-                            .AddAuthenticationSchemes(
-                                TestAuthHandler.SchemeName,
-                                GuestTokenDefaults.AuthenticationScheme)
-                            .RequireAuthenticatedUser())
-                        .AddPolicy(Policies.Participant, policy => policy
-                            .AddAuthenticationSchemes(GuestTokenDefaults.AuthenticationScheme)
-                            .RequireAuthenticatedUser());
-                });
-            });
-
-        _anonFactory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UsePlaceholderGoogleCredentials();
-                builder.ConfigureAppConfiguration((_, config) =>
-                    config.AddInMemoryCollection(new Dictionary<string, string?>
-                    {
-                        ["ConnectionStrings:Reflekt"] = $"Data Source={_anonDbPath}",
-                        ["Seed:Enabled"] = "false",
-                    }));
-            });
+        _factory = ReflektApiFactory.CreateSignedIn(_testDbPath, Policies.SignedInUser, Policies.SignedInUserOrGuest, Policies.Guest);
+        _anonFactory = ReflektApiFactory.CreateAnonymous(_anonDbPath);
 
         _client = _factory.CreateClient();
         _anonClient = _anonFactory.CreateClient();
@@ -88,21 +40,7 @@ public class VoteEndpointTests : IAsyncLifetime
     {
         await _factory.DisposeAsync();
         await _anonFactory.DisposeAsync();
-        SqliteConnection.ClearAllPools();
-        for (var attempt = 1; ; attempt++)
-        {
-            try
-            {
-                if (File.Exists(_testDbPath)) File.Delete(_testDbPath);
-                if (File.Exists(_anonDbPath)) File.Delete(_anonDbPath);
-                break;
-            }
-            catch (IOException) when (attempt < 20)
-            {
-                await Task.Delay(100);
-                SqliteConnection.ClearAllPools();
-            }
-        }
+        await ReflektApiFactory.DeleteDatabaseFilesAsync(_testDbPath, _anonDbPath);
     }
 
     // --- CastVote ---

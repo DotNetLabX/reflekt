@@ -1,7 +1,9 @@
 namespace Reflekt.Domain.Sprints;
 
-public sealed class ColumnColor
+public sealed record ColumnColor
 {
+    public const int MaxLength = 10;
+
     public static readonly IReadOnlyCollection<string> AllowedColors =
         ["green", "red", "amber", "blue", "purple", "teal", "pink", "slate"];
 
@@ -25,6 +27,4 @@ public sealed class ColumnColor
     }
 
     public override string ToString() => Value;
-    public override bool Equals(object? obj) => obj is ColumnColor other && Value == other.Value;
-    public override int GetHashCode() => Value.GetHashCode();
 }

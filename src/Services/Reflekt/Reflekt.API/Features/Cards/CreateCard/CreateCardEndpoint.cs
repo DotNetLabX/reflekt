@@ -1,57 +1,46 @@
 using System.Security.Claims;
+using Blocks.Exceptions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
-using AuthPolicies = Reflekt.API.Auth.Policies;
 
 namespace Reflekt.API.Features.Cards.CreateCard;
 
-[Authorize(Policy = AuthPolicies.Participant)]
+[Authorize(Policy = Auth.Policies.Guest)]
 [HttpPost("/api/sprints/{sprintId}/cards")]
 [Tags("Cards")]
-public sealed class CreateCardEndpoint(SprintRepository sprintRepository, CardRepository cardRepository, PhaseActionCache phaseActionCache)
+public sealed class CreateCardEndpoint(
+    SprintAccess sprintAccess,
+    CardRepository cardRepository,
+    PhaseActionPolicyProvider phaseActionPolicyProvider)
     : Endpoint<CreateCardCommand, CardResponse>
 {
     public override async Task HandleAsync(CreateCardCommand command, CancellationToken ct)
     {
-        if (!int.TryParse(User.FindFirstValue("sprintId"), out var claimSprintId) || claimSprintId != command.SprintId)
-        {
-            await SendUnauthorizedAsync(ct);
-            return;
-        }
-
-        if (!int.TryParse(User.FindFirstValue("participantId"), out var participantId))
-        {
-            await SendUnauthorizedAsync(ct);
-            return;
-        }
+        var access = await sprintAccess.ForSprintAsync(User, command.SprintId, ct);
+        access.RequireGuestOf(command.SprintId);
+        var participantId = access.RequireParticipant();
 
         var columnType = Enum.Parse<ColumnType>(command.ColumnType);
         var cardType = Enum.Parse<CardType>(command.CardType);
 
-        var sprint = await sprintRepository.GetByIdAsync(command.SprintId, ct);
-        if (sprint is null) { await SendNotFoundAsync(ct); return; }
-
-        if (sprint.State == SprintState.Closed)
-            ThrowError("Sprint is closed.", StatusCodes.Status409Conflict);
+        var sprint = access.RequireSprint();
+        sprint.EnsureOpen();
 
         var action = cardType == CardType.ActionItem ? SprintAction.CreateActionItem : SprintAction.CreateNote;
-        if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, action))
-            ThrowError($"{action} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
+        (await phaseActionPolicyProvider.GetAsync()).EnsureAllowed(sprint.CurrentPhase, action);
 
         if (sprint.CurrentPhase == SprintPhase.Discussing && cardType == CardType.ActionItem)
         {
             var cookieResult = await HttpContext.AuthenticateAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
             if (cookieResult.Principal?.FindFirstValue(ClaimTypes.Email) is null)
-            {
-                await SendForbiddenAsync(ct);
-                return;
-            }
+                throw new ForbiddenException("Only a signed-in user can create action items while discussing.");
         }
 
         var card = Card.Create(command.Text, command.SprintId, participantId, columnType, cardType, command.AssigneeName);

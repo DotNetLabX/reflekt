@@ -1,9 +1,9 @@
-using Blocks.Domain;
-
 namespace Reflekt.Domain.Participants;
 
 public sealed partial class Participant : AggregateRoot
 {
+    public const int DisplayNameMaxLength = 50;
+
     private Participant() { }
 
     public required int SprintId { get; init; }

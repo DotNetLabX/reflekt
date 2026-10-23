@@ -4,6 +4,8 @@ namespace Reflekt.Domain.CardGroups;
 
 public sealed partial class CardGroup : AggregateRoot
 {
+    public const int TitleMaxLength = 100;
+
     private CardGroup() { }
 
     public required int SprintId { get; init; }

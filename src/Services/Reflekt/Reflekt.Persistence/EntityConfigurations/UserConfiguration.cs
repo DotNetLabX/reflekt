@@ -9,10 +9,10 @@ internal sealed class UserConfiguration : EntityConfiguration<User>
     {
         base.Configure(builder);
         builder.ToTable("Users");
-        builder.Property(u => u.Email).IsRequired().HasMaxLength(256).UseCollation("NOCASE");
+        builder.Property(u => u.Email).IsRequired().HasMaxLength(User.EmailMaxLength).UseCollation("NOCASE");
         builder.HasIndex(u => u.Email).IsUnique().HasDatabaseName("IX_Users_Email");
-        builder.Property(u => u.Name).IsRequired().HasMaxLength(256);
-        builder.Property(u => u.GivenName).IsRequired().HasMaxLength(100);
+        builder.Property(u => u.Name).IsRequired().HasMaxLength(User.NameMaxLength);
+        builder.Property(u => u.GivenName).IsRequired().HasMaxLength(User.GivenNameMaxLength);
         builder.Property(u => u.CreatedAt).IsRequired();
     }
 }
