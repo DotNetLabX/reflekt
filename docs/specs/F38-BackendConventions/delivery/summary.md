@@ -10,7 +10,7 @@ Gear: normal — campaign
 ## Key Outcomes
 - 241 paths changed in the worktree (77 added, 150 modified, 13 deleted, 1 renamed), untracked feature files included; nothing under `web/`.
 - Build: clean rebuild 0 warnings, 0 errors (Step 17).
-- **Full suite:** pass — 91 s (recorded 2026-10-23T17:05:18Z, run mvl80mew-1d7d55e7; complete red on a fast-green tree: no; filtered: no)
+- **Full suite:** pass — 97 s (recorded 2026-10-23T17:09:40Z, run mvl868z3-4b383e8c, on the committed tree a7b2a22; complete red on a fast-green tree: no; filtered: no). Earlier close run mvl80mew-1d7d55e7 (pass, 91 s) was made before the closing commit and is superseded.
 - **Tests and builds:** 2 h 6 min across 197 runs — complete 4 min 22 s, step runs 2 h 1 min, gate runs 0, builds 20 s
 - **Map delta:** none
 - Review: Codex NO-GO (1 HIGH, 1 MEDIUM, 3 LOW) → one fix round → Codex GO; second reader (Sonnet) COMMENT both times; done check PASS (Check 1 and the re-check, Check 2). Cycles: 1/3.

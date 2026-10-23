@@ -104,6 +104,7 @@
 | 80 | team-lead → solo (solo-red1, fresh opus abe02dba61c8bb6bd) | close | Solo fix 1 for F38-BackendConventions (handover ladder attempt 1/3). | — |
 | 81 | solo (solo-red1) → team-lead | close | Solo fix 1: fixed. Cause: FastEndpoints' process-wide JSON options mutated by each parallel test host's start-up → read-only exception in MapFastEndpoints; pre-existing (on record in F35/F37). Fix: tests/Reflekt.IntegrationTests/TestParallelization.cs disables xUnit test parallelization (test config, no production change). Proof: tied fast mvl7h2o3-350e5a1f green; integration role 8/8 green. Cost: integration project +45–100 s. Size: 310k · Time: 120 min · Tool calls: 163 | — |
 | 82 | team-lead | close | Close complete run mvl80mew-1d7d55e7: pass (91 s). Close gate: no rule list (not applicable); no M3 flag; no anchored set; no registry change; lessons on record; map delta none; usage record partial; no MEDIUM under the bar. change-notes.md, campaign-close.json, summary.md written. | — |
+| 83 | team-lead | close | Campaign refused the close record (made before commit a7b2a22). Directive d5: re-ran the complete suite on the committed tree, no source change: mvl868z3-4b383e8c pass (97 s). summary.md Full suite line updated. | — |
 
 ## Runtime / Plugin Issues Log
 
