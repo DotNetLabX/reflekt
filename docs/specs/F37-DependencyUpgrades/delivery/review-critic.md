@@ -80,3 +80,70 @@ Coverage: complete
 | R2-02 | fixed-real | — | — | AC7 (base commit recorded in implementation.md) |
 
 Reconciled: Scope DP-02 ↔ AC1. No round 3: no CRITICAL.
+
+---
+
+## Round 1 — 2026-10-23 — plan — primary (codex)
+
+Header note: primary Codex (default effort — the repo sets no `codex.effort`, so the light lane's step down could not be applied), verdict persisted in `review-critic-codex.md` § Plan review — round 1. Second reader: Sonnet at medium effort (light lane, one step below high). Persisted by team-lead.
+
+Codex verdict: **NO-GO** — 3 MEDIUM, 1 LOW (full text in `review-critic-codex.md`).
+
+## Second reader — round 1 (sonnet)
+
+Verdict: **ACCEPT** — 1 MEDIUM, 2 LOW. Findings verbatim:
+
+- **[MEDIUM] F1 — Step 5's allowed-file list omits an untracked path that exists now.** `git status --porcelain` shows `?? .claude/tmp/` (campaign review files); Step 5 lists only the props file, the feature folder, forced fixes and `.claude/.personas.json`. Fix: add `.claude/tmp/` (campaign tooling, not this unit's) beside `.personas.json`, with the same Decisions row.
+- **[LOW] F2 — The npm change note never asks for a build after the lockfile change.** Acceptance 5 is judged on the pre-fix lockfile only. Fix: the note asks the applier to run `npm --prefix web/reflekt-web ci && npm --prefix web/reflekt-web run build` and record the result.
+- **[LOW] F3 — Step 4's `audit fix --dry-run` capture has no Decisions `Adds:` row.** Route: owner keep or drop; fix: add an `Adds:` row (recommended keep) or drop the line.
+
+Coverage ledger (second reader): NOT OPENED — `Reflekt.API/Auth/AuthenticationConfiguration.cs` beyond lines 1–40; sibling specs F38–F40.
+
+### Merge — round 1
+
+Coverage: `Reflekt.API/Auth/AuthenticationConfiguration.cs` beyond lines 1–40; sibling specs F38–F40 (Codex returned no coverage ledger, so neither surface is known to be opened by any reader)
+
+| id | readers | level | anchor | title | shape | consequence | evidence | untouchable | tag | surfaces | source ids |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| R1-01 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Link-preview check can pass with both runs `Failed`/null | verification gap | acceptance 6 passes without working previews | plan.md:16; `FetchResult.Failed` on HTTP/parse failure | — | link-preview | plan Step 1; OpenGraphFetcher.cs | codex-1 |
+| R1-02 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | SQLite version probe bypasses the app's connection | spec mismatch | DP-02 asks for `sqlite_version()` through the app's connection | plan.md:34; `AddReflektPersistence` / `ConnectionStrings:Reflekt` | — | sqlite-probe | plan Step 3; Reflekt.Persistence/DependencyInjection.cs | codex-2 |
+| R1-03 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Step 5 file guard allows all of the feature folder, spec allows delivery docs only | acceptance broadened | `definition/spec.md` edit passes unreconciled | plan.md:28; live diff holds `definition/spec.md` | — | change-set | plan Step 5; spec acceptance 7 | codex-3 |
+| R1-04 | codex, sonnet | MEDIUM | seed-0130 (sonnet); Codex severity LOW — contested: LOW / MEDIUM, settled MEDIUM: the literal whitelist fails on a path present today | Step 5 allowed list omits campaign artifacts (`.claude/tmp/`) | criterion contradicts worktree | Step 5 cannot pass as written | `git status --porcelain` shows `?? .claude/tmp/` | — | change-set | plan Step 5; plan Decisions | codex-4, sonnet-F1 |
+| R1-05 | sonnet | LOW | seed-0127 | npm change note asks for no build after the lockfile change | deferred verification gap | lockfile merges with no build against it | plan Step 4; Q1 answer | — | npm-note | plan Step 4 | sonnet-F2 |
+| R1-06 | sonnet | LOW | seed-0137 | Step 4 dry-run capture lacks an `Adds:` row (also: Step 1 online probe route lacks one, from codex-1) | untagged addition | added requirement not shown | plan Step 4; plan Step 1 | — | adds-row | plan Steps 1, 4; Decisions | sonnet-F3, codex-1 |
+
+### Fold — round 1 (architect, claude-opus-5-5[1m], 2026-10-23)
+
+| id | disposition | level after | re-grade (level · anchor · why) | where |
+|---|---|---|---|---|
+| R1-01 | fixed-real | — | — | plan Step 1 Accept (spec's offline route; fetcher's own `ParseOpenGraphAsync` by reflection; both runs `Ok = true`, four fields non-null and identical, else stop); Decisions row "link-preview check"; Where to Look Step 1 |
+| R1-02 | fixed-real | — | — | plan Step 3 Accept (`AddReflektPersistence` + `ReflektDbContext` connection, `select sqlite_version()`); Decisions row "SQLite engine version"; Where to Look Step 3 (probe shape ran at plan time: `sqlite 3.46.1`) |
+| R1-03 | fixed-real | — | — | plan Step 5 Accept (`delivery/` only, plus the one `**Plan:**` line of `definition/spec.md`; any other `definition/` change fails); Decisions new row "`**Plan:**` line" |
+| R1-04 | fixed-real | — | — | plan Step 5 Accept (`.claude/.personas.json` and anything under `.claude/tmp/` named as campaign artifacts); Decisions row "campaign's own artifacts" |
+| R1-05 | fixed-real | — | — | plan Step 4 Accept (the note asks the applier to re-run spec acceptance 5, the full role's npm leg, and record it beside the "after" audit) — sourced by spec acceptance 5, so no `Adds:` row |
+| R1-06 | fixed-real | — | — | plan Step 4 Accept (`audit fix --dry-run` capture removed); plan Step 1 Accept (live `FetchAsync` route removed, per R1-01) — no unsourced addition remains, so no `Adds:` row is owed |
+
+Reconciled: plan Step 1 ↔ Decisions link-preview row ↔ Where to Look Steps 1 and 3 (one probe project serves both); plan Step 3 ↔ Decisions SQLite row ↔ spec Scope DP-02 ("through the app's connection"); plan Step 4 ↔ plan P1 ↔ `questions.md` Q1 Answer (AR-1: "after" output recorded when the note is applied) ↔ spec acceptance 5; plan Step 5 ↔ Decisions rows (campaign artifacts, `**Plan:**` line, `graphify update`) ↔ spec acceptance 7; Where to Look Step 5 (deletion command the campaign fence allows). Size, Lane and Build lane re-derived: unchanged (5 steps, 1 file). Plan-side summary: `plan.md` § Plan Review.
+
+
+## Round 2 — 2026-10-23 — plan — primary (codex)
+
+Header note: Codex alone (no second reader after round 1), Floor MEDIUM, Read full (round 1 coverage incomplete). Verdict persisted in review-critic-codex.md § Plan review — round 2. Persisted by team-lead.
+
+Codex verdict: **GO** — R1-01..R1-06 all closed; no MEDIUM-or-higher finding; the two surfaces round 1 left unopened (AuthenticationConfiguration.cs in full; F38–F40 definitions) were read with no issue.
+
+### Merge — round 2
+
+Coverage: complete
+
+| id | readers | level | anchor | title | shape | consequence | evidence | untouchable | tag | surfaces | source ids |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+
+No findings. Round 3 does not run (no CRITICAL in this merge).
+
+### Fold — round 2 (architect, claude-opus-5-5[1m], 2026-10-23)
+
+| id | disposition | level after | re-grade (level · anchor · why) | where |
+|---|---|---|---|---|
+
+No findings to fold; `plan.md` unchanged by this round except its `## Plan Review` note. Reconciled: none touched. The schedule ends here (no CRITICAL); the plan is approved.

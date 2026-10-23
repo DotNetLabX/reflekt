@@ -41,3 +41,42 @@ Read-only review completed; no files modified. Build, restore, and audit command
 | R1-10 | closed | 15; F39:66 | Point-in-time baseline and sibling audit check added. | none |
 
 No new MEDIUM-or-higher findings. No collateral contradiction or newly broken guarantee identified in the checked delta and sibling references. The two partial closures retain their round-1 MEDIUM severity.
+
+
+---
+
+# Plan review — round 1 — 2026-10-23 (Codex job task-mvkfz5jt-7msf7m, persisted by team-lead session e1039f04)
+
+## Verdict: NO-GO
+
+- **MEDIUM — [plan.md:16](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:16): Preview verification can pass without working previews.** Equality permits both runs to return `FetchResult.Failed` with null metadata; the live fetcher returns that result for HTTP and parsing failures. Acceptance 6 requires displayed title/image or the specified offline comparison. Require successful, meaningful metadata and use an accepted route. The added online probe route also lacks an `Adds:` row.
+
+- **MEDIUM — [plan.md:34](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:34): SQLite verification bypasses the app’s connection.** Referencing `Reflekt.Persistence.csproj` and opening a separate in-memory `SqliteConnection` checks the probe’s runtime. DP-02 explicitly requires querying through the app’s connection, registered by `AddReflektPersistence` using `ConnectionStrings:Reflekt`. Resolve the configured `ReflektDbContext` and query its connection.
+
+- **MEDIUM — [plan.md:28](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:28): The file guard broadens acceptance 7.** It permits everything under the feature directory, while the spec permits delivery docs. The live diff already includes `definition/spec.md`. Preserve the delivery-only boundary and explicitly reconcile that existing modification; the broader permission has neither a supporting source nor an `Adds:` row.
+
+- **LOW — [plan.md:28](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:28): The campaign-artifact exception is incomplete.** Live status also contains untracked `.claude/tmp/f37-plan-review-r1.md`, which the literal whitelist rejects. Record and distinguish pre-existing campaign artifacts so Step 5 can assess the unit’s changes accurately.
+
+Read-only review completed; no files modified.
+
+
+---
+
+# Plan review — round 2 — 2026-10-23 (Codex job task-mvkgb848-ucc81t, persisted by team-lead session e1039f04)
+
+## Verdict: GO
+
+| Round-1 finding | Status | Plan line | Closure |
+|---|---|---|---|
+| R1-01 | closed | [16](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:16) | Both preview runs must succeed with four non-null, identical values. |
+| R1-02 | closed | [22](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:22) | SQLite probe resolves the app’s configured `ReflektDbContext` connection. |
+| R1-03 | closed | [28](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:28) | Delivery-only boundary restored; existing spec modification restricted to its `Plan:` line. |
+| R1-04 | closed | [28](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:28) | Campaign artifacts explicitly included and distinguished. |
+| R1-05 | closed | [25](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:25) | Merge applier must rerun the full role after updating the lockfile. |
+| R1-06 | closed | [16](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:16), [25](D:/src/reflekt-F37-DependencyUpgrades/docs/specs/F37-DependencyUpgrades/delivery/plan.md:25) | Unsourced online-probe and dry-run requirements removed. |
+
+No MEDIUM-or-higher findings.
+
+Read the complete plan, governing spec, live package declarations and lockfile, whole `AuthenticationConfiguration.cs`, and F38–F40 definitions. No additional authentication compatibility issue or sibling-spec conflict identified. Google 10’s [claim mappings](https://github.com/dotnet/aspnetcore/blob/v10.0.13/src/Security/Authentication/Google/src/GoogleOptions.cs) remain compatible with the callback.
+
+The npm handoff preserves Q1’s shared-file restriction. No files modified; builds, restores, and audits were not run.

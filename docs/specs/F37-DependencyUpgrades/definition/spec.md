@@ -6,7 +6,7 @@
 **Rule list:** not applicable — package versions only, no rule-shaped behaviour
 **Review:** round 1 — `delivery/review-critic.md`
 **Status:** Ready
-**Plan:** None
+**Plan:** `docs/specs/F37-DependencyUpgrades/delivery/plan.md`
 
 ---
 
