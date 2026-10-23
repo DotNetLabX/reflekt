@@ -1,20 +1,21 @@
-import { ref, computed, watch, onUnmounted } from 'vue'
-import { useTimerStore } from '../stores/timer'
-
-export type TimerStatus = 'running' | 'paused' | 'expired' | 'stopped'
-
-export interface TimerPayload {
-  status: TimerStatus
-  remainingSeconds: number
-  endTimeUtc: string | null
-}
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useTimerStore } from '@/stores/timer'
+import { formatMmSs } from '@/format/format'
 
 let audioContext: AudioContext | null = null
 
-export function unlockChime() {
+function unlockChime() {
   if (typeof window.AudioContext === 'undefined') return
   audioContext ??= new window.AudioContext()
   if (audioContext.state === 'suspended') audioContext.resume().catch(() => {})
+}
+
+// Browsers only start audio from a user gesture; any gesture on the page, before the timer is shown included, unlocks the chime.
+const UNLOCK_EVENTS = ['pointerdown', 'click', 'keydown'] as const
+
+export function useChimeUnlock() {
+  onMounted(() => UNLOCK_EVENTS.forEach((e) => document.addEventListener(e, unlockChime)))
+  onUnmounted(() => UNLOCK_EVENTS.forEach((e) => document.removeEventListener(e, unlockChime)))
 }
 
 function playChime() {
@@ -44,12 +45,7 @@ export function useTimer() {
 
   const isMuted = computed(() => timerStore.isMuted)
 
-  const formattedTime = computed<string>(() => {
-    const total = Math.max(0, displayRemainingSeconds.value)
-    const mins = Math.floor(total / 60)
-    const secs = total % 60
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-  })
+  const formattedTime = computed(() => formatMmSs(displayRemainingSeconds.value))
 
   function startInterval() {
     stopInterval()
@@ -131,8 +127,6 @@ export function useTimer() {
     isFlashing,
     isMuted,
     formattedTime,
-    isRunning: computed(() => timerStore.isRunning),
-    isExpired: computed(() => timerStore.isExpired),
     toggleMute,
   }
 }

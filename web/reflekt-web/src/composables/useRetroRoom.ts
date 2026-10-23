@@ -1,16 +1,18 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useGuestStore } from '../stores/guest'
-import { useParticipantStore } from '../stores/participant'
-import { useCardStore } from '../stores/card'
-import { useAuthStore } from '../stores/auth'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { describeApiError, isHttpError } from '@/api/client'
+import { useGuestStore } from '@/stores/guest'
+import { useParticipantStore } from '@/stores/participant'
+import { useCardStore } from '@/stores/card'
+import { useAuthStore } from '@/stores/auth'
 import { getHubConnection, useSprintHub } from './useSprintHub'
-import { useVoteStore } from '../stores/vote'
-import { useSprintStore } from '../stores/sprint'
-import { usePolicyStore } from '../stores/policy'
-import { useCardGroupStore } from '../stores/cardGroup'
-import { useReportStore } from '../stores/report'
-import { useReadinessStore } from '../stores/readiness'
-import { usePreviousActionsStore } from '../stores/previousActions'
+import { useVoteStore } from '@/stores/vote'
+import { useSprintStore } from '@/stores/sprint'
+import { usePolicyStore } from '@/stores/policy'
+import { useCardGroupStore } from '@/stores/cardGroup'
+import { useReportStore } from '@/stores/report'
+import { useReadinessStore } from '@/stores/readiness'
+import { usePreviousActionsStore } from '@/stores/previousActions'
+import { useRetroPhase } from './useRetroPhase'
 
 type EntryStage = 'info' | 'identity' | 'data'
 type ConnectOutcome = 'ok' | 'failed' | 'stale'
@@ -56,11 +58,18 @@ export function useRetroRoom(sprintId: number) {
   let ownedConnection: ReturnType<typeof getHubConnection> = null
   let connectInFlight = false
 
-  const { connect, disconnect } = useSprintHub(() => {
-    kicked.value = true
-    guestStore.clearToken(sprintId)
-    cancelHub()
-  })
+  const { connect, disconnect } = useSprintHub()
+  const { isReporting } = useRetroPhase()
+
+  watch(
+    () => participantStore.kicked,
+    (isKicked) => {
+      if (!isKicked) return
+      kicked.value = true
+      guestStore.clearToken(sprintId)
+      cancelHub()
+    },
+  )
 
   // Call only while holding the hub lock.
   async function stopOwned(): Promise<void> {
@@ -103,16 +112,13 @@ export function useRetroRoom(sprintId: number) {
   }
 
   const sprintName = computed(() => sprintStore.currentSummary?.name ?? '')
-  const currentPhase = computed(() => sprintStore.currentSummary?.currentPhase ?? '')
   const summaryParticipants = computed(() => sprintStore.currentSummary?.participants ?? [])
-  const isReportingPhase = computed(() => currentPhase.value === 'Reporting')
-  const isClosed = computed(() => sprintStore.currentSummary?.state === 'Closed')
-  const teamId = computed(() => sprintStore.currentSummary?.teamId ?? null)
-  const isScrumMaster = computed(() => sprintStore.currentSummary?.isScrumMaster ?? false)
 
   // After entry, cards and groups load only as background refreshes, so their error
   // is a failed refresh of a board that is still on screen.
-  const refreshError = computed(() => (joined.value ? (cardStore.error ?? cardGroupStore.error) : null))
+  const refreshError = computed(() =>
+    joined.value ? (cardStore.error ?? cardGroupStore.error) : null,
+  )
 
   function failStage(stage: EntryStage, message: string) {
     resumeStage = stage
@@ -121,7 +127,7 @@ export function useRetroRoom(sprintId: number) {
   }
 
   async function loadRoomInfo(entry: number): Promise<boolean> {
-    await Promise.all([policyStore.fetch(), sprintStore.fetchSprintSummary(sprintId)])
+    await Promise.all([policyStore.load(), sprintStore.fetchSprintSummary(sprintId)])
     if (superseded(entry)) return false
     const error = policyStore.error ?? sprintStore.currentSummaryError
     if (error) {
@@ -138,15 +144,18 @@ export function useRetroRoom(sprintId: number) {
       try {
         const response = await participantStore.joinWithGoogle(sprintId)
         if (superseded(entry)) return false
-        guestStore.saveToken(sprintId, response.guestToken, response.displayName)
+        guestStore.saveToken(sprintId, response.guestToken)
         return true
       } catch (err: unknown) {
         if (superseded(entry)) return false
-        console.error('[joinWithGoogle] failed:', err)
-        const status = (err as { status?: number })?.status
-        if (status === 409) errorMessage.value = 'Sprint is not accepting participants.'
-        else if (status === 404) errorMessage.value = 'Sprint not found.'
-        else errorMessage.value = `Could not join with Google (${status ?? 'network error'}). You can join as a guest instead.`
+        const status = isHttpError(err) ? err.status : 'network error'
+        errorMessage.value = describeApiError(err, {
+          statusMessages: {
+            409: 'Sprint is not accepting participants.',
+            404: 'Sprint not found.',
+          },
+          fallback: `Could not join with Google (${status}). You can join as a guest instead.`,
+        })
       }
       loading.value = false
       return false
@@ -187,7 +196,8 @@ export function useRetroRoom(sprintId: number) {
       failStage('data', error)
       return
     }
-    if (sprintStore.currentSummary) voteStore.votesPerParticipant = sprintStore.currentSummary.votesPerParticipant
+    if (sprintStore.currentSummary)
+      voteStore.setVotesPerParticipant(sprintStore.currentSummary.votesPerParticipant)
     await voteStore.fetchMyVotes(sprintId)
     if (superseded(entry)) return
     if (voteStore.error) {
@@ -203,7 +213,7 @@ export function useRetroRoom(sprintId: number) {
     }
     joined.value = true
     loading.value = false
-    if (isReportingPhase.value) reportStore.fetchParticipantReport(sprintId)
+    if (isReporting.value) reportStore.fetchParticipantReport(sprintId)
   }
 
   async function runEntry(from: EntryStage): Promise<void> {
@@ -242,14 +252,14 @@ export function useRetroRoom(sprintId: number) {
         busy.value = false
         return
       }
-      guestStore.saveToken(sprintId, response.guestToken, response.displayName)
+      guestStore.saveToken(sprintId, response.guestToken)
     } catch (err: unknown) {
       busy.value = false
       if (superseded(entry)) return
-      const status = (err as { status?: number })?.status
-      if (status === 409) errorMessage.value = 'Name already taken. Choose another.'
-      else if (status === 404) errorMessage.value = 'Sprint not found.'
-      else errorMessage.value = 'Failed to join. Please try again.'
+      errorMessage.value = describeApiError(err, {
+        statusMessages: { 409: 'Name already taken. Choose another.', 404: 'Sprint not found.' },
+        fallback: 'Failed to join. Please try again.',
+      })
       return
     }
     try {
@@ -268,6 +278,7 @@ export function useRetroRoom(sprintId: number) {
   })
 
   const showGoogleOption = computed(() => !authStore.isSignedIn)
+  const inRoom = computed(() => joined.value && !kicked.value && !loading.value)
 
   return {
     kicked,
@@ -275,19 +286,14 @@ export function useRetroRoom(sprintId: number) {
     errorMessage,
     joined,
     loading,
+    inRoom,
     roomError,
     refreshError,
     sprintName,
-    currentPhase,
     summaryParticipants,
-    isReportingPhase,
-    isClosed,
-    teamId,
-    isScrumMaster,
     handleJoin,
     retryEntry,
     retryRefresh,
-    reportStore,
     showGoogleOption,
   }
 }

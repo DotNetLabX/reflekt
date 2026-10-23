@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @source inline("bg-col-green bg-col-green-light text-col-green border-col-green border-col-green-light bg-col-red bg-col-red-light text-col-red border-col-red border-col-red-light bg-col-amber bg-col-amber-light text-col-amber border-col-amber border-col-amber-light bg-col-blue bg-col-blue-light text-col-blue border-col-blue border-col-blue-light bg-col-purple bg-col-purple-light text-col-purple border-col-purple border-col-purple-light bg-col-teal bg-col-teal-light text-col-teal border-col-teal border-col-teal-light bg-col-pink bg-col-pink-light text-col-pink border-col-pink border-col-pink-light bg-col-slate bg-col-slate-light text-col-slate border-col-slate border-col-slate-light bg-badge-success-bg text-badge-success-text bg-badge-danger-bg text-badge-danger-text bg-badge-warning-bg text-badge-warning-text bg-badge-info-bg text-badge-info-text bg-badge-default-bg text-badge-default-text bg-badge-primary-bg text-badge-primary-text");
 
@@ -29,6 +29,12 @@
   --col-pink-light: color-mix(in srgb, #ec4899 10%, #13131a);
   --col-slate-light: color-mix(in srgb, #64748b 10%, #13131a);
   --action-items-light: color-mix(in srgb, #3b82f6 10%, #13131a);
+
+  /* Ready button, not yet ready — dark */
+  --ready-idle-bg: color-mix(in oklab, oklch(59.6% 0.145 163.225) 80%, transparent);
+  --ready-idle-border: transparent;
+  --ready-idle-text: #ffffff;
+  --ready-idle-hover: oklch(50.8% 0.118 165.612);
 
   /* Badge tokens — dark */
   --badge-success-bg: color-mix(in srgb, #10b981 10%, #13131a);
@@ -73,6 +79,12 @@
   --col-pink-light: #fce7f3;
   --col-slate-light: #f1f5f9;
   --action-items-light: #dbeafe;
+
+  /* Ready button, not yet ready — light */
+  --ready-idle-bg: var(--surface-card);
+  --ready-idle-border: var(--border-default);
+  --ready-idle-text: var(--text-secondary);
+  --ready-idle-hover: var(--surface-elevated);
 
   /* Badge tokens — light */
   --badge-success-bg: #d1fae5;
@@ -170,6 +182,18 @@
   --color-warning: #f59e0b;
   --color-info: #3b82f6;
 
+  /* Solid fills and their states (theme-independent) */
+  --color-success-solid: oklch(59.6% 0.145 163.225);
+  --color-success-hover: oklch(50.8% 0.118 165.612);
+  --color-danger-hover: oklch(57.7% 0.245 27.325);
+  --color-danger-active: oklch(50.5% 0.213 27.518);
+
+  /* Ready button, not yet ready — theme-aware aliases */
+  --color-ready-idle: var(--ready-idle-bg);
+  --color-ready-idle-border: var(--ready-idle-border);
+  --color-ready-idle-text: var(--ready-idle-text);
+  --color-ready-idle-hover: var(--ready-idle-hover);
+
   /* Shadows — theme-aware */
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
@@ -183,8 +207,17 @@
 }
 
 body {
-  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    'Inter',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
   background-color: var(--color-background);
 }
 
@@ -193,31 +226,58 @@ body {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
-:root:not(.light) ::-webkit-scrollbar { width: 6px; }
-:root:not(.light) ::-webkit-scrollbar-track { background: transparent; }
+:root:not(.light) ::-webkit-scrollbar {
+  width: 6px;
+}
+:root:not(.light) ::-webkit-scrollbar-track {
+  background: transparent;
+}
 :root:not(.light) ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 @keyframes attention-ring {
-  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
-  50% { box-shadow: 0 0 0 5px transparent; }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
 }
 .animate-attention {
   animation: attention-ring 1.5s ease-in-out infinite;
 }
 
 @keyframes blink-strong {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
 }
 .animate-blink {
   animation: blink-strong 1s ease-in-out infinite;
 }
 
-.card-list-enter-active { transition: all 0.3s ease; }
-.card-list-leave-active { transition: all 0.2s ease; position: absolute; }
-.card-list-enter-from { opacity: 0; transform: translateY(-10px); }
-.card-list-leave-to { opacity: 0; transform: translateX(20px); }
-.card-list-move { transition: transform 0.3s ease; }
+.card-list-enter-active {
+  transition: all 0.3s ease;
+}
+.card-list-leave-active {
+  transition: all 0.2s ease;
+  position: absolute;
+}
+.card-list-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.card-list-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+.card-list-move {
+  transition: transform 0.3s ease;
+}

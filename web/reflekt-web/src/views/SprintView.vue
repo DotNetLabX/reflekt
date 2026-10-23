@@ -14,19 +14,33 @@
       :error-message="errorMessage"
       @start="handleStart"
       @copy-invite="copyInviteLink"
-      @kick="confirmKick"
+      @kick="requestKick"
     />
+
+    <BaseModal :open="!!kickTarget" title="Kick participant" @close="kickTarget = null">
+      <p class="text-sm text-text-secondary">
+        Kick {{ kickTarget?.displayName }}? They'll need a new invite to rejoin.
+      </p>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="kickTarget = null">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="kickConfirmed">Kick</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useSprintStore } from '../stores/sprint'
-import { useParticipantStore } from '../stores/participant'
-import SprintDetailPanel from '../components/sprints/SprintDetailPanel.vue'
-import EmptyState from '../components/ui/EmptyState.vue'
-import BaseButton from '../components/ui/BaseButton.vue'
+import { useSprintStore } from '@/stores/sprint'
+import { useParticipantStore } from '@/stores/participant'
+import SprintDetailPanel from '@/components/sprints/SprintDetailPanel.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
+import type { ParticipantName } from '@/types/participant'
 
 const route = useRoute()
 const sprintStore = useSprintStore()
@@ -47,7 +61,9 @@ const participants = computed(() => participantStore.participants)
 // view's own participants load counts here.
 const participantsRequested = ref(false)
 const loadError = computed(
-  () => sprintStore.currentSprintError ?? (participantsRequested.value ? participantStore.participantsError : null),
+  () =>
+    sprintStore.currentSprintError ??
+    (participantsRequested.value ? participantStore.participantsError : null),
 )
 const loading = computed(() => !loadError.value && !sprint.value)
 
@@ -71,24 +87,44 @@ onUnmounted(() => currentLoad++)
 async function handleStart() {
   errorMessage.value = ''
   busy.value = true
-  try { await sprintStore.startSprint(teamId, sprintId) }
-  catch { errorMessage.value = 'Failed to start sprint.' }
-  finally { busy.value = false }
+  try {
+    await sprintStore.startSprint(teamId, sprintId)
+  } catch {
+    errorMessage.value = 'Failed to start sprint.'
+  } finally {
+    busy.value = false
+  }
 }
 
-async function confirmKick(p: { id: number; displayName: string }) {
-  if (!confirm(`Kick ${p.displayName}? They'll need a new invite to rejoin.`)) return
+const kickTarget = ref<ParticipantName | null>(null)
+
+function requestKick(p: ParticipantName) {
+  kickTarget.value = p
+}
+
+async function kickConfirmed() {
+  const p = kickTarget.value
+  kickTarget.value = null
+  if (!p) return
   errorMessage.value = ''
   busy.value = true
-  try { await participantStore.kickParticipant(sprintId, p.id) }
-  catch { errorMessage.value = 'Failed to kick participant.' }
-  finally { busy.value = false }
+  try {
+    await participantStore.kickParticipant(sprintId, p.id)
+  } catch {
+    errorMessage.value = 'Failed to kick participant.'
+  } finally {
+    busy.value = false
+  }
 }
 
 async function copyInviteLink() {
   const url = `${window.location.origin}/sprint/${sprintId}`
-  try { await navigator.clipboard.writeText(url) }
-  catch { errorMessage.value = 'Failed to copy link. Copy manually: ' + url; return }
+  try {
+    await navigator.clipboard.writeText(url)
+  } catch {
+    errorMessage.value = 'Failed to copy link. Copy manually: ' + url
+    return
+  }
   copied.value = true
   if (copiedTimer) clearTimeout(copiedTimer)
   copiedTimer = setTimeout(() => (copied.value = false), 2000)

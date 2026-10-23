@@ -11,7 +11,7 @@
     <slot v-else-if="empty" name="empty">
       <div class="flex items-center justify-center min-h-screen">
         <slot name="empty-content">
-          <p class="text-text-muted text-sm">Nothing here yet.</p>
+          <EmptyState title="Nothing here yet." />
         </slot>
       </div>
     </slot>
@@ -24,11 +24,16 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{
-  loading?: boolean
-  empty?: boolean
-}>(), {
-  loading: false,
-  empty: false,
-})
+import EmptyState from '@/components/ui/EmptyState.vue'
+
+withDefaults(
+  defineProps<{
+    loading?: boolean
+    empty?: boolean
+  }>(),
+  {
+    loading: false,
+    empty: false,
+  },
+)
 </script>

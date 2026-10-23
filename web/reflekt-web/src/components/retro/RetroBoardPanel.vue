@@ -1,185 +1,108 @@
 <template>
   <div class="flex flex-col gap-5 flex-1 min-h-0">
-    <!-- "I'm done" readiness toggle -->
-    <div v-if="showReadinessButton" class="flex justify-end">
-      <button
-        :class="[
-          'px-3 py-1.5 text-sm font-medium rounded-sm border transition-colors cursor-pointer',
-          isReady
-            ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'
-            : isDark
-              ? 'bg-emerald-600/80 border-transparent text-white hover:bg-emerald-700'
-              : 'bg-surface border-border text-text-secondary hover:bg-surface-raised',
-        ]"
-        @click="$emit('toggle-ready')"
-      >
-        {{ isReady ? "Done!" : "I'm done" }}
-      </button>
-    </div>
+    <RetroReadyButton v-if="showReadiness" :sprint-id="sprintId" />
 
     <!-- Previous actions review panel (Writing phase only) -->
     <PreviousActionsPanel
-      v-if="isWritingPhase && previousActionsStore.items.length > 0"
+      v-if="showPreviousActions"
       :sprint-id="sprintId"
-      :team-id="sprintStore.currentSummary?.teamId ?? 0"
+      :team-id="teamId"
       :is-scrum-master="isScrumMaster"
     />
 
     <RetroMobileTabBar
       v-model="activeTab"
       :show-action-items="showActionItems"
-      :column1-name="column1Name"
-      :column1-color="column1Color"
-      :column2-name="column2Name"
-      :column2-color="column2Color"
-      :column3-name="column3Name"
-      :column3-color="column3Color"
+      :column1-name="noteColumns[0].name"
+      :column1-color="noteColumns[0].color"
+      :column2-name="noteColumns[1].name"
+      :column2-color="noteColumns[1].color"
+      :column3-name="noteColumns[2].name"
+      :column3-color="noteColumns[2].color"
     />
 
     <div :class="boardGridClasses">
-      <!-- Column 1 -->
-      <RetroColumnBody
-        :title="column1Name"
-        :column-color="column1Color"
-        badge-variant="success"
-        :count="showGroups ? column1Groups.length : column1Cards.length"
-        :visible="isColumnVisible('Column1')"
+      <RetroColumnPanel
+        v-for="column in noteColumns"
+        :key="column.type"
+        :column="column.type"
+        :title="column.name"
+        :column-color="column.color"
+        :badge-variant="column.badge"
+        :count="showGroups ? column.groups.length : column.cards.length"
+        :mobile-hidden="activeTab !== column.type"
         :is-scrum-master="isScrumMaster"
-        @drop="onColumnDrop($event, 'Column1')"
-        @update-config="(name, color) => onUpdateColumnConfig(1, name, color)"
       >
         <template #empty>
-          <div v-if="showGroups && column1Groups.length === 0" class="text-text-muted text-sm text-center py-4">No groups yet</div>
-          <div v-else-if="!showGroups && column1Cards.length === 0" class="text-text-muted text-sm text-center py-4">No cards yet</div>
-        </template>
-        <template v-if="showGroups">
-          <RetroGroupItem v-for="group in column1Groups" :key="'g' + group.id" v-bind="groupItemProps(group, column1Color)"
-            @vote="castGroupVote" @retract-vote="retractGroupVote" @dissolve="dissolveGroup"
-            @update-title="updateGroupTitle" @merge="mergeGroups" @remove-card="removeCardFromGroup"
-            @focus="focusGroup" @toggle-discussed="toggleDiscussed" />
-        </template>
-        <template v-else>
-          <RetroCardItem v-for="card in column1Cards" :key="card.id" v-bind="cardItemProps(card, column1Color)"
-            @edit="saveEdit" @delete="requestDelete" @vote="castVote" @retract-vote="retractVote"
-            @attach-evidence-link="attachEvidenceLink" @detach-evidence-link="detachEvidenceLink" />
-        </template>
-        <template #input>
-          <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="flex gap-2">
-            <BaseInput v-model="newCardText.Column1" :maxlength="2000" placeholder="Add a note..." class="flex-1" :disabled="noteSaving.Column1" @keydown.enter="onAddNote('Column1')" />
-            <BaseButton size="sm" variant="primary" :disabled="noteSaving.Column1 || !newCardText.Column1.trim()" @click="onAddNote('Column1')">Add</BaseButton>
+          <div
+            v-if="showGroups && column.groups.length === 0"
+            class="text-text-muted text-sm text-center py-4"
+          >
+            No groups yet
+          </div>
+          <div
+            v-else-if="!showGroups && column.cards.length === 0"
+            class="text-text-muted text-sm text-center py-4"
+          >
+            No cards yet
           </div>
         </template>
-      </RetroColumnBody>
-
-      <!-- Column 2 -->
-      <RetroColumnBody
-        :title="column2Name"
-        :column-color="column2Color"
-        badge-variant="danger"
-        :count="showGroups ? column2Groups.length : column2Cards.length"
-        :visible="isColumnVisible('Column2')"
-        :is-scrum-master="isScrumMaster"
-        @drop="onColumnDrop($event, 'Column2')"
-        @update-config="(name, color) => onUpdateColumnConfig(2, name, color)"
-      >
-        <template #empty>
-          <div v-if="showGroups && column2Groups.length === 0" class="text-text-muted text-sm text-center py-4">No groups yet</div>
-          <div v-else-if="!showGroups && column2Cards.length === 0" class="text-text-muted text-sm text-center py-4">No cards yet</div>
-        </template>
         <template v-if="showGroups">
-          <RetroGroupItem v-for="group in column2Groups" :key="'g' + group.id" v-bind="groupItemProps(group, column2Color)"
-            @vote="castGroupVote" @retract-vote="retractGroupVote" @dissolve="dissolveGroup"
-            @update-title="updateGroupTitle" @merge="mergeGroups" @remove-card="removeCardFromGroup"
-            @focus="focusGroup" @toggle-discussed="toggleDiscussed" />
+          <RetroGroupItem
+            v-for="group in column.groups"
+            :key="'g' + group.id"
+            v-bind="groupItemProps(group, column.color)"
+          />
         </template>
         <template v-else>
-          <RetroCardItem v-for="card in column2Cards" :key="card.id" v-bind="cardItemProps(card, column2Color)"
-            @edit="saveEdit" @delete="requestDelete" @vote="castVote" @retract-vote="retractVote"
-            @attach-evidence-link="attachEvidenceLink" @detach-evidence-link="detachEvidenceLink" />
+          <RetroCardItem
+            v-for="card in column.cards"
+            :key="card.id"
+            v-bind="cardItemProps(card, column.color)"
+          />
         </template>
         <template #input>
-          <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="flex gap-2">
-            <BaseInput v-model="newCardText.Column2" :maxlength="2000" placeholder="Add a note..." class="flex-1" :disabled="noteSaving.Column2" @keydown.enter="onAddNote('Column2')" />
-            <BaseButton size="sm" variant="primary" :disabled="noteSaving.Column2 || !newCardText.Column2.trim()" @click="onAddNote('Column2')">Add</BaseButton>
-          </div>
+          <RetroNoteInput v-if="canCreateNote" :column="column.type" />
         </template>
-      </RetroColumnBody>
-
-      <!-- Column 3 -->
-      <RetroColumnBody
-        :title="column3Name"
-        :column-color="column3Color"
-        badge-variant="primary"
-        :count="showGroups ? column3Groups.length : column3Cards.length"
-        :visible="isColumnVisible('Column3')"
-        :is-scrum-master="isScrumMaster"
-        @drop="onColumnDrop($event, 'Column3')"
-        @update-config="(name, color) => onUpdateColumnConfig(3, name, color)"
-      >
-        <template #empty>
-          <div v-if="showGroups && column3Groups.length === 0" class="text-text-muted text-sm text-center py-4">No groups yet</div>
-          <div v-else-if="!showGroups && column3Cards.length === 0" class="text-text-muted text-sm text-center py-4">No cards yet</div>
-        </template>
-        <template v-if="showGroups">
-          <RetroGroupItem v-for="group in column3Groups" :key="'g' + group.id" v-bind="groupItemProps(group, column3Color)"
-            @vote="castGroupVote" @retract-vote="retractGroupVote" @dissolve="dissolveGroup"
-            @update-title="updateGroupTitle" @merge="mergeGroups" @remove-card="removeCardFromGroup"
-            @focus="focusGroup" @toggle-discussed="toggleDiscussed" />
-        </template>
-        <template v-else>
-          <RetroCardItem v-for="card in column3Cards" :key="card.id" v-bind="cardItemProps(card, column3Color)"
-            @edit="saveEdit" @delete="requestDelete" @vote="castVote" @retract-vote="retractVote"
-            @attach-evidence-link="attachEvidenceLink" @detach-evidence-link="detachEvidenceLink" />
-        </template>
-        <template #input>
-          <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="flex gap-2">
-            <BaseInput v-model="newCardText.Column3" :maxlength="2000" placeholder="Add a note..." class="flex-1" :disabled="noteSaving.Column3" @keydown.enter="onAddNote('Column3')" />
-            <BaseButton size="sm" variant="primary" :disabled="noteSaving.Column3 || !newCardText.Column3.trim()" @click="onAddNote('Column3')">Add</BaseButton>
-          </div>
-        </template>
-      </RetroColumnBody>
+      </RetroColumnPanel>
 
       <!-- Action Items column -->
-      <RetroColumnBody
+      <RetroColumnPanel
         v-if="showActionItems"
+        column="ActionItems"
         title="Action Items"
         column-color="blue"
         badge-variant="info"
         :count="actionItems.length"
-        :visible="isColumnVisible('ActionItems')"
+        :mobile-hidden="activeTab !== 'ActionItems'"
         :is-scrum-master="false"
-        @drop="() => {}"
       >
         <template #empty>
-          <div v-if="actionItems.length === 0" class="text-text-muted text-sm text-center py-4">No action items yet</div>
-        </template>
-        <RetroCardItem v-for="card in actionItems" :key="card.id"
-          :card="card" :can-edit="canMutateCard(card)"
-          :blurred="isWritingPhase && card.participantId !== currentParticipantId"
-          :can-attach-link="policyStore.isAllowed(currentPhase, 'AttachEvidenceLink')"
-          :participants="participants" column-color="blue"
-          @edit="saveEdit" @delete="requestDelete"
-          @attach-evidence-link="attachEvidenceLink" @detach-evidence-link="detachEvidenceLink" />
-        <template #input>
-          <div v-if="policyStore.isAllowed(currentPhase, 'CreateActionItem')" class="flex flex-col gap-2">
-            <BaseInput v-model="newActionText" :maxlength="2000" placeholder="Action item..." :disabled="actionSaving" @keydown.enter="onAddActionItem" />
-            <select v-model="newActionAssignee" class="border border-border rounded-md px-3 py-2 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500">
-              <option value="">Assign to...</option>
-              <option v-for="p in participants" :key="p.id" :value="p.displayName">{{ p.displayName }}</option>
-            </select>
-            <BaseButton size="sm" variant="primary" :disabled="actionSaving || !newActionText.trim() || !newActionAssignee" @click="onAddActionItem">Add</BaseButton>
+          <div v-if="actionItems.length === 0" class="text-text-muted text-sm text-center py-4">
+            No action items yet
           </div>
         </template>
-      </RetroColumnBody>
+        <RetroCardItem
+          v-for="card in actionItems"
+          :key="card.id"
+          v-bind="cardItemProps(card, 'blue')"
+          :participants="participants"
+        />
+        <template #input>
+          <RetroActionItemInput v-if="canCreateActionItem" :participants="participants" />
+        </template>
+      </RetroColumnPanel>
     </div>
 
     <!-- Delete confirmation modal -->
-    <BaseModal :open="!!deleteTarget" title="Delete Card" @close="deleteTarget = null">
-      <p class="text-sm text-text-secondary">Are you sure you want to delete this card? This action cannot be undone.</p>
+    <BaseModal :open="!!deleteTarget" title="Delete Card" @close="cancelDelete">
+      <p class="text-sm text-text-secondary">
+        Are you sure you want to delete this card? This action cannot be undone.
+      </p>
       <template #footer>
         <div class="flex justify-end gap-3">
-          <BaseButton variant="secondary" @click="deleteTarget = null">Cancel</BaseButton>
-          <BaseButton variant="danger" @click="executeDelete">Delete</BaseButton>
+          <BaseButton variant="secondary" @click="cancelDelete">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="confirmDelete">Delete</BaseButton>
         </div>
       </template>
     </BaseModal>
@@ -187,126 +110,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { type Card } from '../../stores/card'
-import { useParticipantStore } from '../../stores/participant'
-import { usePolicyStore } from '../../stores/policy'
-import { useSprintStore } from '../../stores/sprint'
-import { useToast } from '../../composables/useToast'
-import { useTheme } from '../../composables/useTheme'
-import { useRetroBoardActions } from '../../composables/useRetroBoardActions'
+import { ref, watch, provide } from 'vue'
+import type { ColumnType } from '@/types/domain'
+import { useToast } from '@/composables/useToast'
+import { boardActionsKey, useRetroBoardActions } from '@/composables/useRetroBoardActions'
 import RetroCardItem from './RetroCardItem.vue'
 import RetroGroupItem from './RetroGroupItem.vue'
-import RetroColumnBody from './RetroColumnBody.vue'
+import RetroColumnPanel from './RetroColumnPanel.vue'
 import RetroMobileTabBar from './RetroMobileTabBar.vue'
+import RetroNoteInput from './RetroNoteInput.vue'
+import RetroActionItemInput from './RetroActionItemInput.vue'
+import RetroReadyButton from './RetroReadyButton.vue'
 import PreviousActionsPanel from './PreviousActionsPanel.vue'
-import BaseInput from '../ui/BaseInput.vue'
-import BaseButton from '../ui/BaseButton.vue'
-import BaseModal from '../ui/BaseModal.vue'
-import { usePreviousActionsStore } from '../../stores/previousActions'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 
 const props = defineProps<{
   sprintId: number
-  isReady?: boolean
-  showReadinessButton?: boolean
 }>()
 
-defineEmits<{
-  'toggle-ready': []
-}>()
-
-const participantStore = useParticipantStore()
-const policyStore = usePolicyStore()
-const sprintStore = useSprintStore()
-const previousActionsStore = usePreviousActionsStore()
 const { addToast } = useToast()
-const { isDark } = useTheme()
 
-const newCardText = ref({ Column1: '', Column2: '', Column3: '' })
-const newActionText = ref('')
-const newActionAssignee = ref('')
-const noteSaving = ref({ Column1: false, Column2: false, Column3: false })
-const actionSaving = ref(false)
-const deleteTarget = ref<Card | null>(null)
-const activeTab = ref<'Column1' | 'Column2' | 'Column3' | 'ActionItems'>('Column1')
-const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth < 640 : false)
-
-function onResize() { isMobile.value = window.innerWidth < 640 }
-onMounted(() => window.addEventListener('resize', onResize))
-onUnmounted(() => window.removeEventListener('resize', onResize))
+const activeTab = ref<ColumnType>('Column1')
 
 const {
-  participants, column1Cards, column2Cards, column3Cards, actionItems,
-  currentPhase, isWritingPhase, showGroups,
-  column1Groups, column2Groups, column3Groups, showActionItems, boardGridClasses,
-  isScrumMaster, cardItemProps, groupItemProps, canMutateCard,
-  addNote, addActionItem, saveEdit, deleteCard, castVote, retractVote, castGroupVote, retractGroupVote,
-  attachEvidenceLink, detachEvidenceLink,
-  focusGroup, toggleDiscussed, dissolveGroup, updateGroupTitle, mergeGroups, removeCardFromGroup,
-  updateColumnConfig,
+  participants,
+  actionItems,
+  noteColumns,
+  showGroups,
+  isScrumMaster,
+  canCreateNote,
+  canCreateActionItem,
+  showActionItems,
+  showPreviousActions,
+  showReadiness,
+  teamId,
+  boardGridClasses,
+  deleteTarget,
+  cardItemProps,
+  groupItemProps,
+  actions,
+  cancelDelete,
+  confirmDelete,
 } = useRetroBoardActions(props.sprintId, (msg) => addToast(msg, 'error'))
 
-const currentParticipantId = computed(() => participantStore.currentParticipant?.id ?? 0)
+provide(boardActionsKey, actions)
 
-// Column config from sprint summary (reactive)
-const column1Name = computed(() => sprintStore.currentSummary?.column1Name ?? 'Went Well')
-const column1Color = computed(() => sprintStore.currentSummary?.column1Color ?? 'green')
-const column2Name = computed(() => sprintStore.currentSummary?.column2Name ?? "Didn't Go Well")
-const column2Color = computed(() => sprintStore.currentSummary?.column2Color ?? 'red')
-const column3Name = computed(() => sprintStore.currentSummary?.column3Name ?? 'Start Doing')
-const column3Color = computed(() => sprintStore.currentSummary?.column3Color ?? 'amber')
-
-watch(showActionItems, (visible) => { if (!visible && activeTab.value === 'ActionItems') activeTab.value = 'Column1' })
-
-function isColumnVisible(column: string): boolean { return !isMobile.value || activeTab.value === column }
-
-async function onAddNote(column: 'Column1' | 'Column2' | 'Column3') {
-  if (noteSaving.value[column]) return
-  const text = newCardText.value[column].trim()
-  if (!text) return
-  noteSaving.value[column] = true
-  const added = await addNote(column, text)
-  noteSaving.value[column] = false
-  if (added) newCardText.value[column] = ''
-}
-
-async function onAddActionItem() {
-  const text = newActionText.value.trim()
-  const assigneeName = newActionAssignee.value
-  if (actionSaving.value || !text || !assigneeName) return
-  actionSaving.value = true
-  const added = await addActionItem(text, assigneeName)
-  actionSaving.value = false
-  if (added) { newActionText.value = ''; newActionAssignee.value = '' }
-}
-
-function requestDelete(card: Card) { deleteTarget.value = card }
-
-async function executeDelete() {
-  const card = deleteTarget.value
-  if (!card) return
-  deleteTarget.value = null
-  await deleteCard(card)
-}
-
-async function onUpdateColumnConfig(colIndex: 1 | 2 | 3, name: string, color: string) {
-  const c1Name = colIndex === 1 ? name : column1Name.value
-  const c1Color = colIndex === 1 ? color : column1Color.value
-  const c2Name = colIndex === 2 ? name : column2Name.value
-  const c2Color = colIndex === 2 ? color : column2Color.value
-  const c3Name = colIndex === 3 ? name : column3Name.value
-  const c3Color = colIndex === 3 ? color : column3Color.value
-  await updateColumnConfig(c1Name, c1Color, c2Name, c2Color, c3Name, c3Color)
-}
-
-function onColumnDrop(e: DragEvent, column: string) {
-  e.preventDefault()
-  const raw = e.dataTransfer?.getData('application/json')
-  if (!raw) return
-  let payload: { type: string; columnType: string; sourceGroupId?: number; cardId?: number }
-  try { payload = JSON.parse(raw) } catch { return }
-  if (payload.type !== 'card' || payload.columnType !== column) return
-  if (!payload.sourceGroupId || !payload.cardId) return
-  removeCardFromGroup(payload.sourceGroupId, payload.cardId)
-}
+watch(showActionItems, (visible) => {
+  if (!visible && activeTab.value === 'ActionItems') activeTab.value = 'Column1'
+})
 </script>

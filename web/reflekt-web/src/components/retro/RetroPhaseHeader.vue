@@ -5,61 +5,53 @@
       <h1 class="text-xl font-bold text-text-primary truncate">{{ sprintName }}</h1>
       <div class="flex items-center gap-2 flex-shrink-0">
         <!-- Timer display (Writing/Voting/Discussing phases only) -->
-        <TimerDisplay
-          v-if="isTimedPhase"
-          :sprint-id="sprintId"
-          :is-scrum-master="isScrumMaster"
-          :current-phase="currentPhase"
-          :writing-timer-default="writingTimerDefault"
-          :voting-timer-default="votingTimerDefault"
-          :discussing-timer-default="discussingTimerDefault"
-        />
+        <TimerDisplay v-if="isTimedPhase" :sprint-id="sprintId" />
 
         <!-- Readiness badge (Writing/Voting, >1 participant) -->
-        <div
+        <BaseTooltip
           v-if="showReadiness"
-          class="relative"
-          @mouseenter="showReadinessTooltip = true"
-          @mouseleave="showReadinessTooltip = false"
+          variant="panel"
+          panel-class="right-0 top-full mt-1 w-48"
+          :disabled="!readinessTooltip"
         >
-          <BaseBadge :variant="allDone ? 'success' : 'default'" :class="{ 'animate-attention': allDone }">{{ readyCount }}/{{ totalCount }} done</BaseBadge>
-          <!-- SM tooltip listing ready/not-ready names -->
-          <div
-            v-if="isScrumMaster && showReadinessTooltip && totalCount > 0"
-            class="absolute right-0 top-full mt-1 z-20 w-48 bg-surface-raised text-text-primary border border-border text-xs rounded-sm p-2 shadow-lg"
-          >
+          <template #default="{ describedby }">
+            <span
+              class="inline-flex rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              :tabindex="readinessTooltip ? 0 : undefined"
+              :aria-describedby="describedby"
+            >
+              <BaseBadge
+                :variant="allDone ? 'success' : 'default'"
+                :class="{ 'animate-attention': allDone }"
+                >{{ readyCount }}/{{ totalCount }} done</BaseBadge
+              >
+            </span>
+          </template>
+          <template #content>
             <div v-if="readyParticipants.length > 0" class="mb-1">
-              <p class="font-semibold text-badge-success-text">Done ({{ readyParticipants.length }})</p>
+              <p class="font-semibold text-badge-success-text">
+                Done ({{ readyParticipants.length }})
+              </p>
               <p v-for="name in readyParticipants" :key="name" class="truncate">{{ name }}</p>
             </div>
             <div v-if="notReadyParticipants.length > 0">
-              <p class="font-semibold text-text-secondary">Not done ({{ notReadyParticipants.length }})</p>
+              <p class="font-semibold text-text-secondary">
+                Not done ({{ notReadyParticipants.length }})
+              </p>
               <p v-for="name in notReadyParticipants" :key="name" class="truncate">{{ name }}</p>
             </div>
-          </div>
-        </div>
+          </template>
+        </BaseTooltip>
 
         <!-- Votes remaining badge (Voting phase only) -->
         <BaseBadge v-if="showVotesBadge" variant="info">
-          Votes: {{ remainingBudget }}/{{ votesPerParticipant }}
+          Votes: {{ voteStore.remainingBudget }}/{{ voteStore.votesPerParticipant }}
         </BaseBadge>
 
         <!-- SM controls -->
         <template v-if="isScrumMaster && !isClosed">
-          <button
-            v-if="!isReportingPhase"
-            class="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-sm transition-colors cursor-pointer"
-            @click="$emit('advance-phase')"
-          >
-            Next: {{ nextPhaseName }}
-          </button>
-          <button
-            v-else
-            class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-sm transition-colors cursor-pointer"
-            @click="$emit('close-sprint')"
-          >
-            Close Sprint
-          </button>
+          <AdvancePhaseDialog v-if="!isReporting" :sprint-id="sprintId" />
+          <CloseSprintDialog v-else :sprint-id="sprintId" />
         </template>
       </div>
     </div>
@@ -68,53 +60,44 @@
     <PhaseIndicator :current-phase="currentPhase" />
 
     <!-- Row 3: Participant list -->
-    <RetroParticipantList :participants="participants" />
+    <RetroParticipantList :participants="participantStore.participants" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import BaseBadge from '../ui/BaseBadge.vue'
-import PhaseIndicator from '../PhaseIndicator.vue'
+import { computed } from 'vue'
+import { useParticipantStore } from '@/stores/participant'
+import { useSprintStore } from '@/stores/sprint'
+import { useVoteStore } from '@/stores/vote'
+import { useReadiness } from '@/composables/useReadiness'
+import { useRetroPhase } from '@/composables/useRetroPhase'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseTooltip from '@/components/ui/BaseTooltip.vue'
+import AdvancePhaseDialog from './AdvancePhaseDialog.vue'
+import CloseSprintDialog from './CloseSprintDialog.vue'
+import PhaseIndicator from './PhaseIndicator.vue'
 import RetroParticipantList from './RetroParticipantList.vue'
 import TimerDisplay from './TimerDisplay.vue'
 
 const props = defineProps<{
   sprintId: number
-  sprintName: string
-  currentPhase: string
-  isScrumMaster: boolean
-  nextPhaseName: string
-  isReportingPhase: boolean
-  isClosed: boolean
-  participants: { id: number; displayName: string }[]
-  readyCount: number
-  totalCount: number
-  readyParticipants: string[]
-  notReadyParticipants: string[]
-  isCurrentParticipantReady: boolean
-  showReadiness: boolean
-  remainingBudget: number
-  votesPerParticipant: number
-  showVotesBadge: boolean
-  writingTimerDefault: number
-  votingTimerDefault: number
-  discussingTimerDefault: number
 }>()
 
-defineEmits<{
-  'advance-phase': []
-  'close-sprint': []
-  'toggle-ready': []
-}>()
+const participantStore = useParticipantStore()
+const sprintStore = useSprintStore()
+const voteStore = useVoteStore()
+const {
+  currentPhase,
+  isTimedPhase,
+  isReporting,
+  isClosed,
+  isScrumMaster,
+  showReadiness,
+  showVotesBadge,
+} = useRetroPhase()
+const { readyCount, totalCount, readyParticipants, notReadyParticipants } = useReadiness()
 
-const showReadinessTooltip = ref(false)
-
-const isTimedPhase = computed(() =>
-  props.currentPhase === 'Writing' ||
-  props.currentPhase === 'Voting' ||
-  props.currentPhase === 'Discussing',
-)
-
-const allDone = computed(() => props.totalCount > 0 && props.readyCount >= props.totalCount)
+const sprintName = computed(() => sprintStore.currentSummary?.name || `Sprint #${props.sprintId}`)
+const readinessTooltip = computed(() => isScrumMaster.value && totalCount.value > 0)
+const allDone = computed(() => totalCount.value > 0 && readyCount.value >= totalCount.value)
 </script>
