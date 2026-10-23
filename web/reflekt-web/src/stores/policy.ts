@@ -1,45 +1,39 @@
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { isHttpError } from '@/api/client'
+import { policyApi } from '@/api/policy'
 
-interface PhaseActionsEntry {
-  phase: string
-  actions: string[]
-}
+export const usePolicyStore = defineStore('policy', () => {
+  const matrix = ref<Record<string, string[]>>({})
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
-let matrixRequest = 0
+  let matrixRequest = 0
 
-export const usePolicyStore = defineStore('policy', {
-  state: () => ({
-    matrix: {} as Record<string, string[]>,
-    loading: false,
-    error: null as string | null,
-  }),
-  actions: {
-    async fetch() {
-      const request = ++matrixRequest
-      this.matrix = {}
-      this.error = null
-      this.loading = true
-      try {
-        const res = await fetch('/api/phase-actions')
-        if (!res.ok) {
-          if (request === matrixRequest) this.error = 'Failed to load the retro rules'
-          return
-        }
-        const entries = (await res.json()) as PhaseActionsEntry[]
-        const matrix: Record<string, string[]> = {}
-        for (const entry of entries) {
-          matrix[entry.phase] = entry.actions
-        }
-        if (request === matrixRequest) this.matrix = matrix
-      } catch {
-        if (request === matrixRequest) this.error = "Can't reach the server"
-      } finally {
-        if (request === matrixRequest) this.loading = false
+  async function load() {
+    const request = ++matrixRequest
+    matrix.value = {}
+    error.value = null
+    loading.value = true
+    try {
+      const entries = await policyApi.phaseActions()
+      const next: Record<string, string[]> = {}
+      for (const entry of entries) {
+        next[entry.phase] = entry.actions
       }
-    },
-  },
-  getters: {
-    isAllowed: (state) => (phase: string, action: string) =>
-      state.matrix[phase]?.includes(action) ?? false,
-  },
+      if (request === matrixRequest) matrix.value = next
+    } catch (e) {
+      if (request === matrixRequest) {
+        error.value = isHttpError(e) ? 'Failed to load the retro rules' : "Can't reach the server"
+      }
+    } finally {
+      if (request === matrixRequest) loading.value = false
+    }
+  }
+
+  function isAllowed(phase: string, action: string): boolean {
+    return matrix.value[phase]?.includes(action) ?? false
+  }
+
+  return { matrix, loading, error, load, isAllowed }
 })

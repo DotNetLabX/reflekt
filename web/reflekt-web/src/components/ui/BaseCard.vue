@@ -13,21 +13,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
 
-const props = withDefaults(defineProps<{
-  padding?: 'none' | 'sm' | 'md' | 'lg';
-  hoverable?: boolean;
-}>(), {
-  padding: 'md',
-  hoverable: false,
-});
+const props = withDefaults(
+  defineProps<{
+    padding?: 'none' | 'sm' | 'md' | 'lg'
+    hoverable?: boolean
+    radius?: 'sm' | 'md' | 'lg'
+  }>(),
+  {
+    padding: 'md',
+    hoverable: false,
+    radius: 'md',
+  },
+)
 
 const cardClasses = computed(() => {
-  const base = 'bg-surface border border-border rounded-md shadow-card';
-  const hover = props.hoverable ? 'transition-all hover:shadow-card-hover hover:-translate-y-0.5' : '';
-  return [base, hover];
-});
+  const base = 'bg-surface border border-border shadow-card'
+  const radii = { sm: 'rounded-sm', md: 'rounded-md', lg: 'rounded-lg' }
+  const hover = props.hoverable
+    ? 'transition-all hover:shadow-card-hover hover:-translate-y-0.5'
+    : ''
+  return [base, radii[props.radius], hover]
+})
 
 const bodyPadding = computed(() => {
   const paddings = {
@@ -35,7 +43,7 @@ const bodyPadding = computed(() => {
     sm: 'p-3',
     md: 'p-4',
     lg: 'p-6',
-  };
-  return paddings[props.padding];
-});
+  }
+  return paddings[props.padding]
+})
 </script>

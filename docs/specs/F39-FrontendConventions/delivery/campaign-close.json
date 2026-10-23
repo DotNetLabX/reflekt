@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "suite": { "result": "pass", "record": "docs/specs/F39-FrontendConventions/delivery/summary.md" },
+  "doneCheck": "PASS",
+  "review": { "verdict": "COMMENT", "highestFixed": "HIGH" },
+  "headline": "The Vue SPA now follows the frontend conventions: one API layer, setup stores, optimistic actions in the stores, split retro surfaces, one report component, design tokens, Base* components and accessibility attributes — with no new product behaviour.",
+  "presumed": [
+    { "id": "C1", "story": null, "what": "Reverted four unlisted visible changes (warning reset, frame radii, info-icon navigation, timer hit area) to today's behaviour.", "confidence": "high", "why": "The spec's visible-change list is exhaustive and the owner's rule forbids new product behaviour.", "where": "docs/specs/F39-FrontendConventions/delivery/review.md" },
+    { "id": "C2", "story": null, "what": "Kept useTimerActions' toasts inside the composable, as the plan asked, against the frontend-review checklist.", "confidence": "medium", "why": "Plan-mandated; changing it would deviate from the approved plan for a LOW finding.", "where": "docs/specs/F39-FrontendConventions/delivery/implementation.md" },
+    { "id": "C3", "story": null, "what": "Closed the cycle-2 vote fix on the developer's report with no further re-review.", "confidence": "medium", "why": "A MEDIUM-only round makes no follow-up due; the full suite passed after it.", "where": "docs/specs/F39-FrontendConventions/delivery/summary.md" }
+  ],
+  "deferredRows": { "count": 2, "where": "docs/specs/F39-FrontendConventions/delivery/change-notes.md" },
+  "retirements": { "count": 4, "where": "docs/specs/F39-FrontendConventions/delivery/implementation.md" },
+  "pluginFindings": [
+    { "finding": "The complete role's npm ci removes --no-save lint packages, so every later reader and fixer found lint unavailable.", "where": "docs/specs/F39-FrontendConventions/delivery/lessons.md" },
+    { "finding": "A developer subagent ran git rm --cached despite the no-git-writes pin.", "where": "docs/specs/F39-FrontendConventions/delivery/communication-log.md" }
+  ]
+}

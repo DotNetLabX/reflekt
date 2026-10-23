@@ -1,241 +1,183 @@
 import { defineStore } from 'pinia'
-
-interface Sprint {
-  id: number
-  teamId: number
-  name: string
-  state: string
-  currentPhase: string
-  votesPerParticipant: number
-  createdAt: string
-  closedAt: string | null
-  column1Name: string
-  column1Color: string
-  column2Name: string
-  column2Color: string
-  column3Name: string
-  column3Color: string
-  writingTimerDefault: number
-  votingTimerDefault: number
-  discussingTimerDefault: number
-}
-
-interface SprintSummary {
-  id: number
-  teamId: number
-  name: string
-  state: string
-  currentPhase: string
-  votesPerParticipant: number
-  isScrumMaster: boolean
-  participants: { displayName: string }[]
-  column1Name: string
-  column1Color: string
-  column2Name: string
-  column2Color: string
-  column3Name: string
-  column3Color: string
-  writingTimerDefault: number
-  votingTimerDefault: number
-  discussingTimerDefault: number
-}
-
-export interface AdvancePhaseCheckResponse {
-  currentPhase: string
-  nonVotingParticipantCount?: number
-  totalParticipantCount?: number
-  discussedGroupCount?: number
-  focusedGroupId?: number | null
-  unreviewedActionCount?: number
-  totalPreviousActionCount?: number
-}
-
-interface ColumnConfigPayload {
-  column1Name: string
-  column1Color: string
-  column2Name: string
-  column2Color: string
-  column3Name: string
-  column3Color: string
-}
-
-interface CreateSprintPayload {
-  name: string
-  votesPerParticipant?: number
-  column1Name?: string
-  column1Color?: string
-  column2Name?: string
-  column2Color?: string
-  column3Name?: string
-  column3Color?: string
-  writingTimerDefault?: number
-  votingTimerDefault?: number
-  discussingTimerDefault?: number
-}
+import { ref } from 'vue'
+import { describeApiError, isHttpError } from '@/api/client'
+import { sprintsApi } from '@/api/sprints'
+import { useCardStore } from './card'
+import { useCardGroupStore } from './cardGroup'
+import type { SprintPhase } from '@/types/domain'
+import type {
+  AdvancePhaseCheckResponse,
+  ColumnConfig,
+  ColumnConfigPayload,
+  ColumnConfigUpdatedPayload,
+  CreateSprintPayload,
+  Sprint,
+  SprintSummary,
+} from '@/types/sprint'
 
 const SERVER_UNREACHABLE = "Can't reach the server"
 
-let sprintsRequest = 0
-let currentSprintRequest = 0
-let currentSummaryRequest = 0
+function sprintLoadError(e: unknown): string {
+  if (!isHttpError(e)) return SERVER_UNREACHABLE
+  return describeApiError(e, {
+    statusMessages: { 404: 'Sprint not found' },
+    fallback: 'Failed to load sprint',
+  })
+}
 
-export const useSprintStore = defineStore('sprint', {
-  state: () => ({
-    sprints: [] as Sprint[],
-    currentSprint: null as Sprint | null,
-    currentSummary: null as SprintSummary | null,
-    loaded: false,
-    sprintsLoading: false,
-    sprintsError: null as string | null,
-    currentSprintLoading: false,
-    currentSprintError: null as string | null,
-    currentSummaryLoading: false,
-    currentSummaryError: null as string | null,
-  }),
-  actions: {
-    async fetchTeamSprints(teamId: number) {
-      const request = ++sprintsRequest
-      this.sprints = []
-      this.sprintsError = null
-      this.sprintsLoading = true
-      try {
-        const res = await fetch(`/api/teams/${teamId}/sprints`, { credentials: 'include' })
-        if (!res.ok) {
-          if (request === sprintsRequest) this.sprintsError = 'Failed to load sprints'
-          return
-        }
-        const sprints = (await res.json()) as Sprint[]
-        if (request === sprintsRequest) this.sprints = sprints
-      } catch {
-        if (request === sprintsRequest) this.sprintsError = SERVER_UNREACHABLE
-      } finally {
-        if (request === sprintsRequest) {
-          this.sprintsLoading = false
-          this.loaded = true
-        }
+export const useSprintStore = defineStore('sprint', () => {
+  const cardStore = useCardStore()
+  const cardGroupStore = useCardGroupStore()
+
+  const sprints = ref<Sprint[]>([])
+  const currentSprint = ref<Sprint | null>(null)
+  const currentSummary = ref<SprintSummary | null>(null)
+  const loaded = ref(false)
+  const sprintsLoading = ref(false)
+  const sprintsError = ref<string | null>(null)
+  const currentSprintLoading = ref(false)
+  const currentSprintError = ref<string | null>(null)
+  const currentSummaryLoading = ref(false)
+  const currentSummaryError = ref<string | null>(null)
+
+  let sprintsRequest = 0
+  let currentSprintRequest = 0
+  let currentSummaryRequest = 0
+
+  async function fetchTeamSprints(teamId: number) {
+    const request = ++sprintsRequest
+    sprints.value = []
+    sprintsError.value = null
+    sprintsLoading.value = true
+    try {
+      const result = await sprintsApi.listForTeam(teamId)
+      if (request === sprintsRequest) sprints.value = result
+    } catch (e) {
+      if (request === sprintsRequest) {
+        sprintsError.value = isHttpError(e) ? 'Failed to load sprints' : SERVER_UNREACHABLE
       }
-    },
-    async fetchSprint(teamId: number, sprintId: number) {
-      const request = ++currentSprintRequest
-      this.currentSprint = null
-      this.currentSprintError = null
-      this.currentSprintLoading = true
-      try {
-        const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}`, { credentials: 'include' })
-        if (!res.ok) {
-          if (request === currentSprintRequest) {
-            this.currentSprintError = res.status === 404 ? 'Sprint not found' : 'Failed to load sprint'
-          }
-          return
-        }
-        const sprint = (await res.json()) as Sprint
-        if (request === currentSprintRequest) this.currentSprint = sprint
-      } catch {
-        if (request === currentSprintRequest) this.currentSprintError = SERVER_UNREACHABLE
-      } finally {
-        if (request === currentSprintRequest) this.currentSprintLoading = false
+    } finally {
+      if (request === sprintsRequest) {
+        sprintsLoading.value = false
+        loaded.value = true
       }
-    },
-    async fetchSprintSummary(sprintId: number) {
-      const request = ++currentSummaryRequest
-      this.currentSummary = null
-      this.currentSummaryError = null
-      this.currentSummaryLoading = true
-      try {
-        const res = await fetch(`/api/sprints/${sprintId}/summary`)
-        if (!res.ok) {
-          if (request === currentSummaryRequest) {
-            this.currentSummaryError = res.status === 404 ? 'Sprint not found' : 'Failed to load sprint'
-          }
-          return
-        }
-        const summary = (await res.json()) as SprintSummary
-        if (request === currentSummaryRequest) this.currentSummary = summary
-      } catch {
-        if (request === currentSummaryRequest) this.currentSummaryError = SERVER_UNREACHABLE
-      } finally {
-        if (request === currentSummaryRequest) this.currentSummaryLoading = false
-      }
-    },
-    async createSprint(teamId: number, payload: CreateSprintPayload): Promise<Sprint> {
-      const res = await fetch(`/api/teams/${teamId}/sprints`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) throw await res.json().catch(() => ({}))
-      const sprint = (await res.json()) as Sprint
-      this.sprints.unshift(sprint)
-      return sprint
-    },
-    async updateColumns(sprintId: number, payload: ColumnConfigPayload): Promise<Sprint> {
-      const res = await fetch(`/api/sprints/${sprintId}/columns`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) throw await res.json().catch(() => ({}))
-      const sprint = (await res.json()) as Sprint
-      this._replaceSprint(sprint)
-      if (this.currentSummary?.id === sprint.id) {
-        this.currentSummary.column1Name = sprint.column1Name
-        this.currentSummary.column1Color = sprint.column1Color
-        this.currentSummary.column2Name = sprint.column2Name
-        this.currentSummary.column2Color = sprint.column2Color
-        this.currentSummary.column3Name = sprint.column3Name
-        this.currentSummary.column3Color = sprint.column3Color
-      }
-      return sprint
-    },
-    async startSprint(teamId: number, sprintId: number) {
-      const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}/start`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      })
-      if (!res.ok) throw await res.json().catch(() => ({}))
-      const sprint = (await res.json()) as Sprint
-      this._replaceSprint(sprint)
-    },
-    async advancePhaseCheck(teamId: number, sprintId: number): Promise<AdvancePhaseCheckResponse> {
-      const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}/advance-phase/check`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      })
-      if (!res.ok) throw await res.json().catch(() => ({}))
-      return (await res.json()) as AdvancePhaseCheckResponse
-    },
-    async advancePhase(teamId: number, sprintId: number) {
-      const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}/advance-phase`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      })
-      if (!res.ok) throw await res.json().catch(() => ({}))
-      const sprint = (await res.json()) as Sprint
-      this._replaceSprint(sprint)
-    },
-    async closeSprint(teamId: number, sprintId: number) {
-      const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}/close`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      })
-      if (!res.ok) throw await res.json().catch(() => ({}))
-      const sprint = (await res.json()) as Sprint
-      this._replaceSprint(sprint)
-    },
-    _replaceSprint(sprint: Sprint) {
-      const idx = this.sprints.findIndex((s) => s.id === sprint.id)
-      if (idx !== -1) this.sprints[idx] = sprint
-      if (this.currentSprint?.id === sprint.id) this.currentSprint = sprint
-    },
-  },
+    }
+  }
+
+  async function fetchSprint(teamId: number, sprintId: number) {
+    const request = ++currentSprintRequest
+    currentSprint.value = null
+    currentSprintError.value = null
+    currentSprintLoading.value = true
+    try {
+      const sprint = await sprintsApi.get(teamId, sprintId)
+      if (request === currentSprintRequest) currentSprint.value = sprint
+    } catch (e) {
+      if (request === currentSprintRequest) currentSprintError.value = sprintLoadError(e)
+    } finally {
+      if (request === currentSprintRequest) currentSprintLoading.value = false
+    }
+  }
+
+  async function fetchSprintSummary(sprintId: number) {
+    const request = ++currentSummaryRequest
+    currentSummary.value = null
+    currentSummaryError.value = null
+    currentSummaryLoading.value = true
+    try {
+      const summary = await sprintsApi.summary(sprintId)
+      if (request === currentSummaryRequest) currentSummary.value = summary
+    } catch (e) {
+      if (request === currentSummaryRequest) currentSummaryError.value = sprintLoadError(e)
+    } finally {
+      if (request === currentSummaryRequest) currentSummaryLoading.value = false
+    }
+  }
+
+  async function createSprint(teamId: number, payload: CreateSprintPayload): Promise<Sprint> {
+    const sprint = await sprintsApi.create(teamId, payload)
+    sprints.value.unshift(sprint)
+    return sprint
+  }
+
+  async function updateColumns(sprintId: number, payload: ColumnConfigPayload): Promise<Sprint> {
+    const sprint = await sprintsApi.updateColumns(sprintId, payload)
+    replaceSprint(sprint)
+    setSummaryColumns(sprint.id, sprint)
+    return sprint
+  }
+
+  async function startSprint(teamId: number, sprintId: number) {
+    replaceSprint(await sprintsApi.start(teamId, sprintId))
+  }
+
+  function advancePhaseCheck(teamId: number, sprintId: number): Promise<AdvancePhaseCheckResponse> {
+    return sprintsApi.advanceCheck(teamId, sprintId)
+  }
+
+  async function advancePhase(teamId: number, sprintId: number) {
+    replaceSprint(await sprintsApi.advance(teamId, sprintId))
+  }
+
+  async function closeSprint(teamId: number, sprintId: number) {
+    replaceSprint(await sprintsApi.close(teamId, sprintId))
+  }
+
+  function setSummaryColumns(sprintId: number, columns: ColumnConfig) {
+    const summary = currentSummary.value
+    if (summary?.id !== sprintId) return
+    summary.column1Name = columns.column1Name
+    summary.column1Color = columns.column1Color
+    summary.column2Name = columns.column2Name
+    summary.column2Color = columns.column2Color
+    summary.column3Name = columns.column3Name
+    summary.column3Color = columns.column3Color
+  }
+
+  function applyColumnConfig(payload: ColumnConfigUpdatedPayload): void {
+    setSummaryColumns(payload.sprintId, payload)
+  }
+
+  function applyPhaseChanged(sprintId: number, phase: SprintPhase): void {
+    if (currentSummary.value) currentSummary.value.currentPhase = phase
+    if (phase !== 'Writing') {
+      cardStore.fetchCards(sprintId, { background: true })
+      cardGroupStore.fetchGroups(sprintId, { background: true })
+    }
+  }
+
+  function applySprintClosed(): void {
+    if (currentSummary.value) currentSummary.value.state = 'Closed'
+  }
+
+  function replaceSprint(sprint: Sprint) {
+    const idx = sprints.value.findIndex((s) => s.id === sprint.id)
+    if (idx !== -1) sprints.value[idx] = sprint
+    if (currentSprint.value?.id === sprint.id) currentSprint.value = sprint
+  }
+
+  return {
+    sprints,
+    currentSprint,
+    currentSummary,
+    loaded,
+    sprintsLoading,
+    sprintsError,
+    currentSprintLoading,
+    currentSprintError,
+    currentSummaryLoading,
+    currentSummaryError,
+    fetchTeamSprints,
+    fetchSprint,
+    fetchSprintSummary,
+    createSprint,
+    updateColumns,
+    startSprint,
+    advancePhaseCheck,
+    advancePhase,
+    closeSprint,
+    applyColumnConfig,
+    applyPhaseChanged,
+    applySprintClosed,
+  }
 })

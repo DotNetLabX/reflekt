@@ -1,26 +1,23 @@
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { readString, removeKey, STORAGE_KEYS, writeString } from '@/storage/storage'
 
-// localStorage key format locked at Foundation: reflekt:sprint:{sprintId}:token
-export const guestTokenKey = (sprintId: number) => `reflekt:sprint:${sprintId}:token`
+export const useGuestStore = defineStore('guest', () => {
+  const token = ref<string | null>(null)
 
-export const useGuestStore = defineStore('guest', {
-  state: () => ({
-    token: null as string | null,
-    displayName: null as string | null,
-  }),
-  actions: {
-    loadToken(sprintId: number) {
-      this.token = localStorage.getItem(guestTokenKey(sprintId))
-    },
-    saveToken(sprintId: number, token: string, displayName: string) {
-      localStorage.setItem(guestTokenKey(sprintId), token)
-      this.token = token
-      this.displayName = displayName
-    },
-    clearToken(sprintId: number) {
-      localStorage.removeItem(guestTokenKey(sprintId))
-      this.token = null
-      this.displayName = null
-    },
-  },
+  function loadToken(sprintId: number) {
+    token.value = readString(STORAGE_KEYS.guestToken(sprintId))
+  }
+
+  function saveToken(sprintId: number, newToken: string) {
+    writeString(STORAGE_KEYS.guestToken(sprintId), newToken)
+    token.value = newToken
+  }
+
+  function clearToken(sprintId: number) {
+    removeKey(STORAGE_KEYS.guestToken(sprintId))
+    token.value = null
+  }
+
+  return { token, loadToken, saveToken, clearToken }
 })

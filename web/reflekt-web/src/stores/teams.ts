@@ -1,78 +1,65 @@
-import { defineStore } from 'pinia';
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
+import { isHttpError } from '@/api/client'
+import { teamsApi } from '@/api/teams'
+import type { TeamSummary } from '@/types/team'
 
-export interface TeamSummary {
-  id: number;
-  name: string;
-  createdAt: string;
-  sprintCount: number;
-  lastSprintDate: string | null;
-  hasActiveSprint: boolean;
-}
+export const useTeamsStore = defineStore('teams', () => {
+  const teams = ref<TeamSummary[]>([])
+  const loaded = ref(false)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
-let teamsRequest = 0;
+  const hasTeams = computed(() => teams.value.length > 0)
+  const isAtLimit = computed(() => teams.value.length >= 10)
 
-export const useTeamsStore = defineStore('teams', {
-  state: () => ({
-    teams: [] as TeamSummary[],
-    loaded: false,
-    loading: false,
-    error: null as string | null,
-  }),
-  getters: {
-    hasTeams: (s) => s.teams.length > 0,
-    isAtLimit: (s) => s.teams.length >= 10,
-    teamById: (s) => (id: number) => s.teams.find((t) => t.id === id) ?? null,
-  },
-  actions: {
-    async fetchMyTeams() {
-      const request = ++teamsRequest;
-      this.teams = [];
-      this.error = null;
-      this.loading = true;
-      try {
-        const res = await fetch('/api/teams', { credentials: 'include' });
-        if (!res.ok) {
-          if (request === teamsRequest) this.error = 'Failed to load teams';
-          return;
-        }
-        const teams = (await res.json()) as TeamSummary[];
-        if (request === teamsRequest) this.teams = teams;
-      } catch {
-        if (request === teamsRequest) this.error = "Can't reach the server";
-      } finally {
-        if (request === teamsRequest) {
-          this.loading = false;
-          this.loaded = true;
-        }
+  function teamById(id: number): TeamSummary | null {
+    return teams.value.find((t) => t.id === id) ?? null
+  }
+
+  let teamsRequest = 0
+
+  async function fetchMyTeams() {
+    const request = ++teamsRequest
+    teams.value = []
+    error.value = null
+    loading.value = true
+    try {
+      const result = await teamsApi.list()
+      if (request === teamsRequest) teams.value = result
+    } catch (e) {
+      if (request === teamsRequest) {
+        error.value = isHttpError(e) ? 'Failed to load teams' : "Can't reach the server"
       }
-    },
-    async createTeam(name: string): Promise<TeamSummary> {
-      const res = await fetch('/api/teams', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw err;
+    } finally {
+      if (request === teamsRequest) {
+        loading.value = false
+        loaded.value = true
       }
-      const team = (await res.json()) as TeamSummary;
-      this.teams.push(team);
-      return team;
-    },
-    async deleteTeam(teamId: number, confirmationName: string): Promise<void> {
-      const res = await fetch(`/api/teams/${teamId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirmationName }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw err;
-      }
-      this.teams = this.teams.filter((t) => t.id !== teamId);
-    },
-  },
-});
+    }
+  }
+
+  async function createTeam(name: string): Promise<TeamSummary> {
+    const team = await teamsApi.create(name)
+    teams.value.push(team)
+    return team
+  }
+
+  async function deleteTeam(teamId: number, confirmationName: string): Promise<void> {
+    await teamsApi.remove(teamId, confirmationName)
+    teams.value = teams.value.filter((t) => t.id !== teamId)
+  }
+
+  return {
+    teams,
+    loaded,
+    loading,
+    error,
+    hasTeams,
+    isAtLimit,
+    teamById,
+    fetchMyTeams,
+    createTeam,
+    deleteTeam,
+  }
+})

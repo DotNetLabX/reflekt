@@ -3,11 +3,7 @@
     <div class="flex flex-col gap-2">
       <h2 class="text-xs font-semibold text-text-muted uppercase tracking-wide">Participants</h2>
       <div class="flex flex-wrap gap-2">
-        <BaseBadge
-          v-for="p in participants"
-          :key="p.id"
-          variant="primary"
-        >
+        <BaseBadge v-for="p in participants" :key="p.id" variant="primary">
           {{ p.displayName }}
         </BaseBadge>
       </div>
@@ -16,10 +12,11 @@
 </template>
 
 <script setup lang="ts">
-import BaseCard from '../ui/BaseCard.vue'
-import BaseBadge from '../ui/BaseBadge.vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import type { ParticipantName } from '@/types/participant'
 
 defineProps<{
-  participants: { id: number; displayName: string }[]
+  participants: ParticipantName[]
 }>()
 </script>

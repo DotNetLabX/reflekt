@@ -84,3 +84,23 @@ Option 1 — delete the unused `clearFocus` action and its API function. Keep th
 ### Answer
 **Answered by:** campaign PO (PO-3), relayed by the campaign coordinator — not the owner; owner to rule: no. 2026-10-23.
 Option 1 — keep it. It follows from the spec and is not an addition: Scope row 3 requires the temporary card, and "What must not change" keeps edit/delete only on the caller's own cards within the server's rules — a pending card is not yet a card the server knows. Record plan Decisions row 9 as derived from Scope row 3 + What must not change (not `Adds:`). AC9's optimistic walkthrough notes that the pending card has no edit/delete and gains them on save.
+
+## Q5: Link control on a pending card
+**From:** developer via team-lead
+**To:** architect
+**Status:** Answered
+**Step:** Step 8 — Optimistic actions in the stores
+**File:** `web/reflekt-web/src/composables/useRetroBoardActions.ts` (`cardItemProps`)
+
+**Context:** Step 8 hides edit and delete on a pending (unsaved) card, as Q4 (PO-3) ruled. The "add link" control still shows on a pending note, because `cardItemProps` sets `canAttachLink` from the phase policy alone; using it before the save fails with "Failed to attach link." The plan names only edit and delete.
+
+**Question:** Should the pending card hide the link control too, or leave it?
+
+**Recommendation:**
+1. (Recommended) Hide it — `canAttachLink` is false while the card is pending, and the control appears when the server's card replaces it, as edit and delete do.
+2. Leave it — the control shows and fails with an error toast if used before the save.
+**Confidence:** high — PO-3's ruling covers it: a pending card is not yet a card the server knows, so any control that acts on its id can only fail.
+
+### Answer
+**Answered by:** architect, 2026-10-23 — a technical ruling applying PO-3, not a new product question; not the owner.
+Option 1, hide it. This adds no new rule: PO-3 ruled that a pending card shows no control that can only fail, because its negative id is not one the server knows. That reasoning names edit and delete, but it covers the attach-link control in the same way. Saved cards keep exactly today's link permission (the phase policy), so no role gains or loses anything. The change is one clause in `cardItemProps`: `canAttachLink` is false for a pending card (`cardStore.isPendingCard`), checked before the policy. The grouped view already falls back to `canEdit`, which is false for a pending card. Plan Step 8 is amended with a one-line note, and the Step 15 walkthrough's pending-card item covers the link control too. Plan Decision 9 (left as written) is read by this answer as covering the link control too.

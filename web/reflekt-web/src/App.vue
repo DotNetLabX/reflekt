@@ -13,16 +13,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import AppHeader from './components/AppHeader.vue';
-import ToastContainer from './components/ui/ToastContainer.vue';
-import { useAuthStore } from './stores/auth';
+import { useRoute } from 'vue-router'
+import AppHeader from '@/components/AppHeader.vue'
+import ToastContainer from '@/components/ui/ToastContainer.vue'
+import { useAuthStore } from '@/stores/auth'
 
-const route = useRoute();
-const authStore = useAuthStore();
-
-onMounted(() => {
-  authStore.fetchMe();
-});
+const route = useRoute()
+const authStore = useAuthStore()
 </script>
