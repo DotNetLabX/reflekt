@@ -13,7 +13,7 @@ The Vue SPA now follows the frontend conventions: one API layer, setup stores, o
 - Fix rounds: 2 of 3.
 
 ## Verification
-- Full suite: **pass** — verify-run complete `mvl3hacc-5cb43b85`, 45.1 s, session 76c1a10a-1a00-4555-84ed-ab33c6d71fec (dotnet test Reflekt.slnx && npm ci && npm run build). Handover run `mvl2bnlv-b7a109e5` also passed.
+- Full suite: **pass** — verify-run complete `mvl3nj4e-cc39cae4`, 52.2 s, session cccb06f3-fdb0-46e8-897b-93fd5c220181, re-run on the committed tree of `7a4ba34` (dotnet test Reflekt.slnx && npm ci && npm run build). The earlier close run `mvl3hacc-5cb43b85` and handover run `mvl2bnlv-b7a109e5` also passed, but on a source before the closing commit.
 - Rule list: not applicable — restructuring; nothing to promote (spec header). No registries (owner rule).
 - Anchor check: no `docs/conventions/anchored-set.md` — no-op.
 - Map delta: none (no `docs/architecture-map/`).
