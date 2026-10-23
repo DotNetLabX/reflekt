@@ -68,6 +68,14 @@ export interface ReportResponse {
   previousActionsReview?: ReportPreviousActionsSection | null
 }
 
+let reportRequest = 0
+
+function reportFailureMessage(status: number): string {
+  if (status === 404) return 'Sprint not found'
+  if (status === 401 || status === 403) return 'Not authorized'
+  return 'Failed to load report'
+}
+
 export const useReportStore = defineStore('report', {
   state: () => ({
     report: null as ReportResponse | null,
@@ -76,8 +84,7 @@ export const useReportStore = defineStore('report', {
   }),
   actions: {
     async fetchReport(teamId: number, sprintId: number): Promise<void> {
-      this.loading = true
-      this.error = null
+      const request = this._startReportLoad()
       try {
         const guestStore = useGuestStore()
         const headers: Record<string, string> = {}
@@ -86,27 +93,16 @@ export const useReportStore = defineStore('report', {
           headers,
           credentials: 'include',
         })
-        if (res.status === 404) {
-          this.error = 'Sprint not found'
-          return
-        }
-        if (res.status === 401 || res.status === 403) {
-          this.error = 'Not authorized'
-          return
-        }
-        if (!res.ok) {
-          this.error = 'Failed to load report'
-          return
-        }
-        this.report = (await res.json()) as ReportResponse
+        await this._commitReport(request, res)
+      } catch {
+        if (request === reportRequest) this.error = "Can't reach the server"
       } finally {
-        this.loading = false
+        if (request === reportRequest) this.loading = false
       }
     },
 
     async fetchParticipantReport(sprintId: number): Promise<void> {
-      this.loading = true
-      this.error = null
+      const request = this._startReportLoad()
       try {
         const guestStore = useGuestStore()
         const headers: Record<string, string> = {}
@@ -115,22 +111,28 @@ export const useReportStore = defineStore('report', {
           headers,
           credentials: 'include',
         })
-        if (res.status === 404) {
-          this.error = 'Sprint not found'
-          return
-        }
-        if (res.status === 401 || res.status === 403) {
-          this.error = 'Not authorized'
-          return
-        }
-        if (!res.ok) {
-          this.error = 'Failed to load report'
-          return
-        }
-        this.report = (await res.json()) as ReportResponse
+        await this._commitReport(request, res)
+      } catch {
+        if (request === reportRequest) this.error = "Can't reach the server"
       } finally {
-        this.loading = false
+        if (request === reportRequest) this.loading = false
       }
+    },
+
+    _startReportLoad(): number {
+      this.report = null
+      this.error = null
+      this.loading = true
+      return ++reportRequest
+    },
+
+    async _commitReport(request: number, res: Response): Promise<void> {
+      if (!res.ok) {
+        if (request === reportRequest) this.error = reportFailureMessage(res.status)
+        return
+      }
+      const report = (await res.json()) as ReportResponse
+      if (request === reportRequest) this.report = report
     },
 
     async copyAsMarkdown(): Promise<boolean> {

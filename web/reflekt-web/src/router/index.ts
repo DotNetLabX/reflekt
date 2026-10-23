@@ -39,7 +39,7 @@ const router = createRouter({
       path: '/teams/:teamId/sprints/:sprintId',
       name: 'sprint',
       component: SprintView,
-      meta: { title: 'Sprint — Reflekt' },
+      meta: { title: 'Sprint — Reflekt', requiresAuth: true },
     },
     {
       path: '/sprint/:sprintId',

@@ -10,6 +10,7 @@
   --surface-page: #0a0a0f;
   --surface-card: #13131a;
   --surface-elevated: #1c1c26;
+  --surface-focus: color-mix(in srgb, #6366f1 15%, #13131a);
   --border-default: #2a2a38;
   --border-subtle: #1e1e2a;
   --text-primary: #f0f0f5;
@@ -53,6 +54,7 @@
   --surface-page: #f4f4f8;
   --surface-card: #ffffff;
   --surface-elevated: #eaeaf0;
+  --surface-focus: #eef2ff;
   --border-default: #e2e2ea;
   --border-subtle: #ededf3;
   --text-primary: #1a1a2e;
@@ -133,6 +135,7 @@
   --color-background: var(--surface-page);
   --color-surface: var(--surface-card);
   --color-surface-raised: var(--surface-elevated);
+  --color-surface-focus: var(--surface-focus);
 
   /* Border — theme-aware */
   --color-border: var(--border-default);

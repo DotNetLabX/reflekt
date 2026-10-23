@@ -1,6 +1,6 @@
 <template>
   <div :class="['bg-background flex', joined && !kicked && !loading ? 'h-[calc(100vh-3.5rem)] overflow-hidden flex-col' : 'min-h-screen items-center justify-center']">
-    <div v-if="kicked" class="w-full max-w-sm p-8 bg-surface rounded-[--radius-md] shadow-card flex flex-col gap-4 items-center">
+    <div v-if="kicked" class="w-full max-w-sm p-8 bg-surface rounded-md shadow-card flex flex-col gap-4 items-center">
       <h1 class="text-2xl font-bold text-danger">You were removed</h1>
       <p class="text-sm text-text-secondary text-center">The Scrum Master removed you from this retro. You'll need a new invite to rejoin.</p>
     </div>
@@ -8,6 +8,10 @@
     <div v-else-if="loading" class="flex flex-col items-center gap-4">
       <LoadingSpinner size="lg">Joining retro...</LoadingSpinner>
     </div>
+
+    <EmptyState v-else-if="roomError" :title="roomError">
+      <BaseButton variant="secondary" size="sm" @click="retryEntry">Retry</BaseButton>
+    </EmptyState>
 
     <RetroJoinForm
       v-else-if="!joined"
@@ -47,16 +51,29 @@
         @toggle-ready="onToggleReady"
       />
 
-      <div v-if="isClosed" class="bg-badge-warning-bg border border-badge-warning-text rounded-[--radius-sm] px-4 py-2 text-sm text-badge-warning-text">
+      <div v-if="isClosed" class="bg-badge-warning-bg border border-badge-warning-text rounded-sm px-4 py-2 text-sm text-badge-warning-text">
         This retro has been closed. The board is now read-only.
       </div>
 
-      <div v-if="isReportingPhase" class="flex items-center gap-2">
-        <button class="px-4 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer" :class="reportingView === 'report' ? 'bg-primary-600 text-white' : 'bg-surface-raised text-text-secondary hover:bg-border'" @click="reportingView = 'report'">Report</button>
-        <button class="px-4 py-2 text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer" :class="reportingView === 'board' ? 'bg-primary-600 text-white' : 'bg-surface-raised text-text-secondary hover:bg-border'" @click="reportingView = 'board'">Board</button>
+      <div
+        v-if="refreshError"
+        role="status"
+        class="flex items-center justify-between gap-3 bg-badge-danger-bg border border-badge-danger-text rounded-sm px-4 py-2 text-sm text-badge-danger-text"
+      >
+        <span>The board could not be refreshed.</span>
+        <BaseButton variant="secondary" size="sm" @click="retryRefresh">Retry</BaseButton>
       </div>
 
-      <RetroReportPanel v-if="isReportingPhase && reportingView === 'report'" @copy-markdown="handleCopyMarkdown" />
+      <div v-if="isReportingPhase" class="flex items-center gap-2">
+        <button class="px-4 py-2 text-sm font-medium rounded-sm transition-colors cursor-pointer" :class="reportingView === 'report' ? 'bg-primary-600 text-white' : 'bg-surface-raised text-text-secondary hover:bg-border'" @click="reportingView = 'report'">Report</button>
+        <button class="px-4 py-2 text-sm font-medium rounded-sm transition-colors cursor-pointer" :class="reportingView === 'board' ? 'bg-primary-600 text-white' : 'bg-surface-raised text-text-secondary hover:bg-border'" @click="reportingView = 'board'">Board</button>
+      </div>
+
+      <RetroReportPanel
+        v-if="isReportingPhase && reportingView === 'report'"
+        @copy-markdown="handleCopyMarkdown"
+        @retry="reportStore.fetchParticipantReport(sprintId)"
+      />
       <RetroBoardPanel
         v-if="!isReportingPhase || reportingView === 'board'"
         :sprint-id="sprintId"
@@ -96,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useParticipantStore } from '../stores/participant'
 import { useVoteStore } from '../stores/vote'
@@ -104,9 +121,11 @@ import { useSprintStore } from '../stores/sprint'
 import { useToast } from '../composables/useToast'
 import { useRetroRoom } from '../composables/useRetroRoom'
 import { useReadiness } from '../composables/useReadiness'
+import { unlockChime } from '../composables/useTimer'
 import LoadingSpinner from '../components/ui/LoadingSpinner.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseModal from '../components/ui/BaseModal.vue'
+import EmptyState from '../components/ui/EmptyState.vue'
 import RetroJoinForm from '../components/retro/RetroJoinForm.vue'
 import RetroPhaseHeader from '../components/retro/RetroPhaseHeader.vue'
 import RetroReportPanel from '../components/retro/RetroReportPanel.vue'
@@ -122,9 +141,9 @@ const sprintId = Number(route.params.sprintId)
 const reportingView = ref<'report' | 'board'>('report')
 
 const {
-  kicked, busy, errorMessage, joined, loading,
+  kicked, busy, errorMessage, joined, loading, roomError, refreshError,
   sprintName, currentPhase, summaryParticipants, isReportingPhase,
-  handleJoin, reportStore, showGoogleOption,
+  handleJoin, retryEntry, retryRefresh, reportStore, showGoogleOption,
   isClosed, teamId, isScrumMaster,
 } = useRetroRoom(sprintId)
 
@@ -260,6 +279,11 @@ watch(isClosed, (closed) => {
     addToast('This retro has been closed by the Scrum Master.', 'info')
   }
 })
+
+// Browsers only start audio from a user gesture; any gesture in the room, before the timer is shown included, unlocks the chime.
+const UNLOCK_EVENTS = ['pointerdown', 'click', 'keydown'] as const
+onMounted(() => UNLOCK_EVENTS.forEach((e) => document.addEventListener(e, unlockChime)))
+onUnmounted(() => UNLOCK_EVENTS.forEach((e) => document.removeEventListener(e, unlockChime)))
 
 async function handleCopyMarkdown() {
   const ok = await reportStore.copyAsMarkdown()

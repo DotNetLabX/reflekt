@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<{
 });
 
 const cardClasses = computed(() => {
-  const base = 'bg-surface border border-border rounded-[--radius-md] shadow-card';
+  const base = 'bg-surface border border-border rounded-md shadow-card';
   const hover = props.hoverable ? 'transition-all hover:shadow-card-hover hover:-translate-y-0.5' : '';
   return [base, hover];
 });

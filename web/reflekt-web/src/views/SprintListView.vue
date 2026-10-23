@@ -1,10 +1,13 @@
 <template>
   <div class="flex flex-col items-center p-8">
     <SprintList
+      :team-id="teamId"
       :team-name="teamName"
       :sprints="sprintStore.sprints"
+      :loading="sprintStore.sprintsLoading"
+      :error="sprintStore.sprintsError"
       @select="(id) => router.push({ name: 'sprint', params: { teamId, sprintId: id } })"
-      @create-sprint="handleCreateSprint"
+      @retry="sprintStore.fetchTeamSprints(teamId)"
     />
   </div>
 </template>
@@ -31,17 +34,4 @@ watch(
   },
   { immediate: true },
 );
-
-async function handleCreateSprint(payload: {
-  name: string
-  votesPerParticipant: number | undefined
-  column1Name: string
-  column1Color: string
-  column2Name: string
-  column2Color: string
-  column3Name: string
-  column3Color: string
-}) {
-  await sprintStore.createSprint(teamId.value, payload);
-}
 </script>

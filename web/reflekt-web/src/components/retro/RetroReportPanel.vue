@@ -1,10 +1,13 @@
 <template>
   <div class="flex-1 min-h-0 overflow-y-auto">
     <div v-if="reportStore.loading" class="text-text-muted text-sm text-center py-8">Loading report...</div>
-    <div v-else-if="reportStore.error" class="text-red-600 text-sm text-center py-8">{{ reportStore.error }}</div>
+    <div v-else-if="reportStore.error" class="flex flex-col items-center gap-3 py-8">
+      <p class="text-red-600 text-sm text-center">{{ reportStore.error }}</p>
+      <BaseButton variant="secondary" size="sm" @click="$emit('retry')">Retry</BaseButton>
+    </div>
     <div v-else-if="reportStore.report" class="flex flex-col gap-4 max-w-4xl mx-auto">
       <!-- Report header -->
-      <div class="bg-surface rounded-[--radius-md] shadow-card p-4 flex items-start justify-between">
+      <div class="bg-surface rounded-md shadow-card p-4 flex items-start justify-between">
         <div>
           <h2 class="text-xl font-bold text-text-primary">{{ reportStore.report.sprint.name }} — Sprint Report</h2>
           <p class="text-sm text-text-muted mt-1">
@@ -21,8 +24,8 @@
       </div>
 
       <!-- Dynamic column sections -->
-      <div v-for="col in reportStore.report.columns" :key="col.columnName" class="bg-surface rounded-[--radius-md] shadow-card">
-        <div class="px-4 py-3 border-b rounded-t-[--radius-md]" :class="`bg-col-${col.columnColor}-light`">
+      <div v-for="col in reportStore.report.columns" :key="col.columnName" class="bg-surface rounded-md shadow-card">
+        <div class="px-4 py-3 border-b rounded-t-md" :class="`bg-col-${col.columnColor}-light`">
           <h3 class="font-semibold text-sm" :class="`text-col-${col.columnColor}`">{{ col.columnName }}</h3>
         </div>
         <div class="p-4">
@@ -52,8 +55,8 @@
       </div>
 
       <!-- Action Items -->
-      <div class="bg-surface rounded-[--radius-md] shadow-card">
-        <div class="px-4 py-3 border-b bg-action-items-light rounded-t-[--radius-md]">
+      <div class="bg-surface rounded-md shadow-card">
+        <div class="px-4 py-3 border-b bg-action-items-light rounded-t-md">
           <h3 class="font-semibold text-action-items text-sm">Action Items</h3>
         </div>
         <div class="p-4">
@@ -84,6 +87,7 @@ import BaseButton from '../ui/BaseButton.vue'
 
 defineEmits<{
   'copy-markdown': []
+  retry: []
 }>()
 
 const reportStore = useReportStore()

@@ -4,7 +4,7 @@
       <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center" @keydown.escape="$emit('close')">
         <div class="fixed inset-0 bg-black/50" @click="$emit('close')" />
         <div
-          class="relative z-10 w-full max-w-md bg-surface rounded-[--radius-lg] shadow-modal"
+          class="relative z-10 w-full max-w-md bg-surface rounded-lg shadow-modal"
           role="dialog"
           aria-modal="true"
         >

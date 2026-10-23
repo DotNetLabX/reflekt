@@ -16,7 +16,7 @@
       </div>
     </slot>
 
-    <div v-else class="w-full max-w-[--page-max-width] mx-auto px-4 sm:px-8 lg:px-12 py-6 flex flex-col gap-5">
+    <div v-else class="w-full max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-6 flex flex-col gap-5">
       <slot name="header" />
       <slot />
     </div>

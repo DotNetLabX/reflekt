@@ -64,11 +64,11 @@ export function useSprintHub(onKicked?: () => void) {
         sprintStore.currentSummary.currentPhase = phase
       }
       if (wasWriting && phase === 'Grouping') {
-        cardStore.fetchCards(sprintId)
-        cardGroupStore.fetchGroups(sprintId)
+        cardStore.fetchCards(sprintId, { background: true })
+        cardGroupStore.fetchGroups(sprintId, { background: true })
       } else if (phase !== 'Writing') {
-        cardStore.fetchCards(sprintId)
-        cardGroupStore.fetchGroups(sprintId)
+        cardStore.fetchCards(sprintId, { background: true })
+        cardGroupStore.fetchGroups(sprintId, { background: true })
       }
     })
 
@@ -105,19 +105,19 @@ export function useSprintHub(onKicked?: () => void) {
     })
 
     connection.on('GroupCreated', () => {
-      cardGroupStore.fetchGroups(sprintId)
+      cardGroupStore.fetchGroups(sprintId, { background: true })
     })
 
     connection.on('CardsGrouped', () => {
-      cardGroupStore.fetchGroups(sprintId)
+      cardGroupStore.fetchGroups(sprintId, { background: true })
     })
 
     connection.on('CardUngrouped', () => {
-      cardGroupStore.fetchGroups(sprintId)
+      cardGroupStore.fetchGroups(sprintId, { background: true })
     })
 
     connection.on('GroupDissolved', () => {
-      cardGroupStore.fetchGroups(sprintId)
+      cardGroupStore.fetchGroups(sprintId, { background: true })
     })
 
     connection.on('GroupTitleChanged', (payload: { groupId: number; title: string | null }) => {

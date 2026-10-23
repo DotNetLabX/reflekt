@@ -16,7 +16,7 @@ const props = withDefaults(defineProps<{
 });
 
 const badgeClasses = computed(() => {
-  const base = 'inline-flex items-center font-medium rounded-[--radius-full]';
+  const base = 'inline-flex items-center font-medium rounded-full';
 
   const variants = {
     default: 'bg-badge-default-bg text-badge-default-text',

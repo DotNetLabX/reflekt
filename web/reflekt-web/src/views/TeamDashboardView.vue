@@ -13,8 +13,12 @@
 
     <!-- Signed in -->
     <template v-else-if="authStore.isSignedIn">
+      <EmptyState v-if="teamsStore.error" :title="teamsStore.error" class="mt-16">
+        <BaseButton variant="secondary" size="sm" @click="teamsStore.fetchMyTeams()">Retry</BaseButton>
+      </EmptyState>
+
       <!-- Empty state: no teams -->
-      <div v-if="teamsStore.loaded && !teamsStore.hasTeams" class="mt-16">
+      <div v-else-if="teamsStore.loaded && !teamsStore.loading && !teamsStore.hasTeams" class="mt-16">
         <CreateTeamForm @created="handleTeamCreated" />
       </div>
 
@@ -65,7 +69,7 @@
       v-if="pendingDeleteTeam"
       :team="pendingDeleteTeam"
       :open="!!pendingDeleteTeam"
-      @confirm="handleDeleteConfirm"
+      @deleted="pendingDeleteTeam = null"
       @close="pendingDeleteTeam = null"
     />
   </div>
@@ -79,6 +83,8 @@ import { useTeamsStore, type TeamSummary } from '../stores/teams';
 import CreateTeamForm from '../components/teams/CreateTeamForm.vue';
 import TeamCard from '../components/teams/TeamCard.vue';
 import DeleteTeamDialog from '../components/teams/DeleteTeamDialog.vue';
+import EmptyState from '../components/ui/EmptyState.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -107,10 +113,5 @@ function handleTeamCreated(team: TeamSummary) {
 function handleDeleteRequest(teamId: number) {
   const team = teamsStore.teamById(teamId);
   if (team) pendingDeleteTeam.value = team;
-}
-
-async function handleDeleteConfirm(teamId: number, confirmationName: string) {
-  await teamsStore.deleteTeam(teamId, confirmationName);
-  pendingDeleteTeam.value = null;
 }
 </script>

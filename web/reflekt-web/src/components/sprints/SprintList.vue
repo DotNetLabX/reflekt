@@ -2,7 +2,10 @@
   <div class="flex flex-col gap-4 p-8 bg-surface border border-border rounded shadow-card w-full max-w-md">
     <h2 class="text-xl font-bold text-text-primary">{{ teamName }}</h2>
 
-    <div v-if="sprints.length === 0" class="text-text-muted text-sm">
+    <EmptyState v-if="error" :title="error">
+      <BaseButton variant="secondary" size="sm" @click="$emit('retry')">Retry</BaseButton>
+    </EmptyState>
+    <div v-else-if="!loading && sprints.length === 0" class="text-text-muted text-sm">
       No sprints yet. Create your first sprint.
     </div>
     <ul v-else class="flex flex-col gap-2">
@@ -20,30 +23,26 @@
       </li>
     </ul>
 
-    <CreateSprintForm @create="$emit('create-sprint', $event)" />
+    <CreateSprintForm :team-id="teamId" />
   </div>
 </template>
 
 <script setup lang="ts">
 import CreateSprintForm from './CreateSprintForm.vue'
+import EmptyState from '../ui/EmptyState.vue'
+import BaseButton from '../ui/BaseButton.vue'
 
 defineProps<{
+  teamId: number
   teamName: string
   sprints: { id: number; name: string; currentPhase: string; state: string }[]
+  loading: boolean
+  error: string | null
 }>()
 
 defineEmits<{
   select: [sprintId: number]
-  'create-sprint': [payload: {
-    name: string
-    votesPerParticipant: number | undefined
-    column1Name: string
-    column1Color: string
-    column2Name: string
-    column2Color: string
-    column3Name: string
-    column3Color: string
-  }]
+  retry: []
 }>()
 
 function stateBadge(state: string) {

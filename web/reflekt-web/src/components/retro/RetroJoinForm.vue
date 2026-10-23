@@ -28,7 +28,7 @@
         <template v-if="showGoogleSignIn">
           <a
             :href="googleLoginUrl"
-            class="flex items-center justify-center gap-2 w-full px-4 py-2 border border-border rounded-[--radius-sm] text-sm font-medium text-text-secondary bg-surface hover:bg-surface-raised transition-colors"
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 border border-border rounded-sm text-sm font-medium text-text-secondary bg-surface hover:bg-surface-raised transition-colors"
           >
             Sign in with Google
           </a>

@@ -1,5 +1,5 @@
 <template>
-  <div class="relative rounded-[--radius-md] shadow-card border border-border p-3 flex flex-col gap-1 transition-shadow hover:shadow-card-hover" :class="cardBgClass">
+  <div class="relative rounded-md shadow-card border border-border p-3 flex flex-col gap-1 transition-shadow hover:shadow-card-hover" :class="cardBgClass">
     <!-- Blurred -->
     <div v-if="blurred" class="relative select-none">
       <p class="text-sm text-text-primary whitespace-pre-wrap blur-md" aria-hidden="true">Someone's note</p>
@@ -14,8 +14,8 @@
 
     <!-- Edit mode -->
     <div v-else class="flex flex-col gap-1">
-      <textarea v-model="editText" rows="2" maxlength="2000" class="border border-border rounded-[--radius-sm] px-2 py-1 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
-      <select v-if="card.cardType === 'ActionItem'" v-model="editAssignee" class="border border-border rounded-[--radius-sm] px-2 py-1 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500">
+      <textarea v-model="editText" rows="2" maxlength="2000" class="border border-border rounded-sm px-2 py-1 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
+      <select v-if="card.cardType === 'ActionItem'" v-model="editAssignee" class="border border-border rounded-sm px-2 py-1 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500">
         <option value="">Assign to...</option>
         <option v-for="p in participants" :key="p.displayName" :value="p.displayName">{{ p.displayName }}</option>
       </select>
@@ -45,7 +45,7 @@
     <div v-if="!blurred && (canAttachLink ?? canEdit) && !editing" class="mt-1">
       <button v-if="!addingLink" class="text-text-muted hover:text-blue-500 cursor-pointer" title="Add evidence link" @click="addingLink = true"><LinkIcon :size="14" /></button>
       <div v-else class="flex gap-1 items-center">
-        <input v-model="linkUrl" type="text" placeholder="Paste URL..." class="flex-1 border border-border rounded-[--radius-sm] px-2 py-0.5 text-xs text-text-primary bg-surface focus:outline-none focus:ring-1 focus:ring-primary-500" @keydown.enter="submitLink" @keydown.escape="cancelLink" />
+        <input v-model="linkUrl" type="text" placeholder="Paste URL..." class="flex-1 border border-border rounded-sm px-2 py-0.5 text-xs text-text-primary bg-surface focus:outline-none focus:ring-1 focus:ring-primary-500" @keydown.enter="submitLink" @keydown.escape="cancelLink" />
         <BaseButton size="sm" variant="primary" :disabled="!linkUrl.trim()" @click="submitLink">Add</BaseButton>
         <button class="text-text-muted hover:text-text-secondary cursor-pointer" @click="cancelLink"><XIcon :size="14" /></button>
       </div>
@@ -88,11 +88,22 @@ const editAssignee = ref('')
 const addingLink = ref(false)
 const linkUrl = ref('')
 
+// Full class names: Tailwind emits only classes it finds written out in source.
+const cardTintClasses: Record<string, string> = {
+  green: 'bg-col-green-light/30',
+  red: 'bg-col-red-light/30',
+  amber: 'bg-col-amber-light/30',
+  blue: 'bg-col-blue-light/30',
+  purple: 'bg-col-purple-light/30',
+  teal: 'bg-col-teal-light/30',
+  pink: 'bg-col-pink-light/30',
+  slate: 'bg-col-slate-light/30',
+  'action-items': 'bg-action-items-light/30',
+}
+
 const cardBgClass = computed(() => {
   if (!props.columnColor) return 'bg-surface'
-  // action-items uses a fixed semantic token; palette colors use col-{color}-light
-  if (props.columnColor === 'action-items') return 'bg-action-items-light/30'
-  return `bg-col-${props.columnColor}-light/30`
+  return cardTintClasses[props.columnColor]
 })
 
 function startEdit() {
