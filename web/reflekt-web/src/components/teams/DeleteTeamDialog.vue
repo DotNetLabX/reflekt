@@ -43,6 +43,8 @@
           </div>
         </div>
 
+        <p v-if="errorMessage" class="text-danger text-sm mb-4">{{ errorMessage }}</p>
+
         <div class="flex gap-2 justify-end">
           <button
             class="px-4 py-2 text-sm text-text-secondary hover:bg-surface-raised rounded"
@@ -65,7 +67,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import type { TeamSummary } from '../../stores/teams';
+import { useTeamsStore, type TeamSummary } from '../../stores/teams';
 
 const props = defineProps<{
   team: TeamSummary;
@@ -73,30 +75,39 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  confirm: [teamId: number, confirmationName: string];
+  deleted: [];
   close: [];
 }>();
 
+const teamsStore = useTeamsStore();
 const confirmationInput = ref('');
+const errorMessage = ref('');
 const busy = ref(false);
 
 watch(() => props.open, (open) => {
   if (!open) {
     confirmationInput.value = '';
+    errorMessage.value = '';
     busy.value = false;
   }
 });
 
 watch(() => props.team.id, () => {
   confirmationInput.value = '';
+  errorMessage.value = '';
   busy.value = false;
 });
 
 async function handleConfirm() {
   if (confirmationInput.value !== props.team.name) return;
+  errorMessage.value = '';
   busy.value = true;
   try {
-    emit('confirm', props.team.id, confirmationInput.value);
+    await teamsStore.deleteTeam(props.team.id, confirmationInput.value);
+    emit('deleted');
+  } catch (err: unknown) {
+    const errors = (err as Record<string, unknown>)?.errors as Record<string, string[]> | undefined;
+    errorMessage.value = errors?.generalErrors?.[0] || 'Failed to delete team.';
   } finally {
     busy.value = false;
   }

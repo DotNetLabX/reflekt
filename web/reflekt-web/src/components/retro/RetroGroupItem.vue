@@ -2,7 +2,7 @@
   <!-- Solo group: plain card style -->
   <div
     v-if="isSolo"
-    class="rounded-[--radius-md] shadow-card p-3 flex flex-col gap-1 transition-all hover:shadow-card-hover"
+    class="rounded-md shadow-card p-3 flex flex-col gap-1 transition-all hover:shadow-card-hover"
     :class="[groupBgClass, dragClasses]"
     :draggable="canGroup"
     @dragstart="onDragStart"
@@ -29,15 +29,15 @@
       <button class="text-xs text-text-muted hover:text-text-secondary cursor-pointer" @click="editingTitle = true">Rename</button>
     </div>
     <div v-if="editingTitle" class="flex gap-1">
-      <input v-model="titleInput" maxlength="100" placeholder="Group title..." class="flex-1 border border-border rounded-[--radius-sm] px-2 py-1 text-xs text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" @keydown.enter="saveTitle" @keydown.escape="editingTitle = false" />
-      <button class="px-2 py-1 text-xs bg-primary-600 text-white rounded-[--radius-sm] cursor-pointer" @click="saveTitle">Save</button>
+      <input v-model="titleInput" maxlength="100" placeholder="Group title..." class="flex-1 border border-border rounded-sm px-2 py-1 text-xs text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" @keydown.enter="saveTitle" @keydown.escape="editingTitle = false" />
+      <button class="px-2 py-1 text-xs bg-primary-600 text-white rounded-sm cursor-pointer" @click="saveTitle">Save</button>
     </div>
   </div>
 
   <!-- Multi-card group -->
   <div
     v-else
-    class="rounded-[--radius-md] shadow-card p-3 flex flex-col gap-2 transition-all hover:shadow-card-hover"
+    class="rounded-md shadow-card p-3 flex flex-col gap-2 transition-all hover:shadow-card-hover"
     :class="[groupBgClass, dragClasses]"
     :draggable="canGroup"
     @dragstart="onDragStart"
@@ -68,8 +68,8 @@
     </div>
     <RetroGroupDiscussion v-if="isDiscussing" :group="group" :is-scrum-master="isScrumMaster" @focus="emit('focus', group)" @toggle-discussed="emit('toggle-discussed', group)" />
     <div v-if="editingTitle" class="flex gap-1">
-      <input v-model="titleInput" maxlength="100" placeholder="Group title..." class="flex-1 border border-border rounded-[--radius-sm] px-2 py-1 text-xs text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" @keydown.enter="saveTitle" @keydown.escape="editingTitle = false" />
-      <button class="px-2 py-1 text-xs bg-primary-600 text-white rounded-[--radius-sm] cursor-pointer" @click="saveTitle">Save</button>
+      <input v-model="titleInput" maxlength="100" placeholder="Group title..." class="flex-1 border border-border rounded-sm px-2 py-1 text-xs text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" @keydown.enter="saveTitle" @keydown.escape="editingTitle = false" />
+      <button class="px-2 py-1 text-xs bg-primary-600 text-white rounded-sm cursor-pointer" @click="saveTitle">Save</button>
     </div>
   </div>
 </template>
@@ -122,7 +122,7 @@ const dragOver = ref(false)
 const isSolo = computed(() => props.group.cards.length === 1)
 
 const groupBgClass = computed(() => {
-  if (props.group.isFocused) return 'bg-primary-50 ring-2 ring-primary-500'
+  if (props.group.isFocused) return 'bg-surface-focus ring-2 ring-primary-500'
   if (props.group.isDiscussed) return `bg-col-${props.columnColor}-light opacity-75`
   return `bg-col-${props.columnColor}-light`
 })

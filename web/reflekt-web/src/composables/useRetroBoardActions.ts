@@ -42,10 +42,11 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
   // --- Prop builders ---
 
   function canMutateCard(card: Card): boolean {
-    const ownsCard = card.participantId === participantStore.currentParticipant?.id || authStore.user !== null
-    if (!ownsCard) return false
-    const editAction = card.cardType === 'ActionItem' ? 'EditActionItem' : 'EditNote'
-    return policyStore.isAllowed(currentPhase.value, editAction)
+    if (card.participantId !== participantStore.currentParticipant?.id) return false
+    if (sprintStore.currentSummary?.state === 'Closed') return false
+    const isActionItem = card.cardType === 'ActionItem'
+    if (!policyStore.isAllowed(currentPhase.value, isActionItem ? 'EditActionItem' : 'EditNote')) return false
+    return !(isActionItem && isDiscussingPhase.value && !authStore.isSignedIn)
   }
 
   function cardItemProps(card: Card, color: string) {
@@ -75,14 +76,14 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
 
   // --- Mutation handlers ---
 
-  async function addNote(column: 'Column1' | 'Column2' | 'Column3', text: string) {
-    try { await cardStore.createCard(sprintId, { text, columnType: column, cardType: 'Note' }) }
-    catch { onError('Failed to add card.') }
+  async function addNote(column: 'Column1' | 'Column2' | 'Column3', text: string): Promise<boolean> {
+    try { await cardStore.createCard(sprintId, { text, columnType: column, cardType: 'Note' }); return true }
+    catch { onError('Failed to add card.'); return false }
   }
 
-  async function addActionItem(text: string, assigneeName: string) {
-    try { await cardStore.createCard(sprintId, { text, columnType: 'ActionItems', cardType: 'ActionItem', assigneeName }) }
-    catch { onError('Failed to add action item.') }
+  async function addActionItem(text: string, assigneeName: string): Promise<boolean> {
+    try { await cardStore.createCard(sprintId, { text, columnType: 'ActionItems', cardType: 'ActionItem', assigneeName }); return true }
+    catch { onError('Failed to add action item.'); return false }
   }
 
   async function saveEdit(card: Card, text: string, assigneeName: string | null) {

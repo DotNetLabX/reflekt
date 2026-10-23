@@ -18,7 +18,7 @@
     <div class="flex items-center gap-2">
       <!-- Theme toggle — visible to all users -->
       <button
-        class="flex items-center justify-center w-8 h-8 rounded-[--radius-md] text-text-muted hover:text-text-secondary hover:bg-surface-raised transition-colors cursor-pointer"
+        class="flex items-center justify-center w-8 h-8 rounded-md text-text-muted hover:text-text-secondary hover:bg-surface-raised transition-colors cursor-pointer"
         :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
         @click="toggleTheme"
       >
@@ -28,7 +28,7 @@
 
       <div v-if="authStore.isSignedIn" ref="menuRef" class="relative">
         <button
-          class="flex items-center justify-center w-9 h-9 rounded-[--radius-full] bg-primary-100 text-primary-700 font-semibold text-sm cursor-pointer hover:bg-primary-200 transition-colors"
+          class="flex items-center justify-center w-9 h-9 rounded-full bg-primary-100 text-primary-700 font-semibold text-sm cursor-pointer hover:bg-primary-200 transition-colors"
           @click="menuOpen = !menuOpen"
         >
           {{ userInitial }}
@@ -37,7 +37,7 @@
         <Transition name="dropdown">
           <div
             v-if="menuOpen"
-            class="absolute right-0 mt-2 w-56 bg-surface border border-border rounded-[--radius-md] shadow-card-hover py-1"
+            class="absolute right-0 mt-2 w-56 bg-surface border border-border rounded-md shadow-card-hover py-1"
           >
             <div class="px-3 py-2 text-sm text-text-muted truncate border-b border-border-subtle">
               {{ authStore.user!.email }}
@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { RefreshCw, Sun, Moon } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/auth';
@@ -85,6 +85,23 @@ const teamName = computed(() => {
   const teamId = Number(route.params.teamId);
   return teamId ? (teamsStore.teamById(teamId)?.name ?? '') : '';
 });
+
+// Never retries after a failed load, so an unreachable server gets one request per route entry, not a stream.
+watch(
+  () => route.fullPath,
+  () => {
+    if (
+      showBreadcrumb.value &&
+      authStore.isSignedIn &&
+      teamsStore.teams.length === 0 &&
+      !teamsStore.loading &&
+      !teamsStore.error
+    ) {
+      teamsStore.fetchMyTeams();
+    }
+  },
+  { immediate: true },
+);
 
 function handleSignOut() {
   menuOpen.value = false;

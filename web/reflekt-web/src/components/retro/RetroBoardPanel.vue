@@ -4,7 +4,7 @@
     <div v-if="showReadinessButton" class="flex justify-end">
       <button
         :class="[
-          'px-3 py-1.5 text-sm font-medium rounded-[--radius-sm] border transition-colors cursor-pointer',
+          'px-3 py-1.5 text-sm font-medium rounded-sm border transition-colors cursor-pointer',
           isReady
             ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'
             : isDark
@@ -65,8 +65,8 @@
         </template>
         <template #input>
           <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="flex gap-2">
-            <BaseInput v-model="newCardText.Column1" :maxlength="2000" placeholder="Add a note..." class="flex-1" @keydown.enter="onAddNote('Column1')" />
-            <BaseButton size="sm" variant="primary" :disabled="!newCardText.Column1.trim()" @click="onAddNote('Column1')">Add</BaseButton>
+            <BaseInput v-model="newCardText.Column1" :maxlength="2000" placeholder="Add a note..." class="flex-1" :disabled="noteSaving.Column1" @keydown.enter="onAddNote('Column1')" />
+            <BaseButton size="sm" variant="primary" :disabled="noteSaving.Column1 || !newCardText.Column1.trim()" @click="onAddNote('Column1')">Add</BaseButton>
           </div>
         </template>
       </RetroColumnBody>
@@ -99,8 +99,8 @@
         </template>
         <template #input>
           <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="flex gap-2">
-            <BaseInput v-model="newCardText.Column2" :maxlength="2000" placeholder="Add a note..." class="flex-1" @keydown.enter="onAddNote('Column2')" />
-            <BaseButton size="sm" variant="primary" :disabled="!newCardText.Column2.trim()" @click="onAddNote('Column2')">Add</BaseButton>
+            <BaseInput v-model="newCardText.Column2" :maxlength="2000" placeholder="Add a note..." class="flex-1" :disabled="noteSaving.Column2" @keydown.enter="onAddNote('Column2')" />
+            <BaseButton size="sm" variant="primary" :disabled="noteSaving.Column2 || !newCardText.Column2.trim()" @click="onAddNote('Column2')">Add</BaseButton>
           </div>
         </template>
       </RetroColumnBody>
@@ -133,8 +133,8 @@
         </template>
         <template #input>
           <div v-if="policyStore.isAllowed(currentPhase, 'CreateNote')" class="flex gap-2">
-            <BaseInput v-model="newCardText.Column3" :maxlength="2000" placeholder="Add a note..." class="flex-1" @keydown.enter="onAddNote('Column3')" />
-            <BaseButton size="sm" variant="primary" :disabled="!newCardText.Column3.trim()" @click="onAddNote('Column3')">Add</BaseButton>
+            <BaseInput v-model="newCardText.Column3" :maxlength="2000" placeholder="Add a note..." class="flex-1" :disabled="noteSaving.Column3" @keydown.enter="onAddNote('Column3')" />
+            <BaseButton size="sm" variant="primary" :disabled="noteSaving.Column3 || !newCardText.Column3.trim()" @click="onAddNote('Column3')">Add</BaseButton>
           </div>
         </template>
       </RetroColumnBody>
@@ -162,12 +162,12 @@
           @attach-evidence-link="attachEvidenceLink" @detach-evidence-link="detachEvidenceLink" />
         <template #input>
           <div v-if="policyStore.isAllowed(currentPhase, 'CreateActionItem')" class="flex flex-col gap-2">
-            <BaseInput v-model="newActionText" :maxlength="2000" placeholder="Action item..." @keydown.enter="onAddActionItem" />
-            <select v-model="newActionAssignee" class="border border-border rounded-[--radius-md] px-3 py-2 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <BaseInput v-model="newActionText" :maxlength="2000" placeholder="Action item..." :disabled="actionSaving" @keydown.enter="onAddActionItem" />
+            <select v-model="newActionAssignee" class="border border-border rounded-md px-3 py-2 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="">Assign to...</option>
               <option v-for="p in participants" :key="p.id" :value="p.displayName">{{ p.displayName }}</option>
             </select>
-            <BaseButton size="sm" variant="primary" :disabled="!newActionText.trim() || !newActionAssignee" @click="onAddActionItem">Add</BaseButton>
+            <BaseButton size="sm" variant="primary" :disabled="actionSaving || !newActionText.trim() || !newActionAssignee" @click="onAddActionItem">Add</BaseButton>
           </div>
         </template>
       </RetroColumnBody>
@@ -225,6 +225,8 @@ const { isDark } = useTheme()
 const newCardText = ref({ Column1: '', Column2: '', Column3: '' })
 const newActionText = ref('')
 const newActionAssignee = ref('')
+const noteSaving = ref({ Column1: false, Column2: false, Column3: false })
+const actionSaving = ref(false)
 const deleteTarget = ref<Card | null>(null)
 const activeTab = ref<'Column1' | 'Column2' | 'Column3' | 'ActionItems'>('Column1')
 const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth < 640 : false)
@@ -259,18 +261,23 @@ watch(showActionItems, (visible) => { if (!visible && activeTab.value === 'Actio
 function isColumnVisible(column: string): boolean { return !isMobile.value || activeTab.value === column }
 
 async function onAddNote(column: 'Column1' | 'Column2' | 'Column3') {
+  if (noteSaving.value[column]) return
   const text = newCardText.value[column].trim()
   if (!text) return
-  newCardText.value[column] = ''
-  await addNote(column, text)
+  noteSaving.value[column] = true
+  const added = await addNote(column, text)
+  noteSaving.value[column] = false
+  if (added) newCardText.value[column] = ''
 }
 
 async function onAddActionItem() {
   const text = newActionText.value.trim()
   const assigneeName = newActionAssignee.value
-  if (!text || !assigneeName) return
-  newActionText.value = ''; newActionAssignee.value = ''
-  await addActionItem(text, assigneeName)
+  if (actionSaving.value || !text || !assigneeName) return
+  actionSaving.value = true
+  const added = await addActionItem(text, assigneeName)
+  actionSaving.value = false
+  if (added) { newActionText.value = ''; newActionAssignee.value = '' }
 }
 
 function requestDelete(card: Card) { deleteTarget.value = card }

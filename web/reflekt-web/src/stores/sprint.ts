@@ -73,29 +73,88 @@ interface CreateSprintPayload {
   discussingTimerDefault?: number
 }
 
+const SERVER_UNREACHABLE = "Can't reach the server"
+
+let sprintsRequest = 0
+let currentSprintRequest = 0
+let currentSummaryRequest = 0
+
 export const useSprintStore = defineStore('sprint', {
   state: () => ({
     sprints: [] as Sprint[],
     currentSprint: null as Sprint | null,
     currentSummary: null as SprintSummary | null,
     loaded: false,
+    sprintsLoading: false,
+    sprintsError: null as string | null,
+    currentSprintLoading: false,
+    currentSprintError: null as string | null,
+    currentSummaryLoading: false,
+    currentSummaryError: null as string | null,
   }),
   actions: {
     async fetchTeamSprints(teamId: number) {
-      const res = await fetch(`/api/teams/${teamId}/sprints`, { credentials: 'include' })
-      this.sprints = res.ok ? ((await res.json()) as Sprint[]) : []
-      this.loaded = true
+      const request = ++sprintsRequest
+      this.sprints = []
+      this.sprintsError = null
+      this.sprintsLoading = true
+      try {
+        const res = await fetch(`/api/teams/${teamId}/sprints`, { credentials: 'include' })
+        if (!res.ok) {
+          if (request === sprintsRequest) this.sprintsError = 'Failed to load sprints'
+          return
+        }
+        const sprints = (await res.json()) as Sprint[]
+        if (request === sprintsRequest) this.sprints = sprints
+      } catch {
+        if (request === sprintsRequest) this.sprintsError = SERVER_UNREACHABLE
+      } finally {
+        if (request === sprintsRequest) {
+          this.sprintsLoading = false
+          this.loaded = true
+        }
+      }
     },
     async fetchSprint(teamId: number, sprintId: number) {
-      const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}`, { credentials: 'include' })
-      if (res.ok) {
-        this.currentSprint = (await res.json()) as Sprint
+      const request = ++currentSprintRequest
+      this.currentSprint = null
+      this.currentSprintError = null
+      this.currentSprintLoading = true
+      try {
+        const res = await fetch(`/api/teams/${teamId}/sprints/${sprintId}`, { credentials: 'include' })
+        if (!res.ok) {
+          if (request === currentSprintRequest) {
+            this.currentSprintError = res.status === 404 ? 'Sprint not found' : 'Failed to load sprint'
+          }
+          return
+        }
+        const sprint = (await res.json()) as Sprint
+        if (request === currentSprintRequest) this.currentSprint = sprint
+      } catch {
+        if (request === currentSprintRequest) this.currentSprintError = SERVER_UNREACHABLE
+      } finally {
+        if (request === currentSprintRequest) this.currentSprintLoading = false
       }
     },
     async fetchSprintSummary(sprintId: number) {
-      const res = await fetch(`/api/sprints/${sprintId}/summary`)
-      if (res.ok) {
-        this.currentSummary = (await res.json()) as SprintSummary
+      const request = ++currentSummaryRequest
+      this.currentSummary = null
+      this.currentSummaryError = null
+      this.currentSummaryLoading = true
+      try {
+        const res = await fetch(`/api/sprints/${sprintId}/summary`)
+        if (!res.ok) {
+          if (request === currentSummaryRequest) {
+            this.currentSummaryError = res.status === 404 ? 'Sprint not found' : 'Failed to load sprint'
+          }
+          return
+        }
+        const summary = (await res.json()) as SprintSummary
+        if (request === currentSummaryRequest) this.currentSummary = summary
+      } catch {
+        if (request === currentSummaryRequest) this.currentSummaryError = SERVER_UNREACHABLE
+      } finally {
+        if (request === currentSummaryRequest) this.currentSummaryLoading = false
       }
     },
     async createSprint(teamId: number, payload: CreateSprintPayload): Promise<Sprint> {

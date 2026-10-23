@@ -1,6 +1,6 @@
 <template>
   <div class="w-full max-w-lg p-8 bg-surface border border-border rounded shadow-card flex flex-col gap-4">
-    <router-link :to="{ name: 'welcome' }" class="text-sm text-text-muted hover:text-text-secondary self-start">
+    <router-link :to="{ name: 'team-sprints', params: { teamId } }" class="text-sm text-text-muted hover:text-text-secondary self-start">
       ← Back to sprints
     </router-link>
 

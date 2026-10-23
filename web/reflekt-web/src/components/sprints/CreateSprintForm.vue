@@ -21,35 +21,35 @@
       <p class="text-xs font-medium text-text-muted uppercase tracking-wide">Column Configuration</p>
       <!-- Column 1 -->
       <div class="flex items-center gap-2">
-        <input v-model="col1.name" type="text" placeholder="Column 1 name" maxlength="30"
+        <input v-model="col1.name" type="text" @input="edited.add('col1.name')" placeholder="Column 1 name" maxlength="30"
           class="flex-1 border border-border rounded px-3 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" />
         <div class="flex gap-1">
           <button v-for="color in paletteColors" :key="color" type="button" :title="color"
             class="w-5 h-5 rounded-full border-2 transition-transform cursor-pointer"
             :class="[`bg-col-${color}`, col1.color === color ? 'border-text-primary scale-110' : 'border-transparent']"
-            @click="col1.color = color" />
+            @click="col1.color = color; edited.add('col1.color')" />
         </div>
       </div>
       <!-- Column 2 -->
       <div class="flex items-center gap-2">
-        <input v-model="col2.name" type="text" placeholder="Column 2 name" maxlength="30"
+        <input v-model="col2.name" type="text" @input="edited.add('col2.name')" placeholder="Column 2 name" maxlength="30"
           class="flex-1 border border-border rounded px-3 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" />
         <div class="flex gap-1">
           <button v-for="color in paletteColors" :key="color" type="button" :title="color"
             class="w-5 h-5 rounded-full border-2 transition-transform cursor-pointer"
             :class="[`bg-col-${color}`, col2.color === color ? 'border-text-primary scale-110' : 'border-transparent']"
-            @click="col2.color = color" />
+            @click="col2.color = color; edited.add('col2.color')" />
         </div>
       </div>
       <!-- Column 3 -->
       <div class="flex items-center gap-2">
-        <input v-model="col3.name" type="text" placeholder="Column 3 name" maxlength="30"
+        <input v-model="col3.name" type="text" @input="edited.add('col3.name')" placeholder="Column 3 name" maxlength="30"
           class="flex-1 border border-border rounded px-3 py-1.5 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500" />
         <div class="flex gap-1">
           <button v-for="color in paletteColors" :key="color" type="button" :title="color"
             class="w-5 h-5 rounded-full border-2 transition-transform cursor-pointer"
             :class="[`bg-col-${color}`, col3.color === color ? 'border-text-primary scale-110' : 'border-transparent']"
-            @click="col3.color = color" />
+            @click="col3.color = color; edited.add('col3.color')" />
         </div>
       </div>
     </div>
@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import { useSprintStore } from '../../stores/sprint'
 
 const PALETTE_COLORS = ['green', 'red', 'amber', 'blue', 'purple', 'teal', 'pink', 'slate'] as const
@@ -117,21 +117,7 @@ const DEFAULT_COLUMNS = [
   { name: 'Start Doing', color: 'amber' as PaletteColor },
 ]
 
-const emit = defineEmits<{
-  create: [payload: {
-    name: string
-    votesPerParticipant: number | undefined
-    column1Name: string
-    column1Color: string
-    column2Name: string
-    column2Color: string
-    column3Name: string
-    column3Color: string
-    writingTimerDefault: number
-    votingTimerDefault: number
-    discussingTimerDefault: number
-  }]
-}>()
+const props = defineProps<{ teamId: number }>()
 
 const sprintStore = useSprintStore()
 const sprintName = ref('')
@@ -146,18 +132,29 @@ const col1 = ref({ name: DEFAULT_COLUMNS[0]!.name, color: DEFAULT_COLUMNS[0]!.co
 const col2 = ref({ name: DEFAULT_COLUMNS[1]!.name, color: DEFAULT_COLUMNS[1]!.color as string })
 const col3 = ref({ name: DEFAULT_COLUMNS[2]!.name, color: DEFAULT_COLUMNS[2]!.color as string })
 
-onMounted(() => {
-  // Pre-fill from most recent sprint if available
-  const mostRecent = sprintStore.sprints[0]
-  if (mostRecent) {
-    col1.value.name = mostRecent.column1Name
-    col1.value.color = mostRecent.column1Color
-    col2.value.name = mostRecent.column2Name
-    col2.value.color = mostRecent.column2Color
-    col3.value.name = mostRecent.column3Name
-    col3.value.color = mostRecent.column3Color
-  }
-})
+// The list is cleared when its load starts, so the pre-fill from the most recent
+// sprint waits for that load to end and is applied once. The form is editable
+// meanwhile, so a field the user already changed keeps the user's value.
+const edited = new Set<string>()
+let prefilled = false
+
+function prefillColumn(column: Ref<{ name: string; color: string }>, key: string, name: string, color: string) {
+  if (!edited.has(`${key}.name`)) column.value.name = name
+  if (!edited.has(`${key}.color`)) column.value.color = color
+}
+
+watch(
+  () => sprintStore.sprintsLoading,
+  (loading) => {
+    const mostRecent = sprintStore.sprints[0]
+    if (loading || prefilled || !mostRecent) return
+    prefilled = true
+    prefillColumn(col1, 'col1', mostRecent.column1Name, mostRecent.column1Color)
+    prefillColumn(col2, 'col2', mostRecent.column2Name, mostRecent.column2Color)
+    prefillColumn(col3, 'col3', mostRecent.column3Name, mostRecent.column3Color)
+  },
+  { immediate: true },
+)
 
 function validateTimerDefault(value: number, label: string): boolean {
   if (!Number.isInteger(value) || value < 1 || value > 60) {
@@ -179,7 +176,7 @@ async function handleCreate() {
   if (!validateTimerDefault(discussingTimerDefault.value, 'Discussing')) return
   busy.value = true
   try {
-    emit('create', {
+    await sprintStore.createSprint(props.teamId, {
       name,
       votesPerParticipant: votesPerParticipant.value,
       column1Name: col1.value.name.trim(),
@@ -194,6 +191,9 @@ async function handleCreate() {
     })
     sprintName.value = ''
     votesPerParticipant.value = undefined
+  } catch (err: unknown) {
+    const errors = (err as Record<string, unknown>)?.errors as Record<string, string[]> | undefined
+    error.value = errors?.generalErrors?.[0] || 'Failed to create sprint.'
   } finally {
     busy.value = false
   }

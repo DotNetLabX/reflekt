@@ -5,7 +5,7 @@
         <div
           v-for="toast in toasts"
           :key="toast.id"
-          class="relative overflow-hidden pointer-events-auto flex items-start gap-3 min-w-[300px] max-w-sm bg-surface border border-border rounded-[--radius-md] shadow-card-hover px-4 py-3"
+          class="relative overflow-hidden pointer-events-auto flex items-start gap-3 min-w-[300px] max-w-sm bg-surface border border-border rounded-md shadow-card-hover px-4 py-3"
         >
           <component :is="iconMap[toast.variant]" :size="18" :class="iconColorMap[toast.variant]" class="shrink-0 mt-0.5" />
           <p class="flex-1 text-sm text-text-primary">{{ toast.message }}</p>
@@ -16,7 +16,7 @@
             <X :size="16" />
           </button>
           <div
-            class="absolute bottom-0 left-0 h-0.5 rounded-b-[--radius-md]"
+            class="absolute bottom-0 left-0 h-0.5 rounded-b-md"
             :class="barColorMap[toast.variant]"
             :style="{ animation: `toast-progress ${toast.duration}ms linear forwards` }"
           />

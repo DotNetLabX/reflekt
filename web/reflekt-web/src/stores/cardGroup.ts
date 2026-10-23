@@ -20,9 +20,13 @@ export interface CardGroup {
   isFocused: boolean
 }
 
+let groupsRequest = 0
+
 export const useCardGroupStore = defineStore('cardGroup', {
   state: () => ({
     groups: [] as CardGroup[],
+    loading: false,
+    error: null as string | null,
   }),
   getters: {
     column1Groups: (state): CardGroup[] =>
@@ -35,18 +39,38 @@ export const useCardGroupStore = defineStore('cardGroup', {
       state.groups.find((g) => g.isFocused),
   },
   actions: {
-    async fetchGroups(sprintId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = {}
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups`, {
-        headers,
-        credentials: 'include',
-      })
-      if (!res.ok) return
-      this.groups = (await res.json()) as CardGroup[]
-      const voteStore = useVoteStore()
-      voteStore.initVoteCounts(this.groups.map((g) => ({ groupId: g.id, voteCount: g.voteCount })))
+    // A background refresh keeps the groups on screen and keeps a previous refresh's
+    // error until one succeeds.
+    async fetchGroups(sprintId: number, { background = false } = {}): Promise<void> {
+      const request = ++groupsRequest
+      if (!background) {
+        this.groups = []
+        this.error = null
+        this.loading = true
+      }
+      try {
+        const guestStore = useGuestStore()
+        const headers: Record<string, string> = {}
+        if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
+        const res = await fetch(`/api/sprints/${sprintId}/card-groups`, {
+          headers,
+          credentials: 'include',
+        })
+        if (!res.ok) {
+          if (request === groupsRequest) this.error = 'Failed to load groups'
+          return
+        }
+        const groups = (await res.json()) as CardGroup[]
+        if (request !== groupsRequest) return
+        this.groups = groups
+        this.error = null
+        const voteStore = useVoteStore()
+        voteStore.initVoteCounts(groups.map((g) => ({ groupId: g.id, voteCount: g.voteCount })))
+      } catch {
+        if (request === groupsRequest) this.error = "Can't reach the server"
+      } finally {
+        if (request === groupsRequest) this.loading = false
+      }
     },
 
     async createGroup(sprintId: number, cardIds: number[], title?: string): Promise<CardGroup> {
@@ -61,7 +85,7 @@ export const useCardGroupStore = defineStore('cardGroup', {
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
       const group = (await res.json()) as CardGroup
-      await this.fetchGroups(sprintId)
+      await this.fetchGroups(sprintId, { background: true })
       return group
     },
 
@@ -76,7 +100,7 @@ export const useCardGroupStore = defineStore('cardGroup', {
         body: JSON.stringify({ cardId }),
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      await this.fetchGroups(sprintId)
+      await this.fetchGroups(sprintId, { background: true })
     },
 
     async removeCardFromGroup(sprintId: number, groupId: number, cardId: number): Promise<void> {
@@ -89,7 +113,7 @@ export const useCardGroupStore = defineStore('cardGroup', {
         credentials: 'include',
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      await this.fetchGroups(sprintId)
+      await this.fetchGroups(sprintId, { background: true })
     },
 
     async dissolveGroup(sprintId: number, groupId: number): Promise<void> {
@@ -102,7 +126,7 @@ export const useCardGroupStore = defineStore('cardGroup', {
         credentials: 'include',
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      await this.fetchGroups(sprintId)
+      await this.fetchGroups(sprintId, { background: true })
     },
 
     async focusGroup(sprintId: number, groupId: number): Promise<void> {
@@ -155,7 +179,7 @@ export const useCardGroupStore = defineStore('cardGroup', {
         body: JSON.stringify({ title }),
       })
       if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      await this.fetchGroups(sprintId)
+      await this.fetchGroups(sprintId, { background: true })
     },
   },
 })

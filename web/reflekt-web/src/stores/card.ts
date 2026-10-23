@@ -42,9 +42,13 @@ interface EditCardPayload {
   assigneeName?: string | null
 }
 
+let cardsRequest = 0
+
 export const useCardStore = defineStore('card', {
   state: () => ({
     cards: [] as Card[],
+    loading: false,
+    error: null as string | null,
   }),
   getters: {
     column1Cards: (state) => state.cards.filter((c) => c.columnType === 'Column1'),
@@ -53,14 +57,34 @@ export const useCardStore = defineStore('card', {
     actionItemCards: (state) => state.cards.filter((c) => c.columnType === 'ActionItems'),
   },
   actions: {
-    async fetchCards(sprintId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = {}
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/cards`, { headers, credentials: 'include' })
-      if (!res.ok) return
-      const cards = (await res.json()) as Card[]
-      this.cards = cards
+    // A background refresh keeps the cards on screen and keeps a previous refresh's
+    // error until one succeeds.
+    async fetchCards(sprintId: number, { background = false } = {}): Promise<void> {
+      const request = ++cardsRequest
+      if (!background) {
+        this.cards = []
+        this.error = null
+        this.loading = true
+      }
+      try {
+        const guestStore = useGuestStore()
+        const headers: Record<string, string> = {}
+        if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
+        const res = await fetch(`/api/sprints/${sprintId}/cards`, { headers, credentials: 'include' })
+        if (!res.ok) {
+          if (request === cardsRequest) this.error = 'Failed to load cards'
+          return
+        }
+        const cards = (await res.json()) as Card[]
+        if (request === cardsRequest) {
+          this.cards = cards
+          this.error = null
+        }
+      } catch {
+        if (request === cardsRequest) this.error = "Can't reach the server"
+      } finally {
+        if (request === cardsRequest) this.loading = false
+      }
     },
 
     async createCard(sprintId: number, payload: CreateCardPayload): Promise<Card> {

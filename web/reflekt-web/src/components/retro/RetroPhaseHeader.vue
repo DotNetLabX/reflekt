@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-3 bg-surface rounded-[--radius-md] shadow-card px-4 py-3">
+  <div class="flex flex-col gap-3 bg-surface rounded-md shadow-card px-4 py-3">
     <!-- Row 1: Sprint name | timer + badges + action button -->
     <div class="flex items-center justify-between gap-3">
       <h1 class="text-xl font-bold text-text-primary truncate">{{ sprintName }}</h1>
@@ -26,7 +26,7 @@
           <!-- SM tooltip listing ready/not-ready names -->
           <div
             v-if="isScrumMaster && showReadinessTooltip && totalCount > 0"
-            class="absolute right-0 top-full mt-1 z-20 w-48 bg-surface-raised text-text-primary border border-border text-xs rounded-[--radius-sm] p-2 shadow-lg"
+            class="absolute right-0 top-full mt-1 z-20 w-48 bg-surface-raised text-text-primary border border-border text-xs rounded-sm p-2 shadow-lg"
           >
             <div v-if="readyParticipants.length > 0" class="mb-1">
               <p class="font-semibold text-badge-success-text">Done ({{ readyParticipants.length }})</p>
@@ -48,14 +48,14 @@
         <template v-if="isScrumMaster && !isClosed">
           <button
             v-if="!isReportingPhase"
-            class="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer"
+            class="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-sm transition-colors cursor-pointer"
             @click="$emit('advance-phase')"
           >
             Next: {{ nextPhaseName }}
           </button>
           <button
             v-else
-            class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-[--radius-sm] transition-colors cursor-pointer"
+            class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-sm transition-colors cursor-pointer"
             @click="$emit('close-sprint')"
           >
             Close Sprint

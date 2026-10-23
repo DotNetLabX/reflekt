@@ -10,10 +10,13 @@ export interface PreviousActionItem {
   previousSprintName: string
 }
 
+let previousActionsRequest = 0
+
 export const usePreviousActionsStore = defineStore('previousActions', {
   state: () => ({
     items: [] as PreviousActionItem[],
     loading: false,
+    error: null as string | null,
     previousSprintName: null as string | null,
     previousSprintId: null as number | null,
   }),
@@ -33,6 +36,11 @@ export const usePreviousActionsStore = defineStore('previousActions', {
   },
   actions: {
     async fetchPreviousActions(sprintId: number): Promise<void> {
+      const request = ++previousActionsRequest
+      this.items = []
+      this.previousSprintId = null
+      this.previousSprintName = null
+      this.error = null
       this.loading = true
       try {
         const guestStore = useGuestStore()
@@ -43,21 +51,19 @@ export const usePreviousActionsStore = defineStore('previousActions', {
           credentials: 'include',
         })
         if (!res.ok) {
-          this.items = []
+          if (request === previousActionsRequest) this.error = 'Failed to load previous actions'
           return
         }
         const data = (await res.json()) as PreviousActionItem[]
+        if (request !== previousActionsRequest) return
         this.items = data
         const first = data[0]
-        if (first) {
-          this.previousSprintId = first.previousSprintId
-          this.previousSprintName = first.previousSprintName
-        } else {
-          this.previousSprintId = null
-          this.previousSprintName = null
-        }
+        this.previousSprintId = first?.previousSprintId ?? null
+        this.previousSprintName = first?.previousSprintName ?? null
+      } catch {
+        if (request === previousActionsRequest) this.error = "Can't reach the server"
       } finally {
-        this.loading = false
+        if (request === previousActionsRequest) this.loading = false
       }
     },
 

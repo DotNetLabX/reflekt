@@ -6,11 +6,15 @@ export interface VoteDistribution {
   count: number
 }
 
+let myVotesRequest = 0
+
 export const useVoteStore = defineStore('vote', {
   state: () => ({
     myVotes: [] as VoteDistribution[],
     voteCounts: new Map<number, number>(),
     votesPerParticipant: 3,
+    loading: false,
+    error: null as string | null,
   }),
   getters: {
     remainingBudget: (state): number => {
@@ -30,11 +34,25 @@ export const useVoteStore = defineStore('vote', {
     async fetchMyVotes(sprintId: number): Promise<void> {
       const guestStore = useGuestStore()
       if (!guestStore.token) return
-      const res = await fetch(`/api/sprints/${sprintId}/votes/mine`, {
-        headers: { 'X-Guest-Token': guestStore.token },
-      })
-      if (!res.ok) return
-      this.myVotes = (await res.json()) as VoteDistribution[]
+      const request = ++myVotesRequest
+      this.myVotes = []
+      this.error = null
+      this.loading = true
+      try {
+        const res = await fetch(`/api/sprints/${sprintId}/votes/mine`, {
+          headers: { 'X-Guest-Token': guestStore.token },
+        })
+        if (!res.ok) {
+          if (request === myVotesRequest) this.error = 'Failed to load your votes'
+          return
+        }
+        const myVotes = (await res.json()) as VoteDistribution[]
+        if (request === myVotesRequest) this.myVotes = myVotes
+      } catch {
+        if (request === myVotesRequest) this.error = "Can't reach the server"
+      } finally {
+        if (request === myVotesRequest) this.loading = false
+      }
     },
 
     async castVote(sprintId: number, groupId: number): Promise<void> {

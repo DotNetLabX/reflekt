@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-surface border border-border rounded-[--radius-md] shadow-card">
+  <div class="bg-surface border border-border rounded-md shadow-card">
     <!-- Header row -->
     <div
-      class="flex items-center justify-between px-4 py-3 cursor-pointer select-none bg-badge-warning-bg rounded-t-[--radius-md]"
+      class="flex items-center justify-between px-4 py-3 cursor-pointer select-none bg-badge-warning-bg rounded-t-md"
       :title="sectionTooltip"
       @click="toggleCollapsed"
     >

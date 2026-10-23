@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "suite": { "result": "pass", "record": "docs/specs/F36-FrontendDefects/delivery/summary.md" },
+  "doneCheck": "PASS",
+  "review": { "verdict": "REQUEST CHANGES", "highestFixed": "HIGH" },
+  "headline": "Seven frontend visual and UX defects fixed; one pre-existing hub-connection race moved to the backlog.",
+  "presumed": [
+    { "id": "C1", "story": null, "what": "After the owner-granted 4th cycle, the remaining HIGH (leave during WebSocket startup blocks the next room) was moved out of F36 to a backlog row and F36 closed with it listed.", "confidence": "high", "why": "Architect: the defect exists on main, and a real fix must amend the pinned useSprintHub.ts.", "where": "docs/specs/F36-FrontendDefects/delivery/questions.md" }
+  ],
+  "deferredRows": { "count": 1, "where": "docs/specs/F36-FrontendDefects/delivery/change-notes.md" },
+  "retirements": { "count": 0, "where": null },
+  "pluginFindings": [
+    { "finding": "The tied fast run has no runner for .ts files, so frontend fix rounds ran the .NET unit tests instead.", "where": "docs/specs/F36-FrontendDefects/delivery/implementation.md" }
+  ]
+}

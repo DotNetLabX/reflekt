@@ -1,6 +1,6 @@
 <template>
   <div
-    class="absolute right-0 top-full mt-1 z-30 bg-surface-raised border border-border rounded-[--radius-sm] shadow-lg p-2 flex flex-col gap-1.5 min-w-[140px]"
+    class="absolute right-0 top-full mt-1 z-30 bg-surface-raised border border-border rounded-sm shadow-lg p-2 flex flex-col gap-1.5 min-w-[140px]"
     @click.stop
   >
     <!-- Running: Pause, Reset, +time -->
@@ -79,7 +79,7 @@ async function invokeAddTime(minutes: number) {
 <style scoped>
 @reference "../../assets/main.css";
 .timer-btn {
-  @apply w-full px-3 py-1 text-xs font-medium rounded-[--radius-sm] transition-colors cursor-pointer text-center;
+  @apply w-full px-3 py-1 text-xs font-medium rounded-sm transition-colors cursor-pointer text-center;
 }
 .timer-btn-primary {
   @apply bg-primary-600 hover:bg-primary-700 text-white;
@@ -88,6 +88,6 @@ async function invokeAddTime(minutes: number) {
   @apply bg-surface-raised hover:bg-border text-text-secondary;
 }
 .timer-btn-add {
-  @apply flex-1 px-1 py-1 text-xs font-medium rounded-[--radius-sm] bg-surface-raised hover:bg-border text-text-secondary transition-colors cursor-pointer text-center;
+  @apply flex-1 px-1 py-1 text-xs font-medium rounded-sm bg-surface-raised hover:bg-border text-text-secondary transition-colors cursor-pointer text-center;
 }
 </style>

@@ -1,12 +1,12 @@
 <template>
   <div
     v-show="visible"
-    class="bg-surface border border-border rounded-[--radius-md] shadow-card flex flex-col min-h-0"
+    class="bg-surface border border-border rounded-md shadow-card flex flex-col min-h-0"
     :class="extraClass"
   >
     <!-- Column header -->
     <div
-      class="px-4 py-3 border-b rounded-t-[--radius-md] flex items-center gap-2"
+      class="px-4 py-3 border-b rounded-t-md flex items-center gap-2"
       :class="`bg-col-${columnColor}-light`"
     >
       <!-- Inline edit mode (SM only) -->

@@ -42,9 +42,9 @@ const buttonClasses = computed(() => {
   };
 
   const sizes = {
-    sm: 'px-2.5 py-1.5 text-xs rounded-[--radius-sm]',
-    md: 'px-4 py-2 text-sm rounded-[--radius-md]',
-    lg: 'px-5 py-2.5 text-base rounded-[--radius-md]',
+    sm: 'px-2.5 py-1.5 text-xs rounded-sm',
+    md: 'px-4 py-2 text-sm rounded-md',
+    lg: 'px-5 py-2.5 text-base rounded-md',
   };
 
   const disabled = (props.disabled || props.loading) ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer';
