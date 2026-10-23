@@ -34,3 +34,53 @@ File reviewed: [docs/specs/F40-ArchitectureDocs/definition/spec.md](docs/specs/F
 13. **Low — spec.md:30 — README retains a factual metadata error.** The prescribed map link leaves `README.md:98` claiming only F31/F32 have `definition/` directories, although F35–F40 also have them. Include this correction under the promised current-state documentation refresh.
 
 Read-only review completed; no files modified.
+
+
+# Plan review — round 1 — 2026-10-23 — Codex (job task-mvl8l3zh-gt1bux), persisted by team-lead session 999a4869
+
+## Verdict: NO-GO
+
+All findings concern [delivery/plan.md](D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md).
+
+- **Medium — Step 2, lines 79–81:** Installing with `--tool-path obj/dotnet-ef` does not make `dotnet ef` available automatically. Neither the executable path nor a temporary `PATH` update is specified. The global tool list is empty, no tool manifest exists, and `dotnet ef --version` fails. Specify the installed executable invocation so the required design-time verification actually runs.
+
+- **Medium — Step 3, lines 97–108:** AR-16 and the audit’s §3.8 lack implementation coverage. The architecture sections omit OpenGraph source detection, the Jira fetch bypass, and the background-fetch pipeline. These remain implemented in `EvidenceLinkSourceDetector.cs`, `EvidenceLink.cs`, and `OpenGraphConfiguration.cs`. Add explicit documentation and acceptance coverage.
+
+- **Medium — Step 8, lines 171–185:** TS-09 requires replacement coverage guidance for aggregate behaviour, phase/state transitions, and authorization. The plan only removes the analytics coverage line. It does not address the existing CRUD skip guidance that contradicts actual integration-test practice.
+
+- **Medium — Step 9, line 197:** The F39 scan does not explicitly carry its recorded composable-toast exception. F39’s `implementation.md:460` preserves `useTimerActions` toasting, contrary to `vue-component-architecture`’s prohibition; the current implementation still does this. Name that accepted deviation and include fix-round records in the scan instead of permitting a misleading “none listed” result.
+
+- **Low — Step 3, lines 95–108:** The named `create-architecture-doc` pattern is intentionally departed from, but the step has no required `Departs from:` row. The narrative and future `known-deviations.md` entry do not supply that plan row. Record the template and inventory-disposition departures with their spec authorization.
+
+- **Low — P1, line 299:** “Handlers get `CancellationToken.None`” overstates the guarantee. The interceptor starts publication with that token, but F38’s recorded FastEndpoints probe shows handlers receive linked tokens that can be cancelled when a sibling fails. Distinguish publication-token selection from handler-token behaviour.
+
+
+# Plan review — round 2 — 2026-10-23 — Codex (job task-mvl90l8e-3b0rfx), persisted by team-lead session 999a4869
+
+## Verdict: NO-GO
+
+| Finding | Status | Plan lines | Fold verification |
+|---|---|---|---|
+| R1-01 | closed | [64–66, 104–106, 118](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:64) | Fetch pipeline, packages and cross-cutting sections now have inventory inputs and acceptance checks. |
+| R1-02 | closed | [203–207](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:203) | Whole F39 record scanned; both known exceptions named and candidates recorded. |
+| R1-03 | closed | [81–93](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:81) | Installed tool invoked directly; version and results recorded. |
+| R1-04 | closed | [185–192](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:185) | Domain coverage guidance added; CRUD-skip guidance removed. |
+| R1-05 | closed | [124–127](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:124) | Both allowlist locations explicitly included within permitted annotations. |
+| R1-06 | closed | [302](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:302) | Explicit departure decision and rationale for the untagged row added. |
+| R1-07 | closed | [63, 102, 309](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:309) | Publication token distinguished consistently from handler tokens. |
+| R1-08 | closed | [145, 165, 282](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:165) | Checks require the rule at its canonical home and remove its duplicate. |
+| R1-09 | closed | [254–256, 301](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:254) | Document refresh is observed rather than assumed; ordering rationale corrected. |
+| R1-10 | closed | [187, 216, 260](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:260) | Example-list producers and final consolidation assigned. |
+| R1-11 | closed | [6, 162–165](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:162) | Count exclusions explained; service port duplication explicitly prohibited and checked. |
+
+No MEDIUM-or-higher contradiction introduced by the fold was found. Two source-verification gaps remain:
+
+1. **R2-01 — MEDIUM — [plan.md:66](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:66)** — `round-1 miss: endpoint inventory`
+
+   Step 1 requires extracting verbs, routes and policies “from each `Configure()`”, but the source contains **44 endpoint files, 44 HTTP attributes and zero `Configure()` declarations**. For example, [CreateCardEndpoint.cs:14](/D:/src/reflekt-F40-ArchitectureDocs/src/Services/Reflekt/Reflekt.API/Features/Cards/CreateCard/CreateCardEndpoint.cs:14) declares its policy and route through attributes. The prescribed extraction cannot produce the required endpoint inventory, which later slices must reuse. Require extraction from `[Http*]`, `[Authorize]` and `[AllowAnonymous]`, reconciled against every endpoint class.
+
+2. **R2-02 — MEDIUM — [plan.md:67](/D:/src/reflekt-F40-ArchitectureDocs/docs/specs/F40-ArchitectureDocs/delivery/plan.md:67)** — `round-1 miss: real-time message inventory`
+
+   Enumerating literal `SendAsync("…")` calls yields **24 names**, missing `CardCreated` and `CardUpdated`. Those names enter through [BroadcastCardCreatedHandler.cs:11](/D:/src/reflekt-F40-ArchitectureDocs/src/Services/Reflekt/Reflekt.API/Features/Cards/CreateCard/BroadcastCardCreatedHandler.cs:11) and [BroadcastCardUpdatedHandler.cs:11](/D:/src/reflekt-F40-ArchitectureDocs/src/Services/Reflekt/Reflekt.API/Features/Cards/EditCard/BroadcastCardUpdatedHandler.cs:11); [CardBroadcast.cs:19](/D:/src/reflekt-F40-ArchitectureDocs/src/Services/Reflekt/Reflekt.API/Features/Cards/CardBroadcast.cs:19) sends the supplied variable. Both are consumed by [useSprintHub.ts:65](/D:/src/reflekt-F40-ArchitectureDocs/web/reflekt-web/src/composables/useSprintHub.ts:65). The doc could match its incomplete fact sheet while omitting two central messages. Include helper call sites and reconcile the resulting 26 names with client registrations.
+
+Read-only review; no files modified.

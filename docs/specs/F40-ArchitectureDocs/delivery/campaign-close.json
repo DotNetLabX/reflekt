@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "suite": { "result": "pass", "record": "docs/specs/F40-ArchitectureDocs/delivery/summary.md" },
+  "doneCheck": "PASS",
+  "review": { "verdict": "COMMENT", "highestFixed": "MEDIUM" },
+  "headline": "Reflekt now has an as-built architecture reference, a root CLAUDE.md for this app, and conventions docs that match the code — login documented as open to any Google account.",
+  "presumed": [
+    { "id": "C1", "story": null, "what": "The architecture doc's skill inventory uses a third label, Workflow, for the 10 pipeline skills.", "confidence": "high", "why": "Neither planned label (Referenced, not used by this app) fits process skills; all 37 still listed.", "where": "docs/specs/F40-ArchitectureDocs/delivery/implementation.md" },
+    { "id": "C2", "story": null, "what": "The case-variant team-name race is documented as an accepted deviation, not fixed.", "confidence": "medium", "why": "Scope is docs only, no new behaviour; the code fix belongs to a later feature.", "where": "docs/conventions/known-deviations.md" },
+    { "id": "C3", "story": null, "what": "F40's docs merge with or after F39's lint change notes.", "confidence": "high", "why": "The docs describe the lint script and lint leg that only exist once F39's notes are applied.", "where": "docs/specs/F40-ArchitectureDocs/delivery/change-notes.md" },
+    { "id": "C4", "story": null, "what": "The product doc's 'one team per creator' line is left as is.", "confidence": "medium", "why": "The code allows 10 per user; changing the product statement is a product call, outside this docs unit.", "where": "docs/specs/F40-ArchitectureDocs/delivery/implementation.md" }
+  ],
+  "deferredRows": { "count": 3, "where": "docs/specs/F40-ArchitectureDocs/delivery/change-notes.md" },
+  "retirements": { "count": 0, "where": null },
+  "pluginFindings": [
+    { "finding": "The test-entry gate blocks a shell write or grep whose text merely names the frontend test runner.", "where": "docs/specs/F40-ArchitectureDocs/delivery/lessons.md" },
+    { "finding": "graphify indexes .claude/tmp, where the campaign rules put scratch files, so a graph rebuild picked up scratch copies.", "where": "docs/specs/F40-ArchitectureDocs/delivery/lessons.md" }
+  ]
+}

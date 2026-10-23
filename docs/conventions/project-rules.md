@@ -1,70 +1,33 @@
 # Stack Rules
 
-Architectural guardrails, repo structure, and conventions. Referenced by all agents that plan, write, or review code.
+Source-file boundary, conventions and build verification for this repo. Referenced by all agents that plan, write, or review code.
 
 ## Source File Definition
 
 Source files are files that contain application code. Agents restricted from writing source code must not create or modify these files:
 
-- `src/**/*.cs` — all C# files under the services, modules, and building blocks tree
+- `src/**/*.cs` — all C# files of the service projects (`src/Services/Reflekt/`) and the building blocks (`src/BuildingBlocks/`)
 - `web/reflekt-web/src/**/*.ts` — TypeScript files
 - `web/reflekt-web/src/**/*.vue` — Vue single-file components
 - `web/reflekt-web/src/**/*.css` — stylesheets
 
 These are NOT source files (agents may read/write them freely):
-- `docs/**` — documentation, specs, plans, KB entries
+- `docs/**` — documentation, specs, plans
 - `.claude/**` — agent definitions, rules, skills
 - `web/reflekt-web/index.html`, `web/reflekt-web/*.config.*` — frontend build config
-- Root config files (`*.slnx`, `docker-compose.*`, `*.json`, `*.md`)
+- Root config files (`*.slnx`, `*.json`, `*.md`)
 
-## Guardrails — DO NOT
+## Guardrails, repo structure, reference graph
 
-- **No entity-wrapper service classes** (e.g. `ArticleService`, `SprintService`) — classes that accumulate business logic around a single entity. Focused operation services scoped to a feature area (e.g. `SprintIssueSyncService`) are allowed.
-- **No repository interfaces** — single implementation, interfaces add zero value. Other components (modules, cross-cutting) do use interfaces where contracts are needed.
-- **No god folders** (`Services/`, `Helpers/`, `Utils/`).
-- **No bypassing domain rules** via EF configs or endpoints.
-- **Domain events** = within service boundary. **Integration events** = cross-service.
-- **No `.gitkeep` files** — don't track empty directories.
-- **No secrets in commits or artifacts.** No agent may commit, include, or reference files containing secrets (`.env`, `credentials.json`, API keys, connection strings, tokens). If a file appears to contain secrets, warn the user instead of proceeding.
-
-## Repo Structure
-
-```
-src/
-  BuildingBlocks/              # Shared libraries
-    (app-agnostic)             #   Reusable primitives (no project knowledge)
-    (app-specific)             #   gRPC contracts, integration event contracts
-  Services/                    # Microservices — one folder per service
-    {Svc}/
-      {Svc}.API/               #   FastEndpoints feature slices, SignalR hubs, DI, migration startup host
-      {Svc}.Domain/            #   Aggregates, value objects, domain events
-      {Svc}.Persistence/       #   EF Core DbContext, configs, migrations, repositories
-  Modules/                     # Modular monolith (Contracts + Implementation per module)
-  ApiGateway/                  # YARP reverse proxy
-docker-compose                 # Local dev environment
-```
-
-Default to **module**; only use a microservice when deployment/scaling/ownership demands it.
-
-## Project Reference Graph
-
-```
-API  ──▶  Domain
-  │
-  └─▶  Persistence  ──▶  Domain
-```
-
-- `API` references both `Domain` and `Persistence` directly. Endpoints consume concrete repositories — no abstraction layer.
-- `Persistence` references `Domain`.
-- `Domain` references nothing.
+They live in the root `CLAUDE.md` only: § Guardrails — DO NOT, § Repo Structure and its § Project reference graph. Read them there; this file does not repeat them.
 
 ## Conventions
 
-- **Domain events** carry aggregate reference, not individual properties.
+- **Domain events:** the rule and its exception are in the root `CLAUDE.md` § Domain events.
 - **Aggregate creation:** static factory when business rules or domain events are involved; `required init` properties when plain data.
-- **FastEndpoints:** one endpoint class per feature, validator as sibling class in same folder.
+- **FastEndpoints:** one endpoint class per feature; its request, response and validator live in the slice's sibling `*Command.cs` / `*Query.cs`.
 - **Repositories** wrap `SaveChangesAsync` — endpoints never touch DbContext directly.
-- **EF migrations:** `dotnet ef migrations add Name -p Services/{Svc}/{Svc}.Persistence -s Services/{Svc}/{Svc}.API`
+- **EF migrations** (from the repository root): `dotnet ef migrations add Name -p src/Services/Reflekt/Reflekt.Persistence -s src/Services/Reflekt/Reflekt.API`
 
 ## Plan-to-Code Boundary
 
@@ -75,6 +38,7 @@ API  ──▶  Domain
 
 - `dotnet build` — run after every backend implementation step. Fresh output, not assumed.
 - `npm run build` (from `web/reflekt-web/`) — run after frontend changes. Must exit 0 with no TypeScript errors.
-- `npx vitest run` (from `web/reflekt-web/`) — run frontend tests when they exist.
+- `npm --prefix web/reflekt-web run lint` — ESLint and Prettier, run after frontend changes. Must exit 0.
+- Frontend tests are not set up: there is no frontend test runner and no test script.
 - **File-lock MSB errors (MSB3026/MSB3027/MSB3492) on Windows are not compilation errors** — they mean the app or dev server is holding output DLLs. Filter with `error CS` to confirm zero actual compiler errors. Don't chase these as build failures.
 - Debug artifact grep: `Console.WriteLine` (debugging), `TODO`, `HACK`, `FIXME`, commented-out code.

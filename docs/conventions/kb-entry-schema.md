@@ -2,6 +2,8 @@
 
 Standard section order for all `docs/kb/` entries. Use these headings exactly — agents and lint checks rely on consistent naming.
 
+> **Note:** `docs/kb/` was never created in this repo (owner decision 2026-10-12). The rules that name it stay as written; this schema applies once a KB entry is written.
+
 ## Required Sections
 
 ```markdown

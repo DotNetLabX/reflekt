@@ -1,0 +1,492 @@
+{
+  "format_version": 1,
+  "feature": "F40-ArchitectureDocs",
+  "kind_of_run": "team run",
+  "state": "partial",
+  "started": "2026-10-22T20:17:53.005Z",
+  "closed": "2026-10-23T19:21:34.925Z",
+  "plugin_versions": [
+    "2.4.49"
+  ],
+  "claude_code_versions": [
+    "2.1.308"
+  ],
+  "spawns": [
+    {
+      "role": "architect",
+      "name": "architect-1",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "calls": 51,
+      "tokens": {
+        "input": 118,
+        "cache_written_5m": 0,
+        "cache_written_1h": 152747,
+        "cache_read": 26964350,
+        "output": 45490
+      },
+      "peak_context": 652248,
+      "compactions": 0,
+      "first_activity": "2026-10-22T20:17:53.005Z",
+      "last_activity": "2026-10-22T21:31:25.787Z",
+      "active_ms": 2258887
+    },
+    {
+      "role": "critic",
+      "name": "critic-second",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      },
+      "calls": 27,
+      "tokens": {
+        "input": 54,
+        "cache_written_5m": 246121,
+        "cache_written_1h": 0,
+        "cache_read": 4496782,
+        "output": 61162
+      },
+      "peak_context": 246123,
+      "compactions": 0,
+      "first_activity": "2026-10-22T20:22:43.018Z",
+      "last_activity": "2026-10-22T20:31:22.424Z",
+      "active_ms": 519406
+    },
+    {
+      "role": "critic",
+      "name": "critic-1",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      },
+      "calls": 19,
+      "tokens": {
+        "input": 38,
+        "cache_written_5m": 159105,
+        "cache_written_1h": 0,
+        "cache_read": 2506496,
+        "output": 38622
+      },
+      "peak_context": 180743,
+      "compactions": 0,
+      "first_activity": "2026-10-22T20:22:46.671Z",
+      "last_activity": "2026-10-22T20:27:55.724Z",
+      "active_ms": 309053
+    },
+    {
+      "role": "critic",
+      "name": "critic-2",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      },
+      "calls": 26,
+      "tokens": {
+        "input": 52,
+        "cache_written_5m": 115944,
+        "cache_written_1h": 0,
+        "cache_read": 2719128,
+        "output": 33077
+      },
+      "peak_context": 137582,
+      "compactions": 0,
+      "first_activity": "2026-10-22T20:22:51.337Z",
+      "last_activity": "2026-10-22T20:30:58.296Z",
+      "active_ms": 486959
+    },
+    {
+      "role": "critic",
+      "name": "critic-3",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      },
+      "calls": 43,
+      "tokens": {
+        "input": 86,
+        "cache_written_5m": 226585,
+        "cache_written_1h": 0,
+        "cache_read": 7473718,
+        "output": 70295
+      },
+      "peak_context": 248223,
+      "compactions": 0,
+      "first_activity": "2026-10-22T20:22:56.787Z",
+      "last_activity": "2026-10-22T20:33:14.718Z",
+      "active_ms": 617931
+    },
+    {
+      "role": "critic",
+      "name": "critic-4",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      },
+      "calls": 21,
+      "tokens": {
+        "input": 42,
+        "cache_written_5m": 131825,
+        "cache_written_1h": 0,
+        "cache_read": 2511482,
+        "output": 40270
+      },
+      "peak_context": 153463,
+      "compactions": 0,
+      "first_activity": "2026-10-22T20:23:01.056Z",
+      "last_activity": "2026-10-22T20:29:09.486Z",
+      "active_ms": 368430
+    },
+    {
+      "role": "critic",
+      "name": "critic-5",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      },
+      "calls": 21,
+      "tokens": {
+        "input": 42,
+        "cache_written_5m": 159657,
+        "cache_written_1h": 0,
+        "cache_read": 2815455,
+        "output": 47549
+      },
+      "peak_context": 181295,
+      "compactions": 0,
+      "first_activity": "2026-10-22T20:23:05.864Z",
+      "last_activity": "2026-10-22T20:29:48.730Z",
+      "active_ms": 402866
+    },
+    {
+      "role": "critic",
+      "name": "critic",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "review_link": {
+        "kind": "spec",
+        "round": 2
+      },
+      "calls": 25,
+      "tokens": {
+        "input": 50,
+        "cache_written_5m": 196331,
+        "cache_written_1h": 0,
+        "cache_read": 3790349,
+        "output": 50264
+      },
+      "peak_context": 206447,
+      "compactions": 0,
+      "first_activity": "2026-10-22T21:09:36.854Z",
+      "last_activity": "2026-10-22T21:17:10.216Z",
+      "active_ms": 453362
+    },
+    {
+      "role": "critic",
+      "name": "critic-6",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "forwarder_model": "claude-opus-5-5",
+      "review_link": {
+        "kind": "spec",
+        "round": 1
+      },
+      "plugin_versions": [
+        "2.4.49"
+      ],
+      "claude_code_versions": [
+        "2.1.308"
+      ],
+      "calls": 19,
+      "tokens": {
+        "input": 132956,
+        "cache_written": 0,
+        "cache_read": 1501952,
+        "output": 15398
+      },
+      "first_activity": "2026-10-22T20:22:39.644Z",
+      "last_activity": "2026-10-22T20:29:54.128Z",
+      "active_ms": 434484
+    },
+    {
+      "role": "critic",
+      "name": "plan-round-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "plan",
+        "round": 1
+      }
+    },
+    {
+      "role": "critic",
+      "name": "critic-7",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "plan",
+        "round": 1
+      }
+    },
+    {
+      "role": "critic",
+      "name": "plan-round-2",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "plan",
+        "round": 2
+      }
+    },
+    {
+      "role": "reviewer",
+      "name": "code-round-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 1
+      }
+    },
+    {
+      "role": "reviewer",
+      "name": "reviewer-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 1
+      }
+    }
+  ],
+  "plan_steps": "steps not marked",
+  "review_rounds": {
+    "spec": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "critic-second",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "critic-1",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "critic-2",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "critic-3",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "critic-4",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "critic-5",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "critic-6",
+            "models": [
+              "gpt-6.1-sol"
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "readers": [
+          {
+            "name": "critic",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          }
+        ]
+      }
+    ],
+    "plan": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "plan-round-1",
+            "models": [
+              "model unknown"
+            ]
+          },
+          {
+            "name": "critic-7",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "readers": [
+          {
+            "name": "plan-round-2",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      }
+    ],
+    "code": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "code-round-1",
+            "models": [
+              "model unknown"
+            ]
+          },
+          {
+            "name": "reviewer-1",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "fix_cycles": 0,
+  "test_build_runs": {
+    "count": 1,
+    "total_duration_ms": 49267,
+    "runs": [
+      {
+        "runner": "agent",
+        "duration_ms": 49267
+      }
+    ]
+  },
+  "owner_touches": {
+    "question_box_answered": 1,
+    "typed_message": 3
+  },
+  "completeness": {
+    "spawns": [
+      {
+        "name": "plan-round-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "critic-7",
+        "reason": "out of reach"
+      },
+      {
+        "name": "plan-round-2",
+        "reason": "out of reach"
+      },
+      {
+        "name": "code-round-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "reviewer-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "developer-1",
+        "reason": "out of reach"
+      }
+    ],
+    "fields": []
+  },
+  "output_tokens_note": "output tokens are as the platform recorded them, which can fall short of what the model produced"
+}

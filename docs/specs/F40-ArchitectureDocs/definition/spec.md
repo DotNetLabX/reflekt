@@ -5,8 +5,8 @@
 **Dependencies:** F35, F36, F37, F38, F39 — the docs describe the code they leave behind
 **Rule list:** not applicable — documentation
 **Review:** round 1 — `delivery/review-critic.md`
-**Status:** Ready
-**Plan:** None
+**Status:** Done
+**Plan:** `docs/specs/F40-ArchitectureDocs/delivery/plan.md`
 
 ---
 

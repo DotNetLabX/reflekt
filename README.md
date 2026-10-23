@@ -95,11 +95,11 @@ Reflekt was built by AI agents (Claude Code), with a human owner deciding what t
 |-------|------------|---------------|
 | `ai-coding/` | First | The original agent setup and per-feature folders (`ai-coding/plans/{Feature}/`) — usually a plan, a review and lessons, with the delivery record as `done.md` in the earlier folders and as `implementation.md` + `summary.md` in the later ones; a few folders hold only part of this set — plus notes on the development flow and evaluations of the setup |
 | `docs/features/` + `docs/plans/` | Second | Feature specs written before planning (`docs/features/`) and their implementation plans and delivery records (`docs/plans/`) |
-| `docs/specs/` | Current | The current pipeline layout: one folder per feature from `F29-…` onward, plus ad-hoc runs (`adhoc-…`). Each has `delivery/` (plan, implementation record, reviews, lessons, summary); only the newest features (`F31`, `F32`) also have `definition/` (the spec) |
+| `docs/specs/` | Current | The current pipeline layout: one folder per feature from `F29-…` onward, plus ad-hoc runs (`adhoc-…`). Each has `delivery/` (plan, implementation record, reviews, lessons, summary); `F31`, `F32` and `F35`–`F40` also have `definition/` (the spec), while `F29`, `F30`, `F33`, `F34` and the ad-hoc run have `delivery/` only |
 
 Around them:
 
-- `docs/product/` — the business specs (`v1.md`, `v2.md`); `docs/architecture/` — the architecture decisions; `docs/backlog.md` — the feature sequence and status; `docs/bugs.md` — bugs found in user testing and how they were fixed; `docs/conventions/` — the coding conventions the agents follow.
+- `docs/product/` — the business specs (`v1.md`, `v2.md`); [`docs/architecture/index.md`](docs/architecture/index.md) — the one-page architecture map, which leads to the as-built reference `architecture.md` (`v1.md` beside it is the original proposal, kept as the decision log); `docs/backlog.md` — the feature sequence and status; `docs/bugs.md` — bugs found in user testing and how they were fixed; `docs/conventions/` — the coding conventions the agents follow.
 - `.claude/` — the agent setup exactly as it was used: agent roles (`agents/`), always-on rules (`rules/`), artifact formats (`conventions/`) and pattern skills (`skills/`). `CLAUDE.md` at the root holds the project-wide instructions.
   - The skill set started from a starter template, so it includes skills this app never used (for example gRPC contracts, Redis persistence, MassTransit integration events, MediatR pipeline behaviors, analytics services); their examples point at the template's own paths.
   - The rules mention a `docs/kb/` knowledge base (and a `docs/skill-backlog.md`). Neither was ever created — the mentions are left as they were written.
