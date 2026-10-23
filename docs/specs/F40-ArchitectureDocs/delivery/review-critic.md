@@ -108,3 +108,80 @@ Coverage: complete
 | below floor | fixed-real (cheap) | — | — | testing row (F37 tooling); graph fallback wording; backlog note excludes parked item 22; AC7 base commit |
 
 Reconciled: Scope project-rules row ↔ CLAUDE.md row (events rule lives in CLAUDE.md only) ↔ AC8; AC2 ↔ sign-in row ↔ backlog item 35; AC6 ↔ graph row. No round 3: round 2 holds no CRITICAL.
+
+## Round 1 — 2026-10-23 — plan — primary (codex)
+
+Header note: primary is Codex (job task-mvl8l3zh-gt1bux, completed, NO-GO); its verdict is persisted verbatim in `review-critic-codex.md` § Plan review — round 1. Second reader: nexus critic on Sonnet (ACCEPT). Persisted and merged by the team lead; the fold is the architect's.
+
+Codex findings (verbatim, see review-critic-codex.md): M1 Step 2 `--tool-path` install leaves `dotnet ef` uninvokable; M2 Step 3 omits AR-16 / § 3.8 (OpenGraph detection, Jira bypass, background fetch); M3 Step 8 lacks TS-09 replacement coverage guidance and leaves the CRUD-skip guidance; M4 Step 9 F39 scan misses the `useTimerActions` composable-toast exception (F39 impl:460) and fix-round records; L1 Step 3 has no `Departs from:` row for the `create-architecture-doc` template; L2 P1 overstates "handlers get CancellationToken.None" (handlers get linked tokens).
+
+## Second reader — round 1 (sonnet)
+
+Verdict: ACCEPT — 3 MEDIUM, 4 LOW (relayed message, summarised by finding; full text in the team lead's session transcript):
+- [MEDIUM] F40-01 (seed-0364) Step 3's section list has no home for AR-16 (OpenGraph/source detection/Jira short-circuit), AR-19 (package table) or § 3.8 (pipeline order, options, singletons); its Accept passes without them. Fix: name sections for them.
+- [MEDIUM] F40-02 (seed-0129) Step 9 scans F39's Key Decisions/Deviations only; F39's skill difference sits in `## Skills Used` row 4 / Step 4 (`apiFetch` built in `src/api/client.ts`, create-vue-feature skill cites an absent file). Fix: scan the whole record incl. per-step Skills lines; name `apiFetch` as a starting row.
+- [MEDIUM] F40-03 (seed-0130) Step 4 says "No other edit" but `v1.md:182` (§ 6 Teams: "Allowlist check.") lies outside the annotated regions while Accept requires every allowlist hit be marked superseded. Fix: annotate it, or state the status line covers the file and reword the accept.
+- [LOW] F40-04 (seed-0364) Must-NOT-Change row 6 (events rule in CLAUDE.md only) claims "pinned" by checks that don't test it. Fix: add a grep or mark "by inspection".
+- [LOW] F40-05 (seed-0153) Step 13 / Decisions row 6 claim graph document nodes reflect final docs; `graphify update` re-extracts code only. Fix: drop the claim; optional stale-node check.
+- [LOW] F40-06 (seed-0364) AC3's "reviewed and listed in implementation.md" half has no producing step. Fix: add the listing to Step 8/10 and Step 14.
+- [LOW] F40-07 (seed-0137) Header says 4 files (≈20 change); service CLAUDE.md port note ambiguous vs root rule "services don't duplicate port numbers". Fix: correct count; service file names only index 1 and points to the root table.
+Gap-analysis notes: learner.md says "CLAUDE.md is stack-agnostic" (Step 11 could mention); Step 10's negative grep `inline .*style.*body` could match its own explanation; AC7 "only *.md" vs close-time json files in the feature folder. Open questions: design-time DB path relative to cwd (use `git status --porcelain --ignored` before/after); whether graphify regenerates community labels.
+
+### Merge — round 1
+
+Coverage: incomplete — the second reader opened F34 `backend.md`/`frontend.md`/`skills.md`, `src/`, `tests/` and `web/reflekt-web/src` by grep/listing only; Codex returned no coverage ledger.
+
+| id | readers | level | anchor | title | shape | consequence | evidence | untouchable | tag | surfaces | source ids |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| R1-01 | codex, sonnet | MEDIUM | seed-0364 | Step 3 has no section for AR-16, AR-19, audit § 3.8 | requirement in Satisfies with no step content | as-built doc omits evidence-link fetch pipeline, package table, pipeline order and still passes its accept | quoted | — | coverage | plan § Step 3; spec Scope row 1; F34 architecture.md § 3.8 | codex M2, F40-01 |
+| R1-02 | codex, sonnet | MEDIUM | seed-0129 | Step 9 F39 scan misses recorded skill/code differences | source consulted in wrong place | deviations table says "none listed" while F39 records `apiFetch` and the `useTimerActions` toast exception | quoted | — | coverage | plan § Step 9; F39 implementation.md Skills Used, Step 4, line 460, fix rounds | codex M4, F40-02 |
+| R1-03 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | `--tool-path` install leaves `dotnet ef` uninvokable | missing invocation detail | the required design-time run cannot execute as written | quoted | — | mechanism | plan § Step 2 | codex M1 |
+| R1-04 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | TS-09 replacement coverage guidance absent | spec row partly unplanned | testing.md keeps CRUD-skip guidance contradicting practice | quoted | — | coverage | plan § Step 8; F34 deps-tests-conventions TS-09 | codex M3 |
+| R1-05 | sonnet | MEDIUM | seed-0130 | Step 4 "No other edit" vs its accept on v1.md:182 | step text contradicts accept | allowlist line left unmarked, or step limit broken | quoted | — | contradiction | plan § Step 4; v1.md:182 | F40-03 |
+| R1-06 | codex | LOW | unranked — no anchor fits; Codex severity LOW | no `Departs from:` row for create-architecture-doc template | missing departure row | departure recorded only in narrative | quoted | — | plan grammar | plan § Step 3 | codex L1 |
+| R1-07 | codex | LOW | unranked — no anchor fits; Codex severity LOW | P1 overstates CancellationToken.None for handlers | overstated claim | docs state a guarantee handlers don't get | quoted | — | accuracy | plan P1 | codex L2 |
+| R1-08 | sonnet | LOW | seed-0364 | Must-NOT-Change row 6 pinned by no check | invariant claimed pinned without check | duplicate events rule could pass | quoted | — | verification | plan Must-NOT-Change; Step 6 | F40-04 |
+| R1-09 | sonnet | LOW | seed-0153 | graph-last rationale wrong (doc nodes not refreshed) | rationale contradicts tool | stale doc nodes unchecked | path | — | accuracy | plan Decisions row 6; Step 13 | F40-05 |
+| R1-10 | sonnet | LOW | seed-0364 | AC3 "reviewed and listed" has no producer step | acceptance clause with no producer | list never written | quoted | — | coverage | spec AC3; plan Steps 8, 10, 14 | F40-06 |
+| R1-11 | sonnet | LOW | seed-0137 | header file count wrong; service port note ambiguous | lookup-cost inconsistency | misleads the builder | quoted | — | clarity | plan header; Steps 5, 6 | F40-07 |
+
+### Fold — round 1 (architect, claude-opus-5-5[1m], 2026-10-23)
+
+| id | disposition | level after | re-grade (level · anchor · why) | where |
+|---|---|---|---|---|
+| R1-01 | fixed-real | — | — | Step 1 (evidence-link pipeline and packages listings); Step 3 (three sections: evidence-link fetch pipeline AR-16, cross-cutting § 3.8, packages AR-19; accept grep for `EvidenceLinkSourceDetector`, `JiraDomain`, `Directory.Packages.props`, `UseReflektApi`) |
+| R1-02 | fixed-real | — | — | Step 9 (the whole F39 record read; `useTimerActions` toast and `src/api/client.ts`/`apiFetch` named as starting rows; candidates recorded in `implementation.md` § Step 9; accept grep `useTimerActions`) |
+| R1-03 | fixed-real | — | — | Step 2 (invoke `obj/dotnet-ef/dotnet-ef.exe`; `--version` recorded; accept) |
+| R1-04 | fixed-real | — | — | Step 8 (TS-09 coverage rewording; CRUD-skip line removed; accept grep `simple CRUD|analytics`) |
+| R1-05 | fixed-real | — | — | Step 4 (v1.md § 6 Teams row, line 182, annotated with § 7.1; grep before editing; "no edit beyond") |
+| R1-06 | fixed-real | — | — | Decisions (new untagged row: spec section list and "not used by this app" disposition, required by spec Decisions row 4; why the `Departs from` tag does not apply without `**Mirrors:**`) |
+| R1-07 | fixed-real | — | — | P1 (publication token vs handler token; amendment noted); Step 1 events bullet; Step 3 events section |
+| R1-08 | fixed-real | — | — | Must-NOT-Change row 6 and Step 6 accept (grep `carr(y|ies) .*reference|not recoverable` on `project-rules.md`, which hits today's line 63, so the gate is real); Step 5 accept (events rule and exception listed) |
+| R1-09 | fixed-real | — | — | Decisions row 6 and Step 13 (rationale is the fallback's file order; document-node refresh recorded, not assumed) |
+| R1-10 | fixed-real | — | — | Step 8 and Step 10 (code-example lists in `implementation.md`); Step 14 (AC3 review half gathered, `project-rules.md` included) |
+| R1-11 | fixed-real | — | — | Header Size line (the size rule's exclusions and the four counted files named; about 16 `docs/` files noted); Step 6 (service `CLAUDE.md` records index 1 and points to the root port table; accept grep `40[0-9]{2}` → no hit) |
+| gap notes (below the merge) | fixed-real (cheap) | — | — | Step 11 (`learner.md` line 68 "stack-agnostic" named in the `.claude/README.md` note); Step 10 (the vue negative grep now matches today's wording "use inline `style`", not its own explanation); Step 14 (close-time `campaign-close.json`/`usage-record.json` out of the build-time AC7 check); Step 2 (design-time DB check by `git status --porcelain --ignored` before/after and the `Data Source` printed) |
+
+Reconciled: Step 1 ↔ Step 3 (each new section has its fact listing); Step 3 ↔ Step 9 ↔ Decisions new row (template departure: plan row, accepted-deviation row, spec Decisions row 4); P1 ↔ Step 1 ↔ Step 3 ↔ Step 9's P1 deviation row (token wording identical in substance; the deviation row speaks only of failures being logged); Step 4 ↔ its accept (every allowlist hit in `v1.md` annotated) ↔ AC2; Step 5 accept ↔ Step 6 accept ↔ Must-NOT-Change row 6 (rule present in `CLAUDE.md`, absent from `project-rules.md`); Step 6 service-doc text ↔ root port rule in Step 5; Steps 8, 10 ↔ Step 14 ↔ spec AC3; Step 13 ↔ Decisions row 6 ↔ AC6; Step 14 ↔ AC7 ↔ Decisions row 5 (campaign files) and the new close-files clause; header Size ↔ the architect's size rule (docs/ and generated files not counted).
+
+## Round 2 — 2026-10-23 — plan — primary (codex)
+
+Header note: Codex alone (round ≥ 2 has no second reader), job task-mvl90l8e-3b0rfx, NO-GO. Floor MEDIUM, Read: full (round 1 coverage incomplete). Verbatim in `review-critic-codex.md` § Plan review — round 2. Fold verification: R1-01…R1-11 all closed; no MEDIUM+ contradiction introduced by the fold. Two new findings.
+
+### Merge — round 2
+
+Coverage: complete (single reader, full read; Codex returned no ledger — taken as full per its fold-verification table over the whole plan).
+
+| id | readers | level | anchor | title | shape | consequence | evidence | untouchable | tag | surfaces | source ids |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| R2-01 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Step 1 extracts endpoints "from each Configure()"; code has 44 attribute-declared endpoints, zero Configure() | wrong extraction source | endpoint inventory cannot be produced as prescribed; later slices reuse it | path | — | round-1 miss: endpoint inventory | plan.md:66; Features/**/*Endpoint.cs | codex R2-01 |
+| R2-02 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Step 1 enumerates literal SendAsync("…") names — misses CardCreated/CardUpdated sent via CardBroadcast helper | incomplete enumeration method | real-time doc can omit two central messages and still match its fact sheet | path | — | round-1 miss: real-time message inventory | plan.md:67; CardBroadcast.cs:19; useSprintHub.ts:65 | codex R2-02 |
+
+### Fold — round 2 (architect, claude-opus-5-5[1m], 2026-10-23)
+
+| id | disposition | level after | re-grade (level · anchor · why) | where |
+|---|---|---|---|---|
+| R2-01 | fixed-real | — | — | Step 1 API bullet (endpoints listed from their class attributes — `[Http*("…")]`, `[Authorize(Policy = …)]` / `[AllowAnonymous]` — over `Features/**/*Endpoint.cs`; count checked against the `*Endpoint.cs` classes; `Configure()` named as not used — `grep -rln "Configure()" Features` → 0 files) |
+| R2-02 | fixed-real | — | — | Step 1 Real-time bullet (server names from `SendAsync`/`SendCoreAsync` including those reaching it through a helper such as `CardBroadcast` or a constant, reconciled with the client's `connection.on("…")` registrations in `useSprintHub.ts`; one-sided names listed with why) |
+
+Reconciled: Step 1 API bullet ↔ Step 3 feature-slices section (verb, route, policy per endpoint) ↔ spec AC5 (counts match the listing); Step 1 Real-time bullet ↔ Step 3 real-time section ↔ AC5; no other clause names the endpoint or message extraction method (`grep -n "Configure()\|SendAsync" plan.md` → only the two folded bullets). Lane re-derived after the last fold: 14 developer-built steps, 4 counted files, no fullChecks list — still `full`, build lane unchanged; no tagged (`Adds:` / `Departs from`) rows.

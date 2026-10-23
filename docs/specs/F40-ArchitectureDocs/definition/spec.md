@@ -6,7 +6,7 @@
 **Rule list:** not applicable — documentation
 **Review:** round 1 — `delivery/review-critic.md`
 **Status:** Ready
-**Plan:** None
+**Plan:** `docs/specs/F40-ArchitectureDocs/delivery/plan.md`
 
 ---
 
