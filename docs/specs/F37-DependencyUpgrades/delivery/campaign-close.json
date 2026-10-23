@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "suite": { "result": "pass", "record": "docs/specs/F37-DependencyUpgrades/delivery/summary.md" },
+  "doneCheck": "PASS",
+  "review": { "verdict": "COMMENT", "highestFixed": "none" },
+  "headline": "Package versions only: AngleSharp 1.8.4 and the Microsoft.* family on 10.0.13; the npm fix is a change note applied at merge.",
+  "presumed": [],
+  "deferredRows": { "count": 3, "where": "docs/specs/F37-DependencyUpgrades/delivery/change-notes.md" },
+  "retirements": { "count": 0, "where": null },
+  "pluginFindings": [
+    { "finding": "A failed full-run record cuts the middle of the output, so the exception message of a host-start failure was lost.", "where": "docs/specs/F37-DependencyUpgrades/delivery/lessons.md" },
+    { "finding": "No installed plugin runs vstest tests, so named-file test runs fall back to the whole unit role.", "where": "docs/specs/F37-DependencyUpgrades/delivery/communication-log.md" }
+  ]
+}

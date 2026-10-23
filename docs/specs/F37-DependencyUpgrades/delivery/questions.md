@@ -39,3 +39,34 @@ Default if unanswered in 30 minutes: option 1, recorded presumed (proceed-defaul
 
 **Answered by team-lead (coordinator's process call — not the owner), 2026-10-23:** Option 1. At Step 2's close the developer runs `verify-run.js --role full --slug F37-DependencyUpgrades` and cites the record; a red that is not a compile error stops the step and is handed back as a blocker. The full run stays well inside a subagent's limits (68 s measured).
 
+
+## Q3: Step 2's full run went red once, then green on re-run
+**From:** developer
+**To:** architect
+**Status:** Answered
+**Step:** Step 2 — The Microsoft.* family on one 10.0.x patch
+**File:** `tests/Reflekt.IntegrationTests/CardEndpointTests.cs`
+
+**Context:** After the bump to 10.0.13 (build clean, no source change), full run `mvkgn2o8-461c60a6` failed 1 of 104 integration tests: `CardEndpointTests.CreateCard_ActionItem_Returns201`, thrown at host start (`InitializeAsync`, line 78, `_factory.CreateClient()` → `WebApplicationFactory.StartServer()`). The runner's record elides the exception message. One diagnostic re-run on the same tree, `mvkgpdv7-eb5d9956`, passed in full. The plan says a red that is not a compile error stops the step and is handed back; it does not say how to treat a red that does not repeat. Details: `implementation.md` § Step 2.
+
+**Question:** Does Step 2 close on the green re-run (`mvkgpdv7-eb5d9956`), with the one-off red recorded as an intermittent host-start failure for the reviewer, or does the step stay stopped until the cause is found?
+
+**Recommendation:**
+1. (Recommended) Close Step 2 on the green re-run; keep the red recorded in the step block and as a carry-over for the reviewer; the handover's complete run is a second chance to see it again. Only one test of 104, at host start, and every other host in the same class started the same way — not the model-drift error the rule was written for.
+2. Keep Step 2 stopped: hand the failure to a solo to find the cause (and whether it happens on 9.0.4) before Step 3.
+**Confidence:** medium — the evidence points to a flake, but the exception message was not captured, so a bump-caused start-up race cannot be ruled out.
+
+### Answer
+**Architect, 2026-10-23 — option 1, with a tripwire.** Step 2 closes on the green re-run `mvkgpdv7-eb5d9956`, under the plugin's flaky rule: a red that passes when re-run unchanged, on a quiet machine (`others: 0` on both records), is flaky. It is listed, not fixed in this run, and counts as no attempt.
+
+Why this is not the failure the stop rule guards: everything a framework bump could break at host start is deterministic on an unchanged tree. That covers a pending-model-changes error from `Database.Migrate()` in `UseReflektPersistence`, a removed API, and a changed configuration binding. Any of them would fail every factory start in all eight integration classes on both runs. Here 103 of 104 passed, and then 104 of 104 passed on the same `tree_hash` (`4dcd021f…`). What remains is a one-off at `CardEndpointTests.InitializeAsync`, line 78. That class starts two hosts on SQLite files under `Path.GetTempPath()`, with xUnit running the test classes in parallel: an intermittent start-up race or file-lock shape that predates this feature. There are only five earlier full runs on 9.0.4 to compare with, so the base rate is unknown.
+
+What the developer does:
+1. **Step 2 block in `implementation.md`:** record the flaky test as such. Give both run ids, the test name, the top stack frames (`WebApplicationFactory.StartServer`, from `CardEndpointTests.InitializeAsync`, line 78), and the line "exception message not captured (record excerpt elided)". Also add a carry-over row for the reviewer.
+2. **`delivery/change-notes.md`:** add one row for `docs/backlog.md`, the shared file. It is a backlog row: flaky host start in `CardEndpointTests.InitializeAsync`, seen once on 10.0.13 after F37's bump, cause not found; run ids as above.
+3. **Then continue to Step 3.**
+
+**Tripwire:** if the same host-start failure shows up again in any later full run of this unit — Step 3's re-run if a pin is added, or the handover's complete run — it is no longer a one-off. It then goes to a solo on a `Bug found:` line, to capture the exception message and say whether it also happens on the base commit's 9.0.4. No solo now.
+
+Plan updated: Step 2 Accept now states this rule.
+**Confidence:** medium — the deterministic bump failures are ruled out by the identical green re-run; a rare bump-caused race cannot be, since the message was not captured. The tripwire covers that case.
