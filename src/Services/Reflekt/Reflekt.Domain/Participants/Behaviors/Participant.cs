@@ -35,6 +35,10 @@ public sealed partial class Participant
 
     public void Kick()
     {
+        if (IsRemoved)
+            return;
+
+        RemovedAt = DateTime.UtcNow;
         AddDomainEvent(new Events.ParticipantKickedEvent(this));
     }
 }

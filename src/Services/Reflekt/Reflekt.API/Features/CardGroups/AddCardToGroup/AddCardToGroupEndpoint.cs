@@ -36,6 +36,8 @@ public sealed class AddCardToGroupEndpoint(
             return;
         }
 
+        sprint.EnsureOpen();
+
         if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.GroupCards))
             ThrowError($"{SprintAction.GroupCards} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 

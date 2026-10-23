@@ -60,18 +60,13 @@ public sealed class SetReviewStatusEndpoint(
         if (previousSprint is null) { await SendNotFoundAsync(ct); return; }
 
         var card = await cardRepository.GetByIdAsync(command.CardId, ct);
-        if (card is null || card.SprintId != previousSprint.Id)
+        if (card is null || card.SprintId != previousSprint.Id || card.CardType != CardType.ActionItem)
         {
             await SendNotFoundAsync(ct);
             return;
         }
 
-        if (!Enum.TryParse<Domain.Cards.ReviewStatus>(command.ReviewStatus, out var reviewStatus))
-        {
-            ThrowError(x => x.ReviewStatus, "ReviewStatus must be one of: Done, CarriedOver, Dropped.");
-            return;
-        }
-
+        var reviewStatus = Enum.Parse<Domain.Cards.ReviewStatus>(command.ReviewStatus);
         card.SetReviewStatus(reviewStatus, command.SprintId);
         await cardRepository.SaveChangesAsync(ct);
 

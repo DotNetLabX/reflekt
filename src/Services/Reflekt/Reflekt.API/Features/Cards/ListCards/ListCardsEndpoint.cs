@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
-using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
 
@@ -48,17 +47,16 @@ public sealed class ListCardsEndpoint(
         var groupIds = cards.Where(c => c.GroupId.HasValue).Select(c => c.GroupId!.Value).Distinct();
         var voteCounts = await voteRepository.GetVoteCountsByGroupIdsAsync(groupIds, ct);
 
-        var requestingParticipantId = participantIdClaim is not null ? int.Parse(participantIdClaim) : (int?)null;
-        var redactOthers = sprint.CurrentPhase == SprintPhase.Writing && requestingParticipantId is not null;
+        var viewerParticipantId = WritingPhaseRedaction.GetViewerParticipantId(User);
 
         await SendOkAsync(
             cards.Select(c =>
             {
                 var voteCount = c.GroupId.HasValue ? voteCounts.GetValueOrDefault(c.GroupId.Value, 0) : 0;
                 var response = c.Adapt<CardResponse>() with { VoteCount = voteCount };
-                if (redactOthers && c.ParticipantId != requestingParticipantId)
-                    return response with { Text = "", AssigneeName = null, EvidenceLinks = [] };
-                return response;
+                return WritingPhaseRedaction.IsRedacted(c, sprint, viewerParticipantId)
+                    ? WritingPhaseRedaction.Redact(response)
+                    : response;
             }).ToList(),
             ct);
     }

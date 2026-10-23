@@ -144,7 +144,6 @@ internal static class DbInitializer
                 var votesA = new[]
                 {
                     Vote.Create(wentWellCards[0].GroupId!.Value, participants[0].Id),
-                    Vote.Create(wentWellCards[0].GroupId!.Value, participants[0].Id),
                     Vote.Create(didntGoWellCards[0].GroupId!.Value, participants[0].Id),
                 };
 

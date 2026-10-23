@@ -39,6 +39,8 @@ public sealed class DissolveGroupEndpoint(
             return;
         }
 
+        sprint.EnsureOpen();
+
         if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.UngroupCards))
             ThrowError($"{SprintAction.UngroupCards} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
@@ -52,17 +54,19 @@ public sealed class DissolveGroupEndpoint(
         if (groupCards.Count < 2)
             ThrowError("Cannot dissolve a solo group.", StatusCodes.Status400BadRequest);
 
-        foreach (var card in groupCards)
-        {
-            var soloGroup = CardGroup.Create(req.SprintId, card.ColumnType);
-            soloGroup.ClearDomainEvents();
-            await cardGroupRepository.AddAsync(soloGroup, ct);
-            await cardGroupRepository.SaveChangesAsync(ct);
-            card.SetGroupId(soloGroup.Id);
-        }
+        await using var transaction = await cardGroupRepository.BeginTransactionAsync(ct);
+
+        var soloGroups = groupCards.Select(c => CardGroup.Create(req.SprintId, c.ColumnType)).ToList();
+        foreach (var soloGroup in soloGroups) soloGroup.ClearDomainEvents();
+        await cardGroupRepository.AddRangeAsync(soloGroups, ct);
+        await cardGroupRepository.SaveChangesAsync(ct);
+
+        for (var i = 0; i < groupCards.Count; i++)
+            groupCards[i].SetGroupId(soloGroups[i].Id);
 
         cardGroupRepository.Remove(group);
         await cardGroupRepository.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
 
         await hubContext.Clients.Group($"sprint:{req.SprintId}")
             .SendAsync("GroupDissolved", new { groupId = req.GroupId }, ct);

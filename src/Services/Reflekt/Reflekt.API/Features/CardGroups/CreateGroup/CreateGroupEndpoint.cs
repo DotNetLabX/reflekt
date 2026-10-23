@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Microsoft.AspNetCore.SignalR;
@@ -12,6 +13,18 @@ using AuthPolicies = Reflekt.API.Auth.Policies;
 namespace Reflekt.API.Features.CardGroups.CreateGroup;
 
 public sealed record CreateGroupRequest(int SprintId, List<int> CardIds, string? Title);
+
+public sealed class CreateGroupRequestValidator : Validator<CreateGroupRequest>
+{
+    public CreateGroupRequestValidator()
+    {
+        RuleFor(x => x.CardIds)
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .Must(ids => ids.Distinct().Count() == ids.Count)
+            .WithMessage("Card ids must be distinct.");
+    }
+}
 
 [Authorize(Policy = AuthPolicies.ScrumMaster)]
 [HttpPost("/api/sprints/{sprintId}/card-groups")]
@@ -39,6 +52,8 @@ public sealed class CreateGroupEndpoint(
             return;
         }
 
+        sprint.EnsureOpen();
+
         if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.GroupCards))
             ThrowError($"{SprintAction.GroupCards} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
@@ -57,6 +72,8 @@ public sealed class CreateGroupEndpoint(
         var columnTypes = selectedCards.Select(c => c.ColumnType).Distinct().ToList();
         if (columnTypes.Count > 1)
             ThrowError("All cards must be in the same column.", StatusCodes.Status400BadRequest);
+
+        await using var transaction = await cardGroupRepository.BeginTransactionAsync(ct);
 
         var newGroup = CardGroup.Create(req.SprintId, columnTypes[0], req.Title);
         newGroup.ClearDomainEvents();
@@ -91,6 +108,7 @@ public sealed class CreateGroupEndpoint(
             cardGroupRepository.Remove(empty);
 
         await cardGroupRepository.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
 
         await hubContext.Clients.Group($"sprint:{req.SprintId}")
             .SendAsync("GroupCreated", new

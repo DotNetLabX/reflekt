@@ -15,7 +15,7 @@ namespace Reflekt.Persistence.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
             modelBuilder.Entity("Reflekt.Domain.CardGroups.CardGroup", b =>
                 {
@@ -160,13 +160,17 @@ namespace Reflekt.Persistence.Migrations
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<string>("GuestToken")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RemovedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("SprintId")
@@ -183,6 +187,10 @@ namespace Reflekt.Persistence.Migrations
                     b.HasIndex("SprintId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("SprintId", "DisplayName")
+                        .IsUnique()
+                        .HasFilter("\"RemovedAt\" IS NULL");
 
                     b.HasIndex("SprintId", "UserId")
                         .IsUnique()

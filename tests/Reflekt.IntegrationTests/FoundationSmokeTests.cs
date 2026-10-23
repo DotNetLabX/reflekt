@@ -45,7 +45,18 @@ public class FoundationSmokeTests : IAsyncLifetime
     {
         await _factory.DisposeAsync();
         SqliteConnection.ClearAllPools();
-        if (File.Exists(_testDbPath))
-            File.Delete(_testDbPath);
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                if (File.Exists(_testDbPath)) File.Delete(_testDbPath);
+                break;
+            }
+            catch (IOException) when (attempt < 20)
+            {
+                await Task.Delay(100);
+                SqliteConnection.ClearAllPools();
+            }
+        }
     }
 }

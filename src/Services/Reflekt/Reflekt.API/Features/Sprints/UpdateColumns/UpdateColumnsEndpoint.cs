@@ -25,6 +25,8 @@ public sealed class UpdateColumnsEndpoint(TeamRepository teamRepository, SprintR
             return;
         }
 
+        sprint.EnsureOpen();
+
         sprint.UpdateColumnConfig(
             command.Column1Name, command.Column1Color,
             command.Column2Name, command.Column2Color,

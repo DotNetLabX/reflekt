@@ -1,5 +1,6 @@
 using Blocks.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Blocks.Persistence.Repositories;
 
@@ -15,6 +16,9 @@ public abstract class RepositoryBase<TContext, TEntity, TId>(TContext db)
 
     public virtual Task<int> SaveChangesAsync(CancellationToken ct)
         => Db.SaveChangesAsync(ct);
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct)
+        => Db.Database.BeginTransactionAsync(ct);
 
     public virtual async Task<TEntity?> GetByIdAsync(TId id, CancellationToken ct)
         => await Db.Set<TEntity>().FindAsync([id], ct);

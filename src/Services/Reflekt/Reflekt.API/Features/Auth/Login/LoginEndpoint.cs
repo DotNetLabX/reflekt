@@ -7,31 +7,44 @@ namespace Reflekt.API.Features.Auth.Login;
 [AllowAnonymous]
 [HttpGet("/auth/google/login")]
 [Tags("Auth")]
-public sealed class LoginEndpoint : EndpointWithoutRequest
+public sealed class LoginEndpoint(IWebHostEnvironment environment, IConfiguration configuration)
+    : EndpointWithoutRequest
 {
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var env = HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-
         var returnUrl = HttpContext.Request.Query["returnUrl"].FirstOrDefault();
-        var redirectUri = ResolveRedirectUri(returnUrl, env.IsDevelopment());
+        var redirectUri = ResolveRedirectUri(returnUrl);
 
         var props = new AuthenticationProperties { RedirectUri = redirectUri };
         await HttpContext.ChallengeAsync(GoogleDefaults.AuthenticationScheme, props);
         await HttpContext.Response.StartAsync(ct);
     }
 
-    private static string ResolveRedirectUri(string? returnUrl, bool isDevelopment)
+    public static bool IsSafeReturnUrl(string? returnUrl) =>
+        !string.IsNullOrEmpty(returnUrl)
+        && IsSafeAsReceived(returnUrl)
+        && IsSafeWhenDecoded(returnUrl);
+
+    private string ResolveRedirectUri(string? returnUrl)
     {
-        if (!string.IsNullOrEmpty(returnUrl) && IsValidReturnUrl(returnUrl))
+        var isDevelopment = environment.IsDevelopment();
+        var devFrontendOrigin = configuration["Auth:DevFrontendOrigin"];
+
+        if (IsSafeReturnUrl(returnUrl))
         {
-            return isDevelopment ? $"http://localhost:5173{returnUrl}" : returnUrl;
+            return isDevelopment ? $"{devFrontendOrigin}{returnUrl}" : returnUrl!;
         }
 
-        return isDevelopment ? "http://localhost:5173/" : "/";
+        return isDevelopment ? $"{devFrontendOrigin}/" : "/";
     }
 
-    private static bool IsValidReturnUrl(string url)
+    private static bool IsSafeAsReceived(string url) =>
+        url.StartsWith('/')
+        && (url.Length == 1 || url[1] is not ('/' or '\\'))
+        && !url.Any(c => c < ' ' || c == '\u007F')
+        && !url.Contains("://");
+
+    private static bool IsSafeWhenDecoded(string url)
     {
         var decoded = Uri.UnescapeDataString(url);
         return decoded.StartsWith('/') && !decoded.StartsWith("//") && !decoded.Contains("://");

@@ -67,7 +67,7 @@ TDD is `no` on every step because the owner's rule forbids new tests (Decisions 
 
 ## Implementation Steps
 
-Every step closes with `dotnet build Reflekt.slnx` (0 `error CS`) and the `unit` role through `verify-run.js`. The `unit` role runs only `Reflekt.UnitTests`. So each step also runs, by name, every existing integration test file its **Runs:** line names: `verify-run.js --profile fast --files tests/Reflekt.IntegrationTests/{File}.cs`. Steps 7 and 14 also run the `full` role.
+Every step closes with `dotnet build Reflekt.slnx` (0 `error CS`) and the `unit` role through `verify-run.js`. The `unit` role runs only `Reflekt.UnitTests`. So each step with a **Runs:** line also runs the integration project through the declared `integration` role: `verify-run.js --role integration --slug F35-BackendCorrectnessFixes`. That role is `dotnet test tests/Reflekt.IntegrationTests/Reflekt.IntegrationTests.csproj`, added to `.claude/verify.json` by the team lead before the build resumes (`questions.md` Q2). Named-file runs do not work here, because no installed plugin runs vstest files, and a raw `dotnet test` is refused on the developer seat. The role runs the whole project; the **Runs:** line names the files whose results the step block reports. The `full` role is the main session's: the team lead runs the complete suite at handover and at close (`questions.md` Q3).
 
 **Scratch rule:** a scratch probe is a throwaway console project under `out/f35-scratch/` (git-ignored, `.gitignore:33`). Its input and output are pasted into the step block, and it is deleted in Step 14. It is never a test.
 
@@ -265,7 +265,7 @@ Follow persistence-patterns. Files:
 Generating the migration:
 - Use the command in Migration Notes.
 - `dotnet-ef` is not installed: install it with `--tool-path out/f35-scratch/tools`, version 10.0.13, matching `Microsoft.EntityFrameworkCore.Design`.
-- If the install cannot run, write the migration and the snapshot by hand. The `full` suite's start-up `Migrate()` then proves there is no pending model change.
+- If the install cannot run, write the migration and the snapshot by hand. The `integration` role's run then proves, through the host's start-up `Migrate()`, that there is no pending model change.
 
 Order inside `Up`:
 1. add `RemovedAt`;
@@ -284,10 +284,10 @@ SQLite has no loops, so the repair must be correct for any number of duplicates,
 Accept:
 - A scratch probe builds a scratch database at the previous migration (`20260519160025_AddReviewStatus`, through `IMigrator.Migrate`). It inserts into one sprint the active names `Ana`, `ana`, `Ana 2` and two identical 50-character names, plus one removed-looking control in another sprint. It then migrates to the latest and lists the names after. Expected: `Ana`, `ana 3`, `Ana 2`, the first 50-character name unchanged, the second its first 48 characters + ` 2`; no row deleted.
 - A raw `INSERT` of a duplicate active name into that sprint then fails with SQLite's unique-constraint error. That output is pasted; the 409 mapping is Step 6's code trace (spec AC9).
-- `verify-run.js --role full` passes, which proves the start-up `Migrate()` sees no pending model change.
+- `verify-run.js --role integration --slug F35-BackendCorrectnessFixes` passes. Every integration test starts the host, whose start-up `Migrate()` rejects a pending model change, so a green run proves the migration and the snapshot match the model.
 - `grep -c "participants\[0\].Id" DbInitializer.cs` drops by 1.
 
-Runs: `ParticipantEndpointTests.cs` and `SprintEndpointTests.cs` (Step 6's), then the `full` role, as above.
+Runs: the `integration` role, reporting `ParticipantEndpointTests.cs` and `SprintEndpointTests.cs` (Step 6's) and the rest of the project.
 
 Satisfies: spec BE-15, AC9. Risk: risky — migration kind; renames users' display names on an existing database.
 
@@ -410,6 +410,8 @@ What to build:
 Accept:
 - `grep -rln "WritingPhaseRedaction" src/Services/Reflekt/Reflekt.API/Features` adds these 5 files, 9 endpoint and handler files in all.
 - *Code trace* per handler: in Writing no `Group("sprint:…")` call is made, the full card goes only to the author's participant group, and the others' groups get the redacted form; outside Writing the call is today's.
+- *Code trace* per handler: its reads come first, are untracked, and finish with the scope disposed before the first send; outside Writing only the sprint is read (`questions.md` Q4).
+- An `IOException` at `File.Delete` in an integration class's `DisposeAsync` is a known teardown flake: the handler's read after the response races the test's file delete, as `BroadcastGroupCreatedHandler`'s already did. It is recorded in the step block, not fixed here, pending the owner's ruling on `questions.md` Q5.
 
 Runs: `CardEndpointTests.cs`, `EvidenceLinkEndpointTests.cs`.
 
@@ -470,11 +472,12 @@ None. No source file.
 
 Accept:
 - The greps of Steps 1, 3, 4, 5, 8, 10, 11, 12 and 13 run once more on the final tree, outputs pasted.
-- `verify-run.js --role full` passes (spec AC10).
+- `verify-run.js --role integration --slug F35-BackendCorrectnessFixes` passes on the final tree. Spec AC10's full suite is the close gate's complete run, which the team lead makes from the main session; the step block records it as owed (`questions.md` Q3).
 - `git diff 1eec0b8bfb0ad76895a147416b51d6dbfa5c6bb0 -- Directory.Packages.props` shows exactly one added line, the Relational `PackageVersion` at 10.0.13, and no changed or removed line.
 - `graphify update .` runs. Its `graphify-out/` output is generated, so it is committed but not reviewed and kept out of the file-list check below. Where the `graphify` command is not found, that is recorded and F40's graph refresh covers it.
 - `git diff --name-only 1eec0b8… -- . ':!graphify-out'` plus `git status --porcelain -- . ':!graphify-out'` list only:
   - the files Steps 1–13 name, and any integration test file whose assertion Step 3 updates (named in `implementation.md`);
+  - `.claude/verify.json`, its one added `integration` role (the team lead's edit, `questions.md` Q2);
   - `docs/specs/F35-BackendCorrectnessFixes/` (its `definition/spec.md` changing only the `**Plan:**` line);
   - the campaign's `.claude/.personas.json` and `.claude/tmp/`.
 - `test ! -e out/f35-scratch` succeeds.
@@ -491,19 +494,20 @@ Run with `out/f35-scratch/tools/dotnet-ef` when the tool is installed there (Ste
 
 | Invariant | Pinned by | Disposition |
 |---|---|---|
-| Routes, request and response field names, and status codes, except the changes the spec lists | the existing integration suite (`full` role) | pinned for covered routes; accepted-gap for routes no test calls — the reviewer's diff read |
+| Routes, request and response field names, and status codes, except the changes the spec lists | the existing integration suite (`integration` role per step; the close gate's complete run) | pinned for covered routes; accepted-gap for routes no test calls — the reviewer's diff read |
 | The author sees their own cards in full during Writing | `ListCards_ReturnsAllCardsInSprint` and `ListCards_OrderedByCreatedAtDescending` (own cards, participant token) | pinned |
 | The owner's REST view (no participant identity) is full | Step 10 code trace | accepted-gap — no new test (P1) |
 | The previous-action review of a closed sprint's action items keeps working | Step 4 and Step 10 code traces | accepted-gap — no new test (P1) |
 | SignalR message names and payload shapes | Steps 2, 9 and 11 code traces; the frontend is unchanged | accepted-gap — no new test (P1) |
 | No package version change (one added reference at the already resolved version, P7) | Step 14 `git diff` on `Directory.Packages.props` | pinned |
-| Existing tests pass; only assertions a fix changes are updated (the 6 `SprintTests` throw types, plus any integration assertion Step 3 names) | `full` role; Step 3 grep | pinned |
+| Existing tests pass; only assertions a fix changes are updated (the 6 `SprintTests` throw types, plus any integration assertion Step 3 names) | `integration` role per step; the close gate's complete run; Step 3 grep | pinned |
 
 ## Testing Strategy
 
 No new test cases (owner rule, P1). The only test edits are Step 3's: the six `SprintTests` throw types, plus any existing integration assertion whose status code or body-key casing the spec changes, each named in `implementation.md`. Proof comes from three sources:
-- the existing unit and integration suites: the `unit` role per step, each step's **Runs:** integration files by name, and the `full` role at Steps 7 and 14;
+- the existing unit and integration suites: the `unit` role per step, the `integration` role on every step with a **Runs:** line, and the complete suite the team lead runs from the main session at handover and at close;
 - plan-time greps re-run at close;
+- two known integration flakes, re-run rather than fixed: F37's host-start flake, and the teardown `IOException` Step 11 makes more frequent (`questions.md` Q4, Q5);
 - code traces and scratch probes that leave no file, mapped to the spec's acceptance in Decisions rows 2–8.
 
 ## KB Impact
@@ -548,6 +552,8 @@ None — the repo has no `docs/kb/`. The architecture doc and the conventions ar
 | Departs from error-handling, required by spec BE-07/SK-05 and BE-20/SK-07: `DomainException` maps to 409 and the body is camelCase with no 5xx details, where the skill maps it to 400 with a PascalCase body. | The spec sets both; the skill is logged as ill-fitting in `lessons.md` (R1-11). | Following the skill. | high | decided |
 | Departs from authorization-patterns, required by the spec's Out of scope (conventions and structure findings are F38's): the kick endpoint keeps its inline 404/409/403 checks instead of a resource-gate handler. | Moving the checks is structure work outside F35 (R1-11). | A resource-gate authorization handler. | high | decided |
 | Departs from create-domain-event-handler, required by the spec's Out of scope (handler naming is F38's BE-25): `BroadcastParticipantKickedHandler` keeps its name while it also evicts and aborts. | Renaming is F38's naming pass; the spec asks for one ordered handler (R1-11). | Renaming it, or splitting it into several handlers, which would lose the order. | high | decided |
+| Per-step integration runs go through a declared `integration` role (`dotnet test` of the integration project) run by `verify-run.js`; the full suite stays the main session's complete run at handover and close. | `--files` falls back to the unit role here (no vstest runner installed), a raw `dotnet test` is refused on the developer seat, and the full role is main-session only (`questions.md` Q2, Q3). | Raw `dotnet test --filter` per class; skipping the per-step runs; the developer running the full role. | high | decided |
+| Step 11's teardown race (a handler's read after the response holding the test database file at `DisposeAsync`) is recorded as a known flake and not fixed in this run; the handlers keep their reads short and dispose their scope before sending; the cleanup retry waits for the owner (Q5). | The other fixes change event shapes, request timing or a test file, and the owner's rules allow none of them unasked (`questions.md` Q4). | A teardown retry now; the phase carried on the events; `Mode.WaitForAll`. | medium — the suite stays flaky until Q5 is ruled | decided |
 
 ## Decisions and why
 

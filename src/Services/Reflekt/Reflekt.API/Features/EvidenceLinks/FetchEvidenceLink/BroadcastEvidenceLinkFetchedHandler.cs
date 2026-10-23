@@ -5,10 +5,18 @@ using Reflekt.Domain.Cards.Events;
 
 namespace Reflekt.API.Features.EvidenceLinks.FetchEvidenceLink;
 
-public sealed class BroadcastEvidenceLinkFetchedHandler(IHubContext<SprintHub> hubContext)
+public sealed class BroadcastEvidenceLinkFetchedHandler(IHubContext<SprintHub> hubContext, IServiceScopeFactory scopeFactory)
     : IEventHandler<EvidenceLinkFetchedEvent>
 {
-    public Task HandleAsync(EvidenceLinkFetchedEvent ev, CancellationToken ct)
-        => hubContext.Clients.Group($"sprint:{ev.Card.SprintId}")
-            .SendAsync("EvidenceLinkFetched", ev.EvidenceLink.Adapt<EvidenceLinkResponse>(), ct);
+    public async Task HandleAsync(EvidenceLinkFetchedEvent ev, CancellationToken ct)
+    {
+        var card = ev.Card;
+        var payload = ev.EvidenceLink.Adapt<EvidenceLinkResponse>();
+
+        var recipients = await CardBroadcast.IsWritingPhaseCardAsync(scopeFactory, card, ct)
+            ? hubContext.Clients.Group(SprintHub.ParticipantGroup(card.ParticipantId))
+            : hubContext.Clients.Group($"sprint:{card.SprintId}");
+
+        await recipients.SendAsync("EvidenceLinkFetched", payload, ct);
+    }
 }

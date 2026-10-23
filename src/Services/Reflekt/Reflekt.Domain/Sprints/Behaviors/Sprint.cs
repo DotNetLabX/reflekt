@@ -95,10 +95,16 @@ public sealed partial class Sprint
         return trimmed;
     }
 
+    public void EnsureOpen()
+    {
+        if (State == SprintState.Closed)
+            throw new DomainException("Sprint is closed.");
+    }
+
     public void Start()
     {
         if (State != SprintState.Draft)
-            throw new InvalidOperationException("Sprint must be in Draft state to start.");
+            throw new DomainException("Sprint must be in Draft state to start.");
         State = SprintState.Active;
         AddDomainEvent(new Events.SprintStartedEvent(this));
     }
@@ -106,14 +112,14 @@ public sealed partial class Sprint
     public void AdvancePhase()
     {
         if (State != SprintState.Active)
-            throw new InvalidOperationException("Sprint must be Active to advance phase.");
+            throw new DomainException("Sprint must be Active to advance phase.");
         CurrentPhase = CurrentPhase switch
         {
             SprintPhase.Writing => SprintPhase.Grouping,
             SprintPhase.Grouping => SprintPhase.Voting,
             SprintPhase.Voting => SprintPhase.Discussing,
             SprintPhase.Discussing => SprintPhase.Reporting,
-            SprintPhase.Reporting => throw new InvalidOperationException("Sprint phase is already Reporting."),
+            SprintPhase.Reporting => throw new DomainException("Sprint phase is already Reporting."),
             _ => throw new InvalidOperationException($"Unknown phase: {CurrentPhase}."),
         };
         AddDomainEvent(new Events.PhaseAdvancedEvent(this));
@@ -122,7 +128,7 @@ public sealed partial class Sprint
     public void Close()
     {
         if (State != SprintState.Active)
-            throw new InvalidOperationException("Sprint must be Active to close.");
+            throw new DomainException("Sprint must be Active to close.");
         State = SprintState.Closed;
         ClosedAt = DateTime.UtcNow;
         AddDomainEvent(new Events.SprintClosedEvent(this));
@@ -131,9 +137,9 @@ public sealed partial class Sprint
     public void SetFocus(int groupId)
     {
         if (State != SprintState.Active)
-            throw new InvalidOperationException("Sprint must be Active to set focus.");
+            throw new DomainException("Sprint must be Active to set focus.");
         if (CurrentPhase != SprintPhase.Discussing)
-            throw new InvalidOperationException("Sprint must be in Discussing phase to set focus.");
+            throw new DomainException("Sprint must be in Discussing phase to set focus.");
 
         var previousGroupId = FocusedGroupId;
         FocusedGroupId = groupId;
@@ -143,9 +149,9 @@ public sealed partial class Sprint
     public void ClearFocus()
     {
         if (State != SprintState.Active)
-            throw new InvalidOperationException("Sprint must be Active to clear focus.");
+            throw new DomainException("Sprint must be Active to clear focus.");
         if (CurrentPhase != SprintPhase.Discussing)
-            throw new InvalidOperationException("Sprint must be in Discussing phase to clear focus.");
+            throw new DomainException("Sprint must be in Discussing phase to clear focus.");
 
         var previousGroupId = FocusedGroupId;
         FocusedGroupId = null;

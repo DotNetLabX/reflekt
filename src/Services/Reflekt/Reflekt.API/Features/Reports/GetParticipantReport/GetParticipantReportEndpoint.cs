@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
+using Reflekt.API.Features.Cards;
 using Reflekt.Domain.Cards;
 using Reflekt.Persistence.Repositories;
 using AuthPolicies = Reflekt.API.Auth.Policies;
@@ -52,6 +53,8 @@ public sealed class GetParticipantReportEndpoint(
         var participants = await participantRepository.GetBySprintIdAsync(req.SprintId, ct);
         var teamInfo = await teamRepository.GetByIdAsync(sprint.TeamId, ct);
 
+        var viewerParticipantId = WritingPhaseRedaction.GetViewerParticipantId(User);
+
         var cardsByGroup = cards
             .Where(c => c.CardType == CardType.Note && c.GroupId.HasValue)
             .GroupBy(c => c.GroupId!.Value)
@@ -62,9 +65,14 @@ public sealed class GetParticipantReportEndpoint(
             {
                 var votes = voteCounts.GetValueOrDefault(g.Id, 0);
                 var groupCards = cardsByGroup.GetValueOrDefault(g.Id, []);
-                var title = g.Title ?? groupCards.FirstOrDefault()?.Text ?? "";
+                var title = WritingPhaseRedaction.GetReportGroupTitle(g.Title, groupCards.FirstOrDefault(), sprint, viewerParticipantId);
+                var cardEntries = groupCards
+                    .Select(c => WritingPhaseRedaction.IsRedacted(c, sprint, viewerParticipantId)
+                        ? WritingPhaseRedaction.Redact(c.Adapt<ReportCardEntry>())
+                        : c.Adapt<ReportCardEntry>())
+                    .ToList();
                 var isDiscussed = g.DiscussedAt.HasValue;
-                return (Group: g, Title: title, Votes: votes, Cards: groupCards, IsDiscussed: isDiscussed);
+                return (Group: g, Title: title, Votes: votes, Cards: cardEntries, IsDiscussed: isDiscussed);
             })
             .Where(x => x.IsDiscussed || x.Votes > 1)
             .OrderByDescending(x => x.Votes)
@@ -79,7 +87,9 @@ public sealed class GetParticipantReportEndpoint(
 
         var actionItems = cards
             .Where(c => c.CardType == CardType.ActionItem)
-            .Select(c => c.Adapt<ReportActionItemEntry>())
+            .Select(c => WritingPhaseRedaction.IsRedacted(c, sprint, viewerParticipantId)
+                ? WritingPhaseRedaction.Redact(c.Adapt<ReportActionItemEntry>())
+                : c.Adapt<ReportActionItemEntry>())
             .ToList();
 
         var previousActionsSection = await BuildPreviousActionsSectionAsync(req.SprintId, sprint.TeamId, ct);
@@ -99,11 +109,11 @@ public sealed class GetParticipantReportEndpoint(
         string columnName,
         string columnColor,
         ColumnType columnType,
-        List<(Domain.CardGroups.CardGroup Group, string Title, int Votes, List<Domain.Cards.Card> Cards, bool IsDiscussed)> groupEntries)
+        List<(Domain.CardGroups.CardGroup Group, string Title, int Votes, List<ReportCardEntry> Cards, bool IsDiscussed)> groupEntries)
     {
         var groups = groupEntries
             .Where(x => x.Group.ColumnType == columnType)
-            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards.Select(c => c.Adapt<ReportCardEntry>()).ToList()))
+            .Select(x => new ReportGroupEntry(x.Title, x.Votes, x.IsDiscussed, x.Cards))
             .ToList();
         return new ReportColumnSection(columnName, columnColor, groups);
     }

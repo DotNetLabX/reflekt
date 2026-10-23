@@ -41,7 +41,6 @@ public sealed class KickParticipantEndpoint(
         }
 
         participant.Kick();
-        participantRepository.Remove(participant);
         await participantRepository.SaveChangesAsync(ct);
 
         await SendNoContentAsync(ct);

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
+using Reflekt.API.Features.Cards;
 using Reflekt.Domain.Cards;
 using Reflekt.Domain.Sprints;
 using Reflekt.Persistence.Repositories;
@@ -51,6 +52,8 @@ public sealed class GetGroupsEndpoint(
         var noteCards = cards.Where(c => c.CardType == CardType.Note && c.GroupId.HasValue);
         var cardsByGroup = noteCards.GroupBy(c => c.GroupId!.Value).ToDictionary(g => g.Key, g => g.OrderBy(c => c.CreatedAt).ToList());
 
+        var viewerParticipantId = WritingPhaseRedaction.GetViewerParticipantId(User);
+
         var voteCounts = sprint.CurrentPhase >= SprintPhase.Voting
             ? await voteRepository.GetVoteCountsByGroupIdsAsync(groups.Select(g => g.Id), ct)
             : new Dictionary<int, int>();
@@ -58,7 +61,11 @@ public sealed class GetGroupsEndpoint(
         await SendOkAsync(
             groups.Select(g => g.Adapt<CardGroupResponse>() with
             {
-                Cards = cardsByGroup.GetValueOrDefault(g.Id, []).Select(c => c.Adapt<CardGroupCardEntry>()).ToList(),
+                Cards = cardsByGroup.GetValueOrDefault(g.Id, [])
+                    .Select(c => WritingPhaseRedaction.IsRedacted(c, sprint, viewerParticipantId)
+                        ? WritingPhaseRedaction.Redact(c.Adapt<CardGroupCardEntry>())
+                        : c.Adapt<CardGroupCardEntry>())
+                    .ToList(),
                 VoteCount = voteCounts.GetValueOrDefault(g.Id, 0),
                 IsFocused = sprint.FocusedGroupId == g.Id
             }).ToList(),

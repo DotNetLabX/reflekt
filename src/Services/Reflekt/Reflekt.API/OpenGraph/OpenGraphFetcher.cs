@@ -2,8 +2,6 @@
 // Extract to BuildingBlocks.Api if a second service needs SSRF-guarded HTTP fetching.
 using AngleSharp;
 using AngleSharp.Html.Dom;
-using System.Net;
-using System.Net.Sockets;
 
 namespace Reflekt.API.OpenGraph;
 
@@ -26,9 +24,6 @@ public sealed class OpenGraphFetcher(IHttpClientFactory httpClientFactory)
             if (uri.Scheme is not ("http" or "https"))
                 return FetchResult.Failed;
 
-            if (!await IsPublicHostAsync(uri.Host, ct))
-                return FetchResult.Failed;
-
             var client = httpClientFactory.CreateClient("opengraph");
             using var response = await client.GetAsync(url, ct);
             if (!response.IsSuccessStatusCode)
@@ -41,36 +36,6 @@ public sealed class OpenGraphFetcher(IHttpClientFactory httpClientFactory)
         {
             return FetchResult.Failed;
         }
-    }
-
-    private static async Task<bool> IsPublicHostAsync(string host, CancellationToken ct)
-    {
-        if (host is "localhost") return false;
-
-        try
-        {
-            var addresses = await Dns.GetHostAddressesAsync(host, ct);
-            foreach (var address in addresses)
-            {
-                if (IPAddress.IsLoopback(address)) return false;
-                if (address.AddressFamily == AddressFamily.InterNetwork && IsPrivateIpv4(address))
-                    return false;
-            }
-            return true;
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            return false;
-        }
-    }
-
-    private static bool IsPrivateIpv4(IPAddress address)
-    {
-        var b = address.GetAddressBytes();
-        return b[0] == 10
-            || (b[0] == 172 && b[1] >= 16 && b[1] <= 31)
-            || (b[0] == 192 && b[1] == 168)
-            || (b[0] == 169 && b[1] == 254);
     }
 
     private static async Task<FetchResult> ParseOpenGraphAsync(string html)
