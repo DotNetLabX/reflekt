@@ -36,6 +36,8 @@ public sealed class RemoveCardFromGroupEndpoint(
             return;
         }
 
+        sprint.EnsureOpen();
+
         if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.UngroupCards))
             ThrowError($"{SprintAction.UngroupCards} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);
 
@@ -45,6 +47,8 @@ public sealed class RemoveCardFromGroupEndpoint(
         var card = await cardRepository.GetByIdAsync(req.CardId, ct);
         if (card is null || card.GroupId != req.GroupId) { await SendNotFoundAsync(ct); return; }
 
+        await using var transaction = await cardGroupRepository.BeginTransactionAsync(ct);
+
         var soloGroup = CardGroup.Create(req.SprintId, card.ColumnType);
         soloGroup.ClearDomainEvents();
         await cardGroupRepository.AddAsync(soloGroup, ct);
@@ -53,6 +57,7 @@ public sealed class RemoveCardFromGroupEndpoint(
         card.SetGroupId(soloGroup.Id);
         group.RecordCardRemoved(req.CardId, soloGroup.Id);
         await cardGroupRepository.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
 
         await SendOkAsync(ct);
     }

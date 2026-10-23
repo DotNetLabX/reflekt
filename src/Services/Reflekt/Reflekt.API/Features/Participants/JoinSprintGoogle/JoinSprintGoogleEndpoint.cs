@@ -31,6 +31,9 @@ public sealed class JoinSprintGoogleEndpoint(
         var existing = await participantRepository.GetByUserAndSprintAsync(userId, request.SprintId, ct);
         if (existing is not null)
         {
+            if (existing.IsRemoved)
+                ThrowError("You were removed from this sprint.", StatusCodes.Status409Conflict);
+
             await SendAsync(existing.Adapt<JoinSprintResponse>(), 200, ct);
             return;
         }

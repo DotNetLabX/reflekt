@@ -104,3 +104,83 @@ Coverage: complete
 | R2-06 | fixed-real | — | — | AC1, AC7, AC8, AC9; Scope BE-14 (JoinSprint timer auto-start) |
 
 Reconciled: Scope BE-02 ↔ AC5 ↔ Decisions row 6; Scope BE-12 ↔ AC1 ↔ F38 Scope row 2; Scope BE-13 ↔ AC4; Scope BE-14 ↔ AC3. No round 3: round 2 holds no CRITICAL.
+
+
+## Round 1 — 2026-10-23 — plan — primary (codex)
+
+Header note: plan review round 1. Primary Codex (job task-mvkiap30-p0ko8a, completed, NO-GO) — its verdict is persisted verbatim in `review-critic-codex.md` § Plan review, round 1. Second reader Sonnet (`critic-second`), verdict ACCEPT; its message is below. Pair `codex + sonnet` — gear: normal. Team lead wrote the merge; the fold is the architect's.
+
+## Second reader — round 1 (sonnet)
+
+Verdict: ACCEPT. Findings (verbatim titles, full text in the team lead's relay to the architect):
+- [MEDIUM] P1-01 — Held and collected events are not separated, and EF's implicit save transaction fires the same callbacks (seed-0130). Fix: two lists, `collected` and `held`; transaction callbacks touch only `held`; add a trace for a multi-command save with no explicit transaction.
+- [MEDIUM] P1-02 — Step 6 deletes `ParticipantRepository.Remove`, but the kick endpoint still calls it until Step 8 (seed-0130).
+- [MEDIUM] P1-03 — The hub's closed-sprint rejection cannot come from `EnsureOpen()` as written; name a `RequireOpen` wrapper rethrowing `HubException`, `JoinSprint` keeps a plain state check (seed-0130).
+- [MEDIUM] P1-04 — The per-step `unit` role never runs the integration tests several accept lines cite (seed-0129).
+- [LOW] P1-05 — The Step 2 dissolve-loop grep already passes today (2 sites, not 3) (seed-0127).
+- [LOW] P1-06 — Development fallback when the origin key is missing has no `Adds:` row (seed-0127).
+- Open Q-1 (ungraded): join/kick race window in `JoinSprint`. Q-2: P2 rationale stale. Q-3: graphify-out churn in the Step 14 file-list check.
+Coverage ledger: every scope row and AC opened; sibling specs F38/F40, `SprintRepository`, `CardRepository`, `TimerService`, `OpenGraphBackgroundService` not opened (no step depends on them).
+
+### Merge — round 1
+
+Coverage: complete
+
+| id | readers | level | anchor | title | shape | consequence | evidence | untouchable | tag | surfaces | source ids |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| R1-01 | codex | HIGH | unranked — no anchor fits; Codex severity HIGH | `IDbTransactionInterceptor` needs EF Core Relational; `Blocks.Persistence` references base EF only | missing dependency | Step 1 does not compile; inventory and close-out file list omit the csproj change | quoted | — | dependency | plan Step 1; Blocks.Persistence.csproj | codex-1 |
+| R1-02 | codex, sonnet | HIGH | unranked — no anchor fits; Codex severity HIGH | Join can race kick revocation | race | A kicked participant's connection can end up in both groups after eviction (BE-13 requires an open connection cannot rejoin) | quoted | — | kick | plan Step 9; SprintHub.JoinSprint | codex-2, sonnet Q-1 (contested: HIGH / ungraded — settled HIGH: the spec makes rejoin-proofing a requirement, and only a code coordination or compensating check meets it) |
+| R1-03 | sonnet | MEDIUM | seed-0130 | Collected vs held events not separated; implicit save transaction fires the same callbacks | ambiguous mechanism | Multi-statement saves could silently drop their events | quoted | — | interceptor | plan Step 1; DomainEventPublishingInterceptor.cs | sonnet P1-01 |
+| R1-04 | codex, sonnet | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | P2 does not close R1-18's author-connection window; rationale stale | race / stale rationale | A new author connection can get the redacted copy only | quoted | — | redaction | plan P2; useSprintHub.ts:75–78 | codex-3, sonnet Q-2 |
+| R1-05 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | New participant group has no leave lifecycle (`LeaveSprint`) | incomplete lifecycle | A left connection keeps receiving full author notifications and escapes revocation | quoted | — | hub | plan Step 9; SprintHub.LeaveSprint | codex-4 |
+| R1-06 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Production 5xx body still emits `details: null` | spec contradiction | BE-20/AC3 require no `details` outside Development | quoted | — | errors | plan Step 3 | codex-5 |
+| R1-07 | codex, sonnet | MEDIUM | seed-0130 | Step 6 deletes `ParticipantRepository.Remove` still called until Step 8 | step-ordering break | Build fails at the Step 6/7 boundary | quoted | — | kick | plan Steps 6, 8; KickParticipantEndpoint.cs:44 | codex-6, sonnet P1-02 |
+| R1-08 | sonnet | MEDIUM | seed-0130 | Hub closed-sprint rejection mechanism unnamed (`DomainException` vs `HubException`) | exception/transport mismatch | Client sees a generic error, or the accept grep fails | quoted | — | hub | plan Step 4; SprintHub.cs | sonnet P1-03 |
+| R1-09 | sonnet | MEDIUM | seed-0129 | Step `unit` role never runs the integration tests the accept lines cite | verification role mismatch | Regressions in the riskiest steps surface only at Step 7/14 | quoted | — | verification | .claude/verify.json; plan preamble, Steps 2, 4, 8, 12 | sonnet P1-04 |
+| R1-10 | codex, sonnet | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Missing step-local `Adds:` rows (AdvancePhase every branch; return-URL extra representation; Dev origin fallback) | untagged addition | Unrecorded behaviour beyond the spec | quoted | — | adds | plan Steps 2, 12 | codex-7, sonnet P1-06 (contested: MEDIUM / LOW — settled MEDIUM: three additions, one at a security surface) |
+| R1-11 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Missing `Departs from:` rows (error-handling mapping/serialisation; WaitForNone; inline resource checks; broadcast-only handler name) | untagged departure | Skill departures unrecorded | quoted | — | departs | plan Steps 1, 3, 8, 9 | codex-8 |
+| R1-12 | codex, sonnet | LOW | seed-0127 | Dissolve-loop grep already passes today | non-discriminating check | A left-in loop save passes | path | — | verification | plan Step 2; DissolveGroupEndpoint.cs | codex-9, sonnet P1-05 |
+| R1-13 | sonnet | LOW | seed-0127 | graphify-out regeneration churns the Step 14 file-list check | scope noise | Unreviewable churn in the change set | quoted | — | close-out | plan Step 14 | sonnet Q-3 |
+
+### Fold — round 1 (architect, claude-opus-5-5, 2026-10-23)
+
+| id | disposition | level after | re-grade (level · anchor · why) | where |
+|---|---|---|---|---|
+| R1-01 | fixed-real | HIGH | — | plan Step 1 (files: `Blocks.Persistence.csproj`, `Directory.Packages.props`; Relational reference bullet; grep accept; risk adds dependency kind); Context package-rule bullet; Size line (48 files); Skill Mapping row 1; Must-NOT-Change package row; Step 14 package check (one added line); Decisions row "Relational reference"; P7 (new) |
+| R1-02 | fixed-real | HIGH | — | plan Step 9 (registry; `JoinSprint` order with a second removed check after the group joins, and its undo path; accept traces); Decisions rows "JoinSprint re-check", "connection registry" |
+| R1-03 | fixed-real | MEDIUM | — | plan Step 1 (collected vs held lists; `SavedChangesAsync` routing; callbacks touch held only; `TransactionStartedAsync` clears held; EF's own save transaction covered; trace (e) added); Decisions row "two lists"; Decisions row "AC1" (five traces) |
+| R1-04 | fixed-real | MEDIUM | — | plan Step 11 (Writing broadcasts to participant groups only: full to the author's, redacted to each other active participant's; accept trace); P2 State → superseded by P8; P8 (new); Decisions row "participant groups only" |
+| R1-05 | fixed-real | MEDIUM | — | plan Step 9 (`LeaveSprint` leaves the participant group; the registry is kept until disconnect, so revocation still finds a left connection; the kick handler reads the registry; accept traces); Decisions rows "connection registry", "LeaveSprint" |
+| R1-06 | fixed-real | MEDIUM | — | plan Step 3 (5xx body fields exactly `statusCode`, `message`, `traceId`; `details` key absent; accept trace on the serialised JSON); Decisions row "5xx body" |
+| R1-07 | fixed-real | MEDIUM | — | plan Step 6 (`Remove` kept, grep removed); Step 8 (files add `ParticipantRepository.cs`; deletes `Remove`; grep accept); Decisions row "`Remove` deleted in Step 8" |
+| R1-08 | fixed-real | MEDIUM | — | plan Step 4 (private hub helper: `EnsureOpen()` with `DomainException` rethrown as `HubException("Sprint is closed.")`; `JoinSprint` plain state check; grep accept names the catch); Decisions row "hub closed sprint" |
+| R1-09 | fixed-real | MEDIUM | — | plan Implementation Steps preamble (`unit` runs only `Reflekt.UnitTests`; each step's **Runs:** integration files by name through `verify-run.js --profile fast --files`); a **Runs:** line on Steps 1–13; Step 3 runs every integration file and updates only assertions the spec's status or casing change alters; Testing Strategy; Must-NOT-Change tests row; Decisions row 1; P1 Decided; Step 14 file list |
+| R1-10 | fixed-real | MEDIUM | — | plan Step 2 (`AdvancePhase` transaction narrowed to leaving Writing, as the spec names it — no addition left); Step 12 (received-value check is the spec's, unescaped check is today's `LoginEndpoint.cs:35`, kept — not an addition; dev origin prefixed as today, the designed missing-key fallback removed); Decisions rows "AdvancePhase", "return URL" |
+| R1-11 | fixed-real | MEDIUM | — | plan Decisions: four `Departs from` rows, each naming the source that requires it — domain-patterns (`WaitForNone`, spec BE-12), error-handling (spec BE-07/BE-20), authorization-patterns (inline kick checks, spec Out of scope → F38), create-domain-event-handler (handler name, spec Out of scope → F38 BE-25) |
+| R1-12 | fixed-real | LOW | — | plan Step 2 (dissolve grep replaced by a code trace: no save inside the per-card `foreach`, one batched add and one save) |
+| R1-13 | fixed-real | LOW | — | plan Step 14 (`graphify-out/` committed, not reviewed, excluded from the file-list check by pathspec) |
+
+Reconciled: plan Context (package rule ↔ P7, Step 14 package check, Must-NOT-Change package row — all now "one added line at 10.0.13, nothing moves"); Size line ↔ Step 1 and Step 8 file lists; Skill Mapping row 1 ↔ Step 1; Step 9 seams ↔ Step 11 (Step 11 no longer reads the author's connection ids, so the seam list names only the kick handler's needs); Step 6 ↔ Step 8 (`Remove`, `ParticipantRepository.cs` in both lists); Step 11 ↔ Step 6 (`GetBySprintIdAsync` skips removed participants, so a kicked participant's group gets no redacted copy); Step 3 test rule ↔ Testing Strategy, Must-NOT-Change tests row, Decisions row 1, P1, Step 14 file list; P2 ↔ P8 and Decisions row "participant groups only"; P1 and Testing Strategy row range corrected to Decisions rows 2–8 (the AC replacement rows — the old "2–9" took in the interceptor row). Plan-side summary: plan.md § Plan Review.
+
+
+## Round 2 — 2026-10-23 — plan — primary (codex)
+
+Header note: plan review round 2, floor MEDIUM, Read: full (sample — slug number 35 divisible by 5). Primary Codex alone (job task-mvkj2ttx-ctkrnt, completed, NO-GO); verdict and fold-verification table persisted verbatim in `review-critic-codex.md` § Plan review, round 2. Fold verification: R1-01..R1-09, R1-11..R1-13 closed; R1-10 partial (→ R2-02). Round 3 does not run: no CRITICAL.
+
+### Merge — round 2
+
+Coverage: complete
+
+| id | readers | level | anchor | title | shape | consequence | evidence | untouchable | tag | surfaces | source ids |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| R2-01 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Step 6 integration checks run before Step 7's migration exists | step-ordering break | `Database.Migrate()` rejects pending model changes; Step 6's required integration runs fail | quoted | — | fold | plan Steps 6–7; DependencyInjection.cs:47; ParticipantEndpointTests.cs:75 | codex R2-01 |
+| R2-02 | codex | MEDIUM | unranked — no anchor fits; Codex severity MEDIUM | Decoded return-URL validation expands today's check without an `Adds:` row | untagged addition | `/docs/%09notes` newly rejected; preservation claim at plan line 540 incorrect | quoted | — | fold | plan Step 12, line 430, 540; LoginEndpoint.cs:36 | codex R2-02 |
+
+### Fold — round 2 (architect, claude-opus-5-5, 2026-10-23)
+
+| id | disposition | level after | re-grade (level · anchor · why) | where |
+|---|---|---|---|---|
+| R2-01 | fixed-real | MEDIUM | — | plan Step 6 Runs line (no integration file by name; Steps 6 and 7 are one verification boundary, because the start-up `Migrate()` rejects Step 6's model change until Step 7's migration exists); Step 7 Runs line (runs Step 6's `ParticipantEndpointTests.cs` and `SprintEndpointTests.cs`, then the `full` role); plan § Plan Review |
+| R2-02 | fixed-real | MEDIUM | — | plan Step 12 (the spec's four parts on the received value; today's three decoded-form predicates from `LoginEndpoint.cs:35` kept exactly — starts with `/`, not `//`, no `://` — so `/docs/%09notes` is still accepted); Decisions row "return-URL rule" (rewritten, the "nothing it rejects today" claim replaced by the exact predicates, R2-02 cited); plan § Plan Review |
+
+Reconciled: Step 6 ↔ the Implementation Steps preamble (every step closes on the build and the `unit` role; the integration files run by name per Runs line, so Step 6 naming none is consistent) ↔ Step 7 (its Runs line takes Step 6's files) ↔ the Build slices line (Steps 6 and 7 are both in slice 6–11, one developer) ↔ Testing Strategy (per-step Runs files, unchanged wording); Step 12 ↔ Decisions row "return-URL rule" ↔ the Step 12 scratch-probe cases (`/sprint/12` accepted; `//evil.com`, `/\evil.com`, `/` + TAB + `/evil.com` and `https://evil.com` rejected — each still rejected by the received-value rule) ↔ Must-NOT-Change (no other behaviour change). Plan departures recorded as kept (away answerer, recommendation taken) in plan.md § Plan Review; plan approved there.

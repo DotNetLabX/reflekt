@@ -15,7 +15,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<DomainEventPublishingInterceptor>();
+        services.AddScoped<DomainEventPublishingInterceptor>();
 
         services.AddDbContext<ReflektDbContext>((sp, options) =>
         {

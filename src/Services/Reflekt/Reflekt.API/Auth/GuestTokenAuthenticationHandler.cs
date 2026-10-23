@@ -16,7 +16,7 @@ public class GuestTokenAuthenticationHandler(
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var token = Request.Headers["X-Guest-Token"].FirstOrDefault()
-            ?? Request.Query["access_token"].FirstOrDefault()
+            ?? (Request.Path.StartsWithSegments("/hubs") ? Request.Query["access_token"].FirstOrDefault() : null)
             ?? ExtractBearerToken(Request.Headers.Authorization.FirstOrDefault());
 
         if (token is null)
@@ -25,6 +25,8 @@ public class GuestTokenAuthenticationHandler(
         var participant = await participantRepository.GetByGuestTokenAsync(token, Context.RequestAborted);
         if (participant is null)
             return AuthenticateResult.Fail("Invalid guest token");
+        if (participant.IsRemoved)
+            return AuthenticateResult.Fail("Participant has been removed");
 
         var claims = new[]
         {

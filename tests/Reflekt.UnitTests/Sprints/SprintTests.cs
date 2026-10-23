@@ -1,3 +1,4 @@
+using Blocks.Domain;
 using FluentAssertions;
 using Reflekt.Domain.Sprints;
 using Reflekt.Domain.Sprints.Events;
@@ -80,7 +81,7 @@ public class SprintTests
         var sprint = Sprint.Create("Sprint 1", teamId: 1);
         sprint.Start();
         var act = sprint.Start;
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DomainException>();
     }
 
     [Fact]
@@ -90,7 +91,7 @@ public class SprintTests
         sprint.Start();
         sprint.Close();
         var act = sprint.Start;
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DomainException>();
     }
 
     [Fact]
@@ -131,7 +132,7 @@ public class SprintTests
         sprint.AdvancePhase(); // Voting → Discussing
         sprint.AdvancePhase(); // Discussing → Reporting
         var act = sprint.AdvancePhase;
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DomainException>();
     }
 
     [Fact]
@@ -139,7 +140,7 @@ public class SprintTests
     {
         var sprint = Sprint.Create("Sprint 1", teamId: 1);
         var act = sprint.AdvancePhase;
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DomainException>();
     }
 
     [Fact]
@@ -185,7 +186,7 @@ public class SprintTests
     {
         var sprint = Sprint.Create("Sprint 1", teamId: 1);
         var act = sprint.Close;
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DomainException>();
     }
 
     [Fact]
@@ -195,6 +196,6 @@ public class SprintTests
         sprint.Start();
         sprint.Close();
         var act = sprint.Close;
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DomainException>();
     }
 }

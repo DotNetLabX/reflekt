@@ -6,7 +6,7 @@
 **Rule list:** not applicable — defect fixes against existing behaviour; the rules they restore are stated below
 **Review:** round 1 — `delivery/review-critic.md`
 **Status:** Ready
-**Plan:** None
+**Plan:** docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md
 
 ---
 

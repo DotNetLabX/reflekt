@@ -2,6 +2,7 @@
   "roles": {
     "build": "dotnet build Reflekt.slnx",
     "unit": "dotnet test tests/Reflekt.UnitTests/Reflekt.UnitTests.csproj --filter \"Speed!=Slow\"",
+    "integration": "dotnet test tests/Reflekt.IntegrationTests/Reflekt.IntegrationTests.csproj",
     "full": "dotnet test Reflekt.slnx && npm --prefix web/reflekt-web ci && npm --prefix web/reflekt-web run build"
   },
   "slow": {

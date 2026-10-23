@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Reflekt.API.Auth;
 using Reflekt.API.Features.PhaseActions;
@@ -9,6 +10,14 @@ using AuthPolicies = Reflekt.API.Auth.Policies;
 namespace Reflekt.API.Features.CardGroups.UpdateGroupTitle;
 
 public sealed record UpdateGroupTitleRequest(int SprintId, int GroupId, string? Title);
+
+public sealed class UpdateGroupTitleRequestValidator : Validator<UpdateGroupTitleRequest>
+{
+    public UpdateGroupTitleRequestValidator()
+    {
+        RuleFor(x => x.Title).MaximumLength(100).When(x => x.Title is not null);
+    }
+}
 
 [Authorize(Policy = AuthPolicies.ScrumMaster)]
 [HttpPatch("/api/sprints/{sprintId}/card-groups/{groupId}")]
@@ -34,6 +43,8 @@ public sealed class UpdateGroupTitleEndpoint(
             await SendForbiddenAsync(ct);
             return;
         }
+
+        sprint.EnsureOpen();
 
         if (!phaseActionCache.IsAllowed(sprint.CurrentPhase, SprintAction.RenameGroup))
             ThrowError($"{SprintAction.RenameGroup} is not allowed in phase {sprint.CurrentPhase}.", StatusCodes.Status409Conflict);

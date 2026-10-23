@@ -106,7 +106,7 @@ public sealed partial class Card
             throw new ArgumentException("Cannot set review status to None. Use Done, CarriedOver, or Dropped.", nameof(status));
 
         if (CardType != CardType.ActionItem)
-            throw new InvalidOperationException("Only ActionItem cards can have a review status.");
+            throw new DomainException("Only ActionItem cards can have a review status.");
 
         if (ReviewStatus == status && ReviewedInSprintId == reviewingSprintId)
             return;

@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "suite": { "result": "pass", "record": "docs/specs/F35-BackendCorrectnessFixes/delivery/summary.md" },
+  "doneCheck": "PASS",
+  "review": { "verdict": "COMMENT", "highestFixed": "MEDIUM" },
+  "headline": "The backend defects and security holes from the F34 audit are fixed: events wait for the commit, Writing-phase card text is hidden, rule violations return 409, closed sprints are read-only, kicks are soft, names are unique, and outbound fetches and sign-in redirects are checked.",
+  "presumed": [
+    { "id": "C1", "story": null, "what": "Kept the plan's four source-required departures from skills (domain-patterns, error-handling, authorization-patterns, create-domain-event-handler).", "confidence": "high", "why": "Each is required by the spec (BE-07/12/20) or its Out of scope; the architect recommended keep.", "where": "docs/specs/F35-BackendCorrectnessFixes/delivery/plan.md" }
+  ],
+  "deferredRows": { "count": 1, "where": "docs/specs/F35-BackendCorrectnessFixes/delivery/change-notes.md" },
+  "retirements": { "count": 0, "where": null },
+  "pluginFindings": [
+    { "finding": "The Codex code-review job failed inside its early window with no output.", "where": "docs/specs/F35-BackendCorrectnessFixes/delivery/communication-log.md" },
+    { "finding": "No installed plugin runs vstest, so named-file and tied test runs fell back to the whole unit role and integration runs needed a new declared role.", "where": "docs/specs/F35-BackendCorrectnessFixes/delivery/lessons.md" },
+    { "finding": "verify-run records cut the exception message out of failed runs, hiding the cause of intermittent failures.", "where": "docs/specs/F35-BackendCorrectnessFixes/delivery/lessons.md" },
+    { "finding": "An approval-scope stamp with directory paths matches nothing and logs false-positive violations.", "where": "docs/specs/F35-BackendCorrectnessFixes/delivery/lessons.md" }
+  ]
+}

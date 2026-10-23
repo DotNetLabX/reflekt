@@ -73,21 +73,29 @@ public sealed class AdvancePhaseEndpoint(
         sprint.AdvancePhase();
 
         if (previousPhase == SprintPhase.Writing)
-        {
-            var cards = await cardRepository.GetBySprintIdAsync(request.SprintId, ct);
-            var noteCards = cards.Where(c => c.CardType == CardType.Note).ToList();
-
-            var groups = noteCards.Select(c => CardGroup.Create(sprint.Id, c.ColumnType)).ToList();
-            foreach (var g in groups) g.ClearDomainEvents();
-            await cardGroupRepository.AddRangeAsync(groups, ct);
+            await LeaveWritingAsync(sprint, ct);
+        else
             await sprintRepository.SaveChangesAsync(ct);
 
-            for (var i = 0; i < noteCards.Count; i++)
-                noteCards[i].SetGroupId(groups[i].Id);
-        }
+        await SendOkAsync(sprint.Adapt<SprintResponse>(), ct);
+    }
 
+    private async Task LeaveWritingAsync(Sprint sprint, CancellationToken ct)
+    {
+        await using var transaction = await sprintRepository.BeginTransactionAsync(ct);
+
+        var cards = await cardRepository.GetBySprintIdAsync(sprint.Id, ct);
+        var noteCards = cards.Where(c => c.CardType == CardType.Note).ToList();
+
+        var groups = noteCards.Select(c => CardGroup.Create(sprint.Id, c.ColumnType)).ToList();
+        foreach (var g in groups) g.ClearDomainEvents();
+        await cardGroupRepository.AddRangeAsync(groups, ct);
         await sprintRepository.SaveChangesAsync(ct);
 
-        await SendOkAsync(sprint.Adapt<SprintResponse>(), ct);
+        for (var i = 0; i < noteCards.Count; i++)
+            noteCards[i].SetGroupId(groups[i].Id);
+
+        await sprintRepository.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
     }
 }

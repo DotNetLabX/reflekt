@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Blocks.Domain;
 using Blocks.Exceptions;
 using FluentValidation;
@@ -11,14 +12,15 @@ public sealed class GlobalExceptionMiddleware(
     ILogger<GlobalExceptionMiddleware> logger,
     IWebHostEnvironment env)
 {
+    private const string ServerErrorMessage = "An unexpected error occurred.";
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private static HttpStatusCode MapStatusCode(Exception ex) => ex switch
     {
-        ValidationException => HttpStatusCode.BadRequest,
+        DomainException => HttpStatusCode.Conflict,
+        HttpException httpException => httpException.HttpStatusCode,
         ArgumentException => HttpStatusCode.BadRequest,
-        BadRequestException => HttpStatusCode.BadRequest,
-        NotFoundException => HttpStatusCode.NotFound,
-        DomainException => HttpStatusCode.BadRequest,
-        UnauthorizedException => HttpStatusCode.Unauthorized,
         _ => HttpStatusCode.InternalServerError
     };
 
@@ -46,14 +48,13 @@ public sealed class GlobalExceptionMiddleware(
     private Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var statusCode = MapStatusCode(exception);
-        if (statusCode >= HttpStatusCode.InternalServerError)
+        var isServerError = statusCode >= HttpStatusCode.InternalServerError;
+        if (isServerError)
             logger.LogError(exception, "Unhandled exception. TraceId={TraceId}", context.TraceIdentifier);
 
-        var response = new
+        var message = isServerError && !env.IsDevelopment() ? ServerErrorMessage : exception.Message;
+        var response = new ErrorResponse((int)statusCode, message, context.TraceIdentifier)
         {
-            StatusCode = (int)statusCode,
-            exception.Message,
-            TraceId = context.TraceIdentifier,
             Details = env.IsDevelopment() ? exception.StackTrace : null
         };
 
@@ -62,22 +63,33 @@ public sealed class GlobalExceptionMiddleware(
 
     private Task HandleValidationExceptionAsync(HttpContext context, ValidationException exception)
     {
-        var response = new
+        var response = new ErrorResponse(
+            (int)HttpStatusCode.BadRequest,
+            "One or more validation errors occurred.",
+            context.TraceIdentifier)
         {
-            StatusCode = (int)HttpStatusCode.BadRequest,
-            Message = "One or more validation errors occurred.",
-            TraceId = context.TraceIdentifier,
-            Errors = exception.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }),
+            Errors = exception.Errors.Select(e => new ValidationError(e.PropertyName, e.ErrorMessage)).ToList(),
             Details = env.IsDevelopment() ? exception.StackTrace : null
         };
 
         return WriteResponseAsync(context, HttpStatusCode.BadRequest, response);
     }
 
-    private static Task WriteResponseAsync(HttpContext context, HttpStatusCode statusCode, object response)
+    private static Task WriteResponseAsync(HttpContext context, HttpStatusCode statusCode, ErrorResponse response)
     {
         context.Response.StatusCode = (int)statusCode;
         context.Response.ContentType = "application/json";
-        return context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        return context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonOptions));
     }
+
+    private sealed record ErrorResponse(int StatusCode, string Message, string TraceId)
+    {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IReadOnlyList<ValidationError>? Errors { get; init; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Details { get; init; }
+    }
+
+    private sealed record ValidationError(string PropertyName, string ErrorMessage);
 }

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Claims;
+using Blocks.Domain;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +23,15 @@ public class SprintHub(
     // sprintId -> connectionId -> participantId (all connected participants)
     private static readonly ConcurrentDictionary<int, ConcurrentDictionary<string, int>> ConnectionState = new();
 
+    // connectionId -> caller; cleared only on disconnect, so a connection that left the sprint is still found
+    private static readonly ConcurrentDictionary<string, RegisteredConnection> ConnectionRegistry = new();
+
+    private const string ParticipantRemovedMessage = "Participant has been removed.";
+
+    private sealed record RegisteredConnection(HubCallerContext Caller, int SprintId, int ParticipantId);
+
+    public static string ParticipantGroup(int participantId) => $"participant:{participantId}";
+
     public override Task OnConnectedAsync()
     {
         logger.LogInformation("Client {ConnectionId} connected to SprintHub", Context.ConnectionId);
@@ -34,16 +44,35 @@ public class SprintHub(
         if (!int.TryParse(claimSprintId, out var parsedSprintId) || parsedSprintId != sprintId)
             throw new HubException("Not authorized to join this sprint.");
 
+        var participantIdClaim = Context.User?.FindFirstValue("participantId");
+        if (!int.TryParse(participantIdClaim, out var participantId))
+            throw new HubException("Missing participant claims.");
+
+        await RequireActiveParticipantAsync(participantId);
+
+        ConnectionRegistry[Context.ConnectionId] = new RegisteredConnection(Context, sprintId, participantId);
+        var connections = ConnectionState.GetOrAdd(sprintId, _ => new ConcurrentDictionary<string, int>());
+        connections[Context.ConnectionId] = participantId;
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, ParticipantGroup(participantId));
         await Groups.AddToGroupAsync(Context.ConnectionId, $"sprint:{sprintId}");
 
-        // Track connection
-        var participantIdClaim = Context.User?.FindFirstValue("participantId");
-        if (int.TryParse(participantIdClaim, out var participantId))
+        // A kick committed before this read is undone here; one committed after it finds this
+        // connection in the registry, so its handler evicts and aborts it.
+        if (await IsParticipantRemovedAsync(participantId))
         {
-            var connections = ConnectionState.GetOrAdd(sprintId, _ => new ConcurrentDictionary<string, int>());
-            connections[Context.ConnectionId] = participantId;
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"sprint:{sprintId}");
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, ParticipantGroup(participantId));
+            connections.TryRemove(Context.ConnectionId, out _);
+            ConnectionRegistry.TryRemove(Context.ConnectionId, out _);
+            throw new HubException(ParticipantRemovedMessage);
         }
 
+        await SendJoinSnapshotsAsync(sprintId);
+    }
+
+    private async Task SendJoinSnapshotsAsync(int sprintId)
+    {
         // Send readiness snapshot to joining client
         var readyDict = ReadinessState.GetOrAdd(sprintId, _ => new ConcurrentDictionary<int, string>());
         var connections2 = ConnectionState.GetOrAdd(sprintId, _ => new ConcurrentDictionary<string, int>());
@@ -63,7 +92,7 @@ public class SprintHub(
             using var scope = scopeFactory.CreateScope();
             var sprintRepo = scope.ServiceProvider.GetRequiredService<SprintRepository>();
             var sprint = await sprintRepo.GetByIdAsync(sprintId, Context.ConnectionAborted);
-            if (sprint is not null && sprint.CurrentPhase is
+            if (sprint is not null && sprint.State != Reflekt.Domain.Sprints.SprintState.Closed && sprint.CurrentPhase is
                 Reflekt.Domain.Sprints.SprintPhase.Writing or
                 Reflekt.Domain.Sprints.SprintPhase.Voting or
                 Reflekt.Domain.Sprints.SprintPhase.Discussing)
@@ -88,11 +117,14 @@ public class SprintHub(
         });
     }
 
-    public Task LeaveSprint(int sprintId)
+    public async Task LeaveSprint(int sprintId)
     {
         var connections = ConnectionState.GetValueOrDefault(sprintId);
         connections?.TryRemove(Context.ConnectionId, out _);
-        return Groups.RemoveFromGroupAsync(Context.ConnectionId, $"sprint:{sprintId}");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"sprint:{sprintId}");
+
+        if (int.TryParse(Context.User?.FindFirstValue("participantId"), out var participantId))
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, ParticipantGroup(participantId));
     }
 
     public async Task ToggleReady(int sprintId)
@@ -105,6 +137,8 @@ public class SprintHub(
         var displayNameClaim = Context.User?.FindFirstValue("displayName");
         if (!int.TryParse(participantIdClaim, out var participantId) || displayNameClaim is null)
             throw new HubException("Missing participant claims.");
+
+        await RequireActiveParticipantAsync(participantId);
 
         var readyDict = ReadinessState.GetOrAdd(sprintId, _ => new ConcurrentDictionary<int, string>());
         bool isReady;
@@ -191,8 +225,10 @@ public class SprintHub(
         var teamRepo = scope.ServiceProvider.GetRequiredService<TeamRepository>();
 
         var participant = await participantRepo.GetByIdAsync(participantId, Context.ConnectionAborted);
+        if (participant is null || participant.IsRemoved)
+            throw new HubException(ParticipantRemovedMessage);
 
-        int? resolvedUserId = participant?.UserId;
+        int? resolvedUserId = participant.UserId;
         if (resolvedUserId is null)
         {
             var httpContext = Context.GetHttpContext();
@@ -227,6 +263,15 @@ public class SprintHub(
         var sprint = await sprintRepo.GetByIdAsync(sprintId, Context.ConnectionAborted)
             ?? throw new HubException("Sprint not found.");
 
+        try
+        {
+            sprint.EnsureOpen();
+        }
+        catch (DomainException)
+        {
+            throw new HubException("Sprint is closed.");
+        }
+
         if (sprint.CurrentPhase is not (
             Reflekt.Domain.Sprints.SprintPhase.Writing or
             Reflekt.Domain.Sprints.SprintPhase.Voting or
@@ -234,6 +279,20 @@ public class SprintHub(
             throw new HubException($"Timer is not available in phase {sprint.CurrentPhase}.");
 
         return sprint;
+    }
+
+    private async Task RequireActiveParticipantAsync(int participantId)
+    {
+        if (await IsParticipantRemovedAsync(participantId))
+            throw new HubException(ParticipantRemovedMessage);
+    }
+
+    private async Task<bool> IsParticipantRemovedAsync(int participantId)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var participantRepo = scope.ServiceProvider.GetRequiredService<ParticipantRepository>();
+        var participant = await participantRepo.GetByIdAsync(participantId, Context.ConnectionAborted);
+        return participant is null || participant.IsRemoved;
     }
 
     private Task BroadcastTimerUpdated(int sprintId, TimerSnapshot snapshot) =>
@@ -257,8 +316,50 @@ public class SprintHub(
         return 0;
     }
 
+    public static IReadOnlyList<HubCallerContext> GetParticipantConnections(int sprintId, int participantId)
+        => ConnectionRegistry.Values
+            .Where(c => c.SprintId == sprintId && c.ParticipantId == participantId)
+            .Select(c => c.Caller)
+            .ToList();
+
+    public static void AbortConnections(IReadOnlyList<HubCallerContext> connections)
+    {
+        var failures = new List<Exception>();
+        foreach (var connection in connections)
+        {
+            try
+            {
+                connection.Abort();
+            }
+            catch (Exception ex)
+            {
+                failures.Add(ex);
+            }
+        }
+
+        if (failures.Count > 0)
+            throw new AggregateException(failures);
+    }
+
+    public static (int ReadyCount, int TotalCount) RemoveParticipantState(int sprintId, int participantId)
+    {
+        var connections = ConnectionState.GetValueOrDefault(sprintId);
+        if (connections is not null)
+        {
+            foreach (var connectionId in connections.Where(c => c.Value == participantId).Select(c => c.Key).ToList())
+                connections.TryRemove(connectionId, out _);
+        }
+
+        var readyDict = ReadinessState.GetValueOrDefault(sprintId);
+        readyDict?.TryRemove(participantId, out _);
+
+        return (readyDict?.Count ?? 0, connections?.Values.Distinct().Count() ?? 0);
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        ConnectionRegistry.TryRemove(Context.ConnectionId, out _);
+
         var participantIdClaim = Context.User?.FindFirstValue("participantId");
         var sprintIdClaim = Context.User?.FindFirstValue("sprintId");
 

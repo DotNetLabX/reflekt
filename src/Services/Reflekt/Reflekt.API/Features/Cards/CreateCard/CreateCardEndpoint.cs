@@ -30,17 +30,8 @@ public sealed class CreateCardEndpoint(SprintRepository sprintRepository, CardRe
             return;
         }
 
-        if (!Enum.TryParse<ColumnType>(command.ColumnType, out var columnType))
-        {
-            ThrowError(x => x.ColumnType, "Invalid column type.");
-            return;
-        }
-
-        if (!Enum.TryParse<CardType>(command.CardType, out var cardType))
-        {
-            ThrowError(x => x.CardType, "Invalid card type.");
-            return;
-        }
+        var columnType = Enum.Parse<ColumnType>(command.ColumnType);
+        var cardType = Enum.Parse<CardType>(command.CardType);
 
         var sprint = await sprintRepository.GetByIdAsync(command.SprintId, ct);
         if (sprint is null) { await SendNotFoundAsync(ct); return; }

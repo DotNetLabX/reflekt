@@ -246,8 +246,20 @@ public class ParticipantEndpointTests : IAsyncLifetime
         await _authFactory.DisposeAsync();
         await _anonFactory.DisposeAsync();
         SqliteConnection.ClearAllPools();
-        if (File.Exists(_testDbPath)) File.Delete(_testDbPath);
-        if (File.Exists(_anonDbPath)) File.Delete(_anonDbPath);
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                if (File.Exists(_testDbPath)) File.Delete(_testDbPath);
+                if (File.Exists(_anonDbPath)) File.Delete(_anonDbPath);
+                break;
+            }
+            catch (IOException) when (attempt < 20)
+            {
+                await Task.Delay(100);
+                SqliteConnection.ClearAllPools();
+            }
+        }
     }
 
     private async Task<int> CreateSprintAsync(string name)
