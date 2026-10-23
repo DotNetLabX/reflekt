@@ -1,11 +1,25 @@
-import { computed } from 'vue'
-import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
-import { useParticipantStore } from '../stores/participant'
-import { useAuthStore } from '../stores/auth'
-import { useVoteStore } from '../stores/vote'
-import { useSprintStore } from '../stores/sprint'
-import { usePolicyStore } from '../stores/policy'
-import { useCardGroupStore, type CardGroup } from '../stores/cardGroup'
+import { computed, ref, type InjectionKey } from 'vue'
+import { DEFAULT_COLUMNS } from '@/constants/columns'
+import { useCardStore } from '@/stores/card'
+import { useParticipantStore } from '@/stores/participant'
+import { useAuthStore } from '@/stores/auth'
+import { useVoteStore } from '@/stores/vote'
+import { useSprintStore } from '@/stores/sprint'
+import { usePolicyStore } from '@/stores/policy'
+import { useCardGroupStore } from '@/stores/cardGroup'
+import { usePreviousActionsStore } from '@/stores/previousActions'
+import { useRetroPhase } from './useRetroPhase'
+import type { Card, CardGroup, DragPayload } from '@/types/card'
+import type { ColumnColor, ColumnType } from '@/types/domain'
+
+type NoteColumnType = 'Column1' | 'Column2' | 'Column3'
+
+export const boardActionsKey: InjectionKey<ReturnType<typeof useRetroBoardActions>['actions']> =
+  Symbol('boardActions')
+
+export function missingBoardActions(component: string): never {
+  throw new Error(`${component} must be rendered inside RetroBoardPanel`)
+}
 
 export function useRetroBoardActions(sprintId: number, onError: (msg: string) => void) {
   const cardStore = useCardStore()
@@ -15,194 +29,351 @@ export function useRetroBoardActions(sprintId: number, onError: (msg: string) =>
   const sprintStore = useSprintStore()
   const policyStore = usePolicyStore()
   const cardGroupStore = useCardGroupStore()
+  const previousActionsStore = usePreviousActionsStore()
 
   // --- Board state ---
 
   const participants = computed(() => participantStore.participants)
-  const column1Cards = computed(() => cardStore.column1Cards)
-  const column2Cards = computed(() => cardStore.column2Cards)
-  const column3Cards = computed(() => cardStore.column3Cards)
   const actionItems = computed(() => cardStore.actionItemCards)
-  const currentPhase = computed(() => sprintStore.currentSummary?.currentPhase ?? '')
+  const {
+    currentPhase: phase,
+    isWriting: isWritingPhase,
+    isDiscussing: isDiscussingPhase,
+    isReporting,
+    showGroups,
+    isClosed,
+    isScrumMaster,
+    showReadiness,
+  } = useRetroPhase()
+  const currentPhase = computed(() => phase.value ?? '')
   const currentParticipantId = computed(() => participantStore.currentParticipant?.id ?? 0)
-  const isWritingPhase = computed(() => currentPhase.value === 'Writing')
-  const isDiscussingPhase = computed(() => currentPhase.value === 'Discussing')
-  const showGroups = computed(() => ['Grouping', 'Voting', 'Discussing', 'Reporting'].includes(currentPhase.value))
-  const isScrumMaster = computed(() => sprintStore.currentSummary?.isScrumMaster ?? false)
   const canGroup = computed(() => policyStore.isAllowed(currentPhase.value, 'GroupCards'))
   const canUngroup = computed(() => policyStore.isAllowed(currentPhase.value, 'UngroupCards'))
-  const column1Groups = computed(() => [...cardGroupStore.column1Groups].sort((a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)))
-  const column2Groups = computed(() => [...cardGroupStore.column2Groups].sort((a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)))
-  const column3Groups = computed(() => [...cardGroupStore.column3Groups].sort((a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id)))
-  const showActionItems = computed(() => policyStore.isAllowed(currentPhase.value, 'CreateActionItem') || currentPhase.value === 'Reporting')
-  const boardGridClasses = computed(() => showActionItems.value
-    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-h-0 grid-rows-[1fr]'
-    : 'grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 min-h-0 grid-rows-[1fr]')
+  const canCreateNote = computed(() => policyStore.isAllowed(currentPhase.value, 'CreateNote'))
+  const canCreateActionItem = computed(() =>
+    policyStore.isAllowed(currentPhase.value, 'CreateActionItem'),
+  )
+  const showActionItems = computed(() => canCreateActionItem.value || isReporting.value)
+  const showPreviousActions = computed(
+    () => isWritingPhase.value && previousActionsStore.items.length > 0,
+  )
+  const teamId = computed(() => sprintStore.currentSummary?.teamId ?? 0)
+  const boardGridClasses = computed(() =>
+    showActionItems.value
+      ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-h-0 grid-rows-[1fr]'
+      : 'grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 min-h-0 grid-rows-[1fr]',
+  )
+
+  function sortedByVotes(groups: CardGroup[]): CardGroup[] {
+    return [...groups].sort(
+      (a, b) => voteStore.voteCountForGroup(b.id) - voteStore.voteCountForGroup(a.id),
+    )
+  }
+
+  function noteColumn(
+    type: NoteColumnType,
+    name: string,
+    color: ColumnColor,
+    badge: 'success' | 'danger' | 'primary',
+    cards: Card[],
+    groups: CardGroup[],
+  ) {
+    return { type, name, color, badge, cards, groups: sortedByVotes(groups) }
+  }
+
+  const noteColumns = computed(() => {
+    const summary = sprintStore.currentSummary
+    const [default1, default2, default3] = DEFAULT_COLUMNS
+    return [
+      noteColumn(
+        'Column1',
+        summary?.column1Name ?? default1.name,
+        summary?.column1Color ?? default1.color,
+        'success',
+        cardStore.column1Cards,
+        cardGroupStore.column1Groups,
+      ),
+      noteColumn(
+        'Column2',
+        summary?.column2Name ?? default2.name,
+        summary?.column2Color ?? default2.color,
+        'danger',
+        cardStore.column2Cards,
+        cardGroupStore.column2Groups,
+      ),
+      noteColumn(
+        'Column3',
+        summary?.column3Name ?? default3.name,
+        summary?.column3Color ?? default3.color,
+        'primary',
+        cardStore.column3Cards,
+        cardGroupStore.column3Groups,
+      ),
+    ] as const
+  })
+
+  const deleteTarget = ref<Card | null>(null)
 
   // --- Prop builders ---
 
   function canMutateCard(card: Card): boolean {
-    const ownsCard = card.participantId === participantStore.currentParticipant?.id || authStore.user !== null
-    if (!ownsCard) return false
-    const editAction = card.cardType === 'ActionItem' ? 'EditActionItem' : 'EditNote'
-    return policyStore.isAllowed(currentPhase.value, editAction)
+    if (cardStore.isPendingCard(card)) return false
+    if (card.participantId !== participantStore.currentParticipant?.id) return false
+    if (isClosed.value) return false
+    const isActionItem = card.cardType === 'ActionItem'
+    if (!policyStore.isAllowed(currentPhase.value, isActionItem ? 'EditActionItem' : 'EditNote'))
+      return false
+    return !(isActionItem && isDiscussingPhase.value && !authStore.isSignedIn)
   }
 
-  function cardItemProps(card: Card, color: string) {
+  function cardItemProps(card: Card, color: ColumnColor) {
     return {
       card,
       canEdit: canMutateCard(card),
       blurred: isWritingPhase.value && card.participantId !== currentParticipantId.value,
-      canAttachLink: policyStore.isAllowed(currentPhase.value, 'AttachEvidenceLink'),
-      showVoting: false, voteCount: 0, myVoteCount: 0,
-      remainingBudget: voteStore.remainingBudget,
+      canAttachLink:
+        !cardStore.isPendingCard(card) &&
+        policyStore.isAllowed(currentPhase.value, 'AttachEvidenceLink'),
       columnColor: color,
     }
   }
 
-  function groupItemProps(group: CardGroup, color: string) {
+  function groupItemProps(group: CardGroup, color: ColumnColor) {
     return {
-      group, columnColor: color,
+      group,
+      columnColor: color,
       showVoting: policyStore.isAllowed(currentPhase.value, 'CastVote'),
       voteCount: voteStore.voteCountForGroup(group.id),
       myVoteCount: voteStore.myVotesOnGroup(group.id),
       remainingBudget: voteStore.remainingBudget,
       isScrumMaster: isScrumMaster.value,
-      canGroup: canGroup.value, canUngroup: canUngroup.value,
+      canGroup: canGroup.value,
+      canUngroup: canUngroup.value,
       isDiscussing: isDiscussingPhase.value,
     }
   }
 
   // --- Mutation handlers ---
 
-  async function addNote(column: 'Column1' | 'Column2' | 'Column3', text: string) {
-    try { await cardStore.createCard(sprintId, { text, columnType: column, cardType: 'Note' }) }
-    catch { onError('Failed to add card.') }
+  async function addNote(column: NoteColumnType, text: string): Promise<boolean> {
+    try {
+      await cardStore.createCard(sprintId, { text, columnType: column, cardType: 'Note' })
+      return true
+    } catch {
+      onError('Failed to add card.')
+      return false
+    }
   }
 
-  async function addActionItem(text: string, assigneeName: string) {
-    try { await cardStore.createCard(sprintId, { text, columnType: 'ActionItems', cardType: 'ActionItem', assigneeName }) }
-    catch { onError('Failed to add action item.') }
+  async function addActionItem(text: string, assigneeName: string): Promise<boolean> {
+    try {
+      await cardStore.createCard(sprintId, {
+        text,
+        columnType: 'ActionItems',
+        cardType: 'ActionItem',
+        assigneeName,
+      })
+      return true
+    } catch {
+      onError('Failed to add action item.')
+      return false
+    }
   }
 
   async function saveEdit(card: Card, text: string, assigneeName: string | null) {
-    const prev = { ...card }
-    const idx = cardStore.cards.findIndex((c) => c.id === card.id)
-    if (idx !== -1) cardStore.cards[idx] = { ...card, text, assigneeName, updatedAt: new Date().toISOString() }
-    try { await cardStore.editCard(sprintId, card.id, { text, assigneeName }) }
-    catch { if (idx !== -1) cardStore.cards[idx] = prev; onError('Failed to update card.') }
+    try {
+      await cardStore.editCard(sprintId, card.id, { text, assigneeName })
+    } catch {
+      onError('Failed to update card.')
+    }
   }
 
-  async function deleteCard(card: Card) {
-    const snapshot = [...cardStore.cards]
-    cardStore.cards = cardStore.cards.filter((c) => c.id !== card.id)
-    try { await cardStore.deleteCard(sprintId, card.id) }
-    catch { cardStore.cards = snapshot; onError('Failed to delete card.') }
+  function requestDelete(card: Card) {
+    deleteTarget.value = card
   }
 
-  async function castVote(card: Card) {
-    if (!card.groupId) return
-    try { await voteStore.castVote(sprintId, card.groupId) }
-    catch { onError('Failed to cast vote.') }
+  function cancelDelete() {
+    deleteTarget.value = null
   }
 
-  async function retractVote(card: Card) {
-    if (!card.groupId) return
-    try { await voteStore.retractVote(sprintId, card.groupId) }
-    catch { onError('Failed to retract vote.') }
+  async function confirmDelete() {
+    const card = deleteTarget.value
+    if (!card) return
+    deleteTarget.value = null
+    try {
+      await cardStore.deleteCard(sprintId, card.id)
+    } catch {
+      onError('Failed to delete card.')
+    }
   }
 
   async function castGroupVote(group: CardGroup) {
-    try { await voteStore.castVote(sprintId, group.id) }
-    catch { onError('Failed to cast vote.') }
+    try {
+      await voteStore.castVote(sprintId, group.id)
+    } catch {
+      onError('Failed to cast vote.')
+    }
   }
 
   async function retractGroupVote(group: CardGroup) {
-    try { await voteStore.retractVote(sprintId, group.id) }
-    catch { onError('Failed to retract vote.') }
+    try {
+      await voteStore.retractVote(sprintId, group.id)
+    } catch {
+      onError('Failed to retract vote.')
+    }
   }
 
   async function attachEvidenceLink(cardId: number, url: string) {
-    const card = cardStore.cards.find((c) => c.id === cardId)
-    if (!card) return
-    const optimistic: EvidenceLink = {
-      id: -Date.now(), cardId, url, source: 'Generic', title: null, description: null,
-      iconUrl: null, imageUrl: null, externalKey: null, fetchedAt: null, fetchStatus: 'Pending',
-    }
-    card.evidenceLinks.push(optimistic)
     try {
-      const real = await cardStore.attachEvidenceLink(sprintId, cardId, url)
-      const idx = card.evidenceLinks.findIndex((e) => e.id === optimistic.id)
-      if (idx !== -1) card.evidenceLinks[idx] = real
-    } catch { card.evidenceLinks = card.evidenceLinks.filter((e) => e.id !== optimistic.id); onError('Failed to attach link.') }
+      await cardStore.attachEvidenceLink(sprintId, cardId, url)
+    } catch {
+      onError('Failed to attach link.')
+    }
   }
 
   async function detachEvidenceLink(cardId: number, evidenceLinkId: number) {
-    const card = cardStore.cards.find((c) => c.id === cardId)
-    if (!card) return
-    const snapshot = [...card.evidenceLinks]
-    card.evidenceLinks = card.evidenceLinks.filter((e) => e.id !== evidenceLinkId)
-    try { await cardStore.detachEvidenceLink(sprintId, cardId, evidenceLinkId) }
-    catch { card.evidenceLinks = snapshot; onError('Failed to remove link.') }
+    try {
+      await cardStore.detachEvidenceLink(sprintId, cardId, evidenceLinkId)
+    } catch {
+      onError('Failed to remove link.')
+    }
   }
 
   async function focusGroup(group: CardGroup) {
-    try { await cardGroupStore.focusGroup(sprintId, group.id) }
-    catch { onError('Failed to focus group.') }
+    try {
+      await cardGroupStore.focusGroup(sprintId, group.id)
+    } catch {
+      onError('Failed to focus group.')
+    }
   }
 
   async function toggleDiscussed(group: CardGroup) {
-    try { await cardGroupStore.toggleDiscussed(sprintId, group.id) }
-    catch { onError('Failed to toggle discussed state.') }
+    try {
+      await cardGroupStore.toggleDiscussed(sprintId, group.id)
+    } catch {
+      onError('Failed to toggle discussed state.')
+    }
   }
 
   async function dissolveGroup(group: CardGroup) {
-    try { await cardGroupStore.dissolveGroup(sprintId, group.id) }
-    catch { onError('Failed to dissolve group.') }
+    try {
+      await cardGroupStore.dissolveGroup(sprintId, group.id)
+    } catch {
+      onError('Failed to dissolve group.')
+    }
   }
 
   async function updateGroupTitle(group: CardGroup, title: string | null) {
-    try { await cardGroupStore.updateGroupTitle(sprintId, group.id, title) }
-    catch { onError('Failed to update group title.') }
+    try {
+      await cardGroupStore.updateGroupTitle(sprintId, group.id, title)
+    } catch {
+      onError('Failed to update group title.')
+    }
   }
 
-  async function mergeGroups(source: CardGroup, target: CardGroup) {
+  async function mergeGroups(sourceGroupId: number, targetGroupId: number) {
+    const source = cardGroupStore.groups.find((g) => g.id === sourceGroupId)
+    const target = cardGroupStore.groups.find((g) => g.id === targetGroupId)
+    if (!source || !target) return
+    const [sourceSoloCard] = source.cards.length === 1 ? source.cards : []
+    const [targetSoloCard] = target.cards.length === 1 ? target.cards : []
     try {
-      const sourceIsSolo = source.cards.length === 1
-      const targetIsSolo = target.cards.length === 1
-      if (sourceIsSolo && !targetIsSolo) await cardGroupStore.addCardToGroup(sprintId, target.id, source.cards[0]!.id)
-      else if (!sourceIsSolo && targetIsSolo) await cardGroupStore.addCardToGroup(sprintId, source.id, target.cards[0]!.id)
-      else await cardGroupStore.createGroup(sprintId, [...source.cards.map((c) => c.id), ...target.cards.map((c) => c.id)])
-    } catch { onError('Failed to merge groups.') }
+      if (sourceSoloCard && !targetSoloCard)
+        await cardGroupStore.addCardToGroup(sprintId, target.id, sourceSoloCard.id)
+      else if (!sourceSoloCard && targetSoloCard)
+        await cardGroupStore.addCardToGroup(sprintId, source.id, targetSoloCard.id)
+      else
+        await cardGroupStore.createGroup(sprintId, [
+          ...source.cards.map((c) => c.id),
+          ...target.cards.map((c) => c.id),
+        ])
+    } catch {
+      onError('Failed to merge groups.')
+    }
   }
 
   async function removeCardFromGroup(groupId: number, cardId: number) {
-    try { await cardGroupStore.removeCardFromGroup(sprintId, groupId, cardId) }
-    catch { onError('Failed to remove card from group.') }
+    try {
+      await cardGroupStore.removeCardFromGroup(sprintId, groupId, cardId)
+    } catch {
+      onError('Failed to remove card from group.')
+    }
   }
 
-  async function updateColumnConfig(
-    column1Name: string, column1Color: string,
-    column2Name: string, column2Color: string,
-    column3Name: string, column3Color: string,
-  ) {
+  function dropOnColumn(e: DragEvent, column: ColumnType) {
+    const raw = e.dataTransfer?.getData('application/json')
+    if (!raw) return
+    let payload: DragPayload
     try {
-      await sprintStore.updateColumns(sprintId, { column1Name, column1Color, column2Name, column2Color, column3Name, column3Color })
-    } catch { onError('Failed to update column configuration.') }
+      payload = JSON.parse(raw)
+    } catch {
+      return
+    }
+    if (payload.type !== 'card' || payload.columnType !== column) return
+    if (!payload.sourceGroupId || !payload.cardId) return
+    removeCardFromGroup(payload.sourceGroupId, payload.cardId)
+  }
+
+  async function renameColumn(column: ColumnType, name: string, color: ColumnColor) {
+    if (column === 'ActionItems') return
+    const configOf = (c: { type: NoteColumnType; name: string; color: ColumnColor }) =>
+      c.type === column ? { name, color } : { name: c.name, color: c.color }
+    const [column1, column2, column3] = noteColumns.value.map(configOf)
+    if (!column1 || !column2 || !column3) return
+    try {
+      await sprintStore.updateColumns(sprintId, {
+        column1Name: column1.name,
+        column1Color: column1.color,
+        column2Name: column2.name,
+        column2Color: column2.color,
+        column3Name: column3.name,
+        column3Color: column3.color,
+      })
+    } catch {
+      onError('Failed to update column configuration.')
+    }
+  }
+
+  const actions = {
+    addNote,
+    addActionItem,
+    saveEdit,
+    requestDelete,
+    castGroupVote,
+    retractGroupVote,
+    attachEvidenceLink,
+    detachEvidenceLink,
+    focusGroup,
+    toggleDiscussed,
+    dissolveGroup,
+    updateGroupTitle,
+    mergeGroups,
+    removeCardFromGroup,
+    dropOnColumn,
+    renameColumn,
   }
 
   return {
     // state
-    participants, column1Cards, column2Cards, column3Cards, actionItems,
-    currentPhase, isWritingPhase, showGroups, isScrumMaster,
-    column1Groups, column2Groups, column3Groups, showActionItems, boardGridClasses,
+    participants,
+    actionItems,
+    noteColumns,
+    showGroups,
+    isScrumMaster,
+    showReadiness,
+    canCreateNote,
+    canCreateActionItem,
+    showActionItems,
+    showPreviousActions,
+    teamId,
+    boardGridClasses,
+    deleteTarget,
     // prop builders
-    cardItemProps, groupItemProps, canMutateCard,
+    cardItemProps,
+    groupItemProps,
     // handlers
-    addNote, addActionItem, saveEdit, deleteCard,
-    castVote, retractVote, castGroupVote, retractGroupVote,
-    attachEvidenceLink, detachEvidenceLink,
-    focusGroup, toggleDiscussed, dissolveGroup, updateGroupTitle, mergeGroups, removeCardFromGroup,
-    updateColumnConfig,
+    actions,
+    cancelDelete,
+    confirmDelete,
   }
 }

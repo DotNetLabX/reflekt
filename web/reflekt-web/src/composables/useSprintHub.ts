@@ -1,14 +1,25 @@
 import * as signalR from '@microsoft/signalr'
-import { useGuestStore } from '../stores/guest'
-import { useParticipantStore } from '../stores/participant'
-import { useCardStore, type Card, type EvidenceLink } from '../stores/card'
-import { useVoteStore } from '../stores/vote'
-import { useSprintStore } from '../stores/sprint'
-import { useCardGroupStore } from '../stores/cardGroup'
-import { useReadinessStore } from '../stores/readiness'
-import { useTimerStore } from '../stores/timer'
-import { usePreviousActionsStore } from '../stores/previousActions'
-import type { TimerPayload } from './useTimer'
+import { setHubConnectionSource } from '@/api/hub'
+import { useGuestStore } from '@/stores/guest'
+import { useParticipantStore } from '@/stores/participant'
+import { useCardStore } from '@/stores/card'
+import { useVoteStore } from '@/stores/vote'
+import { useSprintStore } from '@/stores/sprint'
+import { useCardGroupStore } from '@/stores/cardGroup'
+import { useReadinessStore } from '@/stores/readiness'
+import { useTimerStore } from '@/stores/timer'
+import { usePreviousActionsStore } from '@/stores/previousActions'
+import type { Card, EvidenceLink } from '@/types/card'
+import type { SprintPhase } from '@/types/domain'
+import type {
+  ParticipantName,
+  ReadinessChangedPayload,
+  ReadinessSnapshot,
+} from '@/types/participant'
+import type { ReviewStatusChangedPayload } from '@/types/report'
+import type { ColumnConfigUpdatedPayload } from '@/types/sprint'
+import type { TimerPayload } from '@/types/timer'
+import type { VoteCountChangedPayload } from '@/types/vote'
 
 let connection: signalR.HubConnection | null = null
 
@@ -16,7 +27,9 @@ export function getHubConnection(): signalR.HubConnection | null {
   return connection
 }
 
-export function useSprintHub(onKicked?: () => void) {
+setHubConnectionSource(getHubConnection)
+
+export function useSprintHub() {
   const guestStore = useGuestStore()
   const participantStore = useParticipantStore()
   const cardStore = useCardStore()
@@ -27,7 +40,7 @@ export function useSprintHub(onKicked?: () => void) {
   const timerStore = useTimerStore()
   const previousActionsStore = usePreviousActionsStore()
 
-  function build(sprintId: number) {
+  function build(sprintId: number): signalR.HubConnection {
     connection = new signalR.HubConnectionBuilder()
       .withUrl('/hubs/sprint', {
         accessTokenFactory: () => guestStore.token ?? '',
@@ -35,185 +48,98 @@ export function useSprintHub(onKicked?: () => void) {
       .withAutomaticReconnect()
       .build()
 
-    connection.on('ParticipantJoined', (payload: { id: number; displayName: string }) => {
-      const already = participantStore.participants.some((p) => p.id === payload.id)
-      if (!already) {
-        participantStore.participants.push({
-          id: payload.id,
-          sprintId,
-          displayName: payload.displayName,
-          joinedAt: new Date().toISOString(),
-        })
-      }
-    })
+    connection.on('ParticipantJoined', (payload: ParticipantName) =>
+      participantStore.applyParticipantJoined(sprintId, payload),
+    )
 
-    connection.on('ParticipantLeft', (_payload: { participantId: number }) => {})
+    connection.on('ParticipantLeft', () => {})
 
-    connection.on('ParticipantKicked', (payload: { participantId: number }) => {
-      participantStore.participants = participantStore.participants.filter(
-        (p) => p.id !== payload.participantId,
-      )
-      if (onKicked && participantStore.currentParticipant?.id === payload.participantId) {
-        onKicked()
-      }
-    })
+    connection.on('ParticipantKicked', (payload: { participantId: number }) =>
+      participantStore.applyParticipantKicked(payload.participantId),
+    )
 
-    connection.on('PhaseChanged', (phase: string) => {
-      const wasWriting = sprintStore.currentSummary?.currentPhase === 'Writing'
-      if (sprintStore.currentSummary) {
-        sprintStore.currentSummary.currentPhase = phase
-      }
-      if (wasWriting && phase === 'Grouping') {
-        cardStore.fetchCards(sprintId)
-        cardGroupStore.fetchGroups(sprintId)
-      } else if (phase !== 'Writing') {
-        cardStore.fetchCards(sprintId)
-        cardGroupStore.fetchGroups(sprintId)
-      }
-    })
+    connection.on('PhaseChanged', (phase: SprintPhase) =>
+      sprintStore.applyPhaseChanged(sprintId, phase),
+    )
 
-    connection.on('CardCreated', (card: Card) => {
-      if (!cardStore.cards.some((c) => c.id === card.id)) {
-        cardStore.cards.unshift(card)
-      }
-    })
+    connection.on('CardCreated', (card: Card) => cardStore.applyCardCreated(card))
 
-    connection.on('CardUpdated', (card: Card) => {
-      const idx = cardStore.cards.findIndex((c) => c.id === card.id)
-      if (idx !== -1) cardStore.cards[idx] = card
-    })
+    connection.on('CardUpdated', (card: Card) => cardStore.applyCardUpdated(card))
 
-    connection.on('CardDeleted', (payload: { id: number }) => {
-      cardStore.cards = cardStore.cards.filter((c) => c.id !== payload.id)
-    })
+    connection.on('CardDeleted', (payload: { id: number }) =>
+      cardStore.applyCardDeleted(payload.id),
+    )
 
-    connection.on('EvidenceLinkFetched', (link: EvidenceLink) => {
-      const card = cardStore.cards.find((c) => c.id === link.cardId)
-      if (card) {
-        const idx = card.evidenceLinks.findIndex((e) => e.id === link.id)
-        if (idx !== -1) card.evidenceLinks[idx] = link
-        else card.evidenceLinks.push(link)
-      }
-    })
+    connection.on('EvidenceLinkFetched', (link: EvidenceLink) =>
+      cardStore.applyEvidenceLinkFetched(link),
+    )
 
-    connection.on('VoteCast', (payload: { groupId: number; newCount: number }) => {
-      voteStore.setVoteCount(payload.groupId, payload.newCount)
-    })
+    connection.on('VoteCast', (payload: VoteCountChangedPayload) =>
+      voteStore.setVoteCount(payload.groupId, payload.newCount),
+    )
 
-    connection.on('VoteRetracted', (payload: { groupId: number; newCount: number }) => {
-      voteStore.setVoteCount(payload.groupId, payload.newCount)
-    })
+    connection.on('VoteRetracted', (payload: VoteCountChangedPayload) =>
+      voteStore.setVoteCount(payload.groupId, payload.newCount),
+    )
 
-    connection.on('GroupCreated', () => {
-      cardGroupStore.fetchGroups(sprintId)
-    })
+    connection.on('GroupCreated', () => cardGroupStore.fetchGroups(sprintId, { background: true }))
 
-    connection.on('CardsGrouped', () => {
-      cardGroupStore.fetchGroups(sprintId)
-    })
+    connection.on('CardsGrouped', () => cardGroupStore.fetchGroups(sprintId, { background: true }))
 
-    connection.on('CardUngrouped', () => {
-      cardGroupStore.fetchGroups(sprintId)
-    })
+    connection.on('CardUngrouped', () => cardGroupStore.fetchGroups(sprintId, { background: true }))
 
-    connection.on('GroupDissolved', () => {
-      cardGroupStore.fetchGroups(sprintId)
-    })
+    connection.on('GroupDissolved', () =>
+      cardGroupStore.fetchGroups(sprintId, { background: true }),
+    )
 
-    connection.on('GroupTitleChanged', (payload: { groupId: number; title: string | null }) => {
-      const group = cardGroupStore.groups.find((g) => g.id === payload.groupId)
-      if (group) group.title = payload.title
-    })
+    connection.on('GroupTitleChanged', (payload: { groupId: number; title: string | null }) =>
+      cardGroupStore.applyTitleChanged(payload.groupId, payload.title),
+    )
 
-    connection.on('GroupFocused', (payload: { groupId: number; previousGroupId: number | null }) => {
-      cardGroupStore.groups.forEach((g) => (g.isFocused = g.id === payload.groupId))
-    })
+    connection.on('GroupFocused', (payload: { groupId: number; previousGroupId: number | null }) =>
+      cardGroupStore.applyGroupFocused(payload.groupId),
+    )
 
-    connection.on('GroupFocusCleared', (_payload: { previousGroupId: number | null }) => {
-      cardGroupStore.groups.forEach((g) => (g.isFocused = false))
-    })
+    connection.on('GroupFocusCleared', () => cardGroupStore.applyFocusCleared())
 
     connection.on(
       'GroupDiscussedChanged',
-      (payload: { groupId: number; isDiscussed: boolean; discussedAt: string | null }) => {
-        const group = cardGroupStore.groups.find((g) => g.id === payload.groupId)
-        if (group) group.isDiscussed = payload.isDiscussed
-      },
+      (payload: { groupId: number; isDiscussed: boolean; discussedAt: string | null }) =>
+        cardGroupStore.applyDiscussedChanged(payload.groupId, payload.isDiscussed),
     )
 
-    connection.on(
-      'ColumnConfigUpdated',
-      (payload: {
-        sprintId: number
-        column1Name: string
-        column1Color: string
-        column2Name: string
-        column2Color: string
-        column3Name: string
-        column3Color: string
-      }) => {
-        if (sprintStore.currentSummary?.id === payload.sprintId) {
-          sprintStore.currentSummary.column1Name = payload.column1Name
-          sprintStore.currentSummary.column1Color = payload.column1Color
-          sprintStore.currentSummary.column2Name = payload.column2Name
-          sprintStore.currentSummary.column2Color = payload.column2Color
-          sprintStore.currentSummary.column3Name = payload.column3Name
-          sprintStore.currentSummary.column3Color = payload.column3Color
-        }
-      },
+    connection.on('ColumnConfigUpdated', (payload: ColumnConfigUpdatedPayload) =>
+      sprintStore.applyColumnConfig(payload),
     )
 
-    connection.on('SprintClosed', (_payload: { sprintId: number }) => {
-      if (sprintStore.currentSummary) {
-        sprintStore.currentSummary.state = 'Closed'
-      }
-    })
+    connection.on('SprintClosed', () => sprintStore.applySprintClosed())
 
-    connection.on(
-      'ReadinessChanged',
-      (payload: {
-        participantId: number
-        displayName: string | null
-        isReady: boolean
-        readyCount: number
-        totalCount: number
-      }) => {
-        readinessStore.applyChange(payload)
-      },
+    connection.on('ReadinessChanged', (payload: ReadinessChangedPayload) =>
+      readinessStore.applyChange(payload),
     )
 
-    connection.on('ReadinessReset', (_payload: object) => {
-      readinessStore.reset()
-    })
+    connection.on('ReadinessReset', () => readinessStore.reset())
 
-    connection.on(
-      'ReadinessSnapshot',
-      (payload: { readyParticipantIds: number[]; readyCount: number; totalCount: number }) => {
-        readinessStore.setFromSnapshot(payload)
-      },
+    connection.on('ReadinessSnapshot', (payload: ReadinessSnapshot) =>
+      readinessStore.setFromSnapshot(payload),
     )
 
-    connection.on('TimerUpdated', (payload: TimerPayload) => {
-      timerStore.applyTimerUpdate(payload)
-    })
+    connection.on('TimerUpdated', (payload: TimerPayload) => timerStore.applyTimer(payload))
 
-    connection.on('TimerSnapshot', (payload: TimerPayload) => {
-      timerStore.applyTimerSnapshot(payload)
-    })
+    connection.on('TimerSnapshot', (payload: TimerPayload) => timerStore.applyTimer(payload))
 
-    connection.on(
-      'ReviewStatusChanged',
-      (payload: { cardId: number; reviewStatus: string; reviewedCount: number; totalCount: number }) => {
-        previousActionsStore.applyReviewStatusChanged(payload)
-      },
+    connection.on('ReviewStatusChanged', (payload: ReviewStatusChangedPayload) =>
+      previousActionsStore.applyReviewStatusChanged(payload),
     )
+
+    return connection
   }
 
   async function connect(sprintId: number) {
     if (connection) await disconnect()
-    build(sprintId)
-    await connection!.start()
-    await connection!.invoke('JoinSprint', sprintId)
+    const built = build(sprintId)
+    await built.start()
+    await built.invoke('JoinSprint', sprintId)
   }
 
   async function disconnect() {

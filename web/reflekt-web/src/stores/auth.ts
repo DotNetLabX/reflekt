@@ -1,28 +1,52 @@
-import { defineStore } from 'pinia';
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
+import { authApi } from '@/api/auth'
+import { isHttpError } from '@/api/client'
+import type { User } from '@/types/auth'
 
-interface User { email: string; displayName: string; givenName: string; }
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<User | null>(null)
+  const loaded = ref(false)
+  const error = ref<string | null>(null)
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    user: null as User | null,
-    loaded: false,
-  }),
-  getters: {
-    isSignedIn: (s) => s.user !== null,
-  },
-  actions: {
-    async fetchMe() {
-      const res = await fetch('/auth/me', { credentials: 'include' });
-      this.user = res.ok ? (await res.json()) as User : null;
-      this.loaded = true;
-    },
-    signIn() {
-      window.location.href = '/auth/google/login';
-    },
-    async signOut() {
-      await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
-      this.user = null;
-      window.location.href = '/';
-    },
-  },
-});
+  const isSignedIn = computed(() => user.value !== null)
+
+  // The router guard and the retro room can both call fetchMe on a cold load and each reads
+  // the result after its own await, so concurrent calls share one request.
+  let fetchMeInFlight: Promise<void> | null = null
+
+  function fetchMe(): Promise<void> {
+    fetchMeInFlight ??= loadMe().finally(() => {
+      fetchMeInFlight = null
+    })
+    return fetchMeInFlight
+  }
+
+  async function loadMe() {
+    try {
+      user.value = (await authApi.me()) ?? null
+      error.value = null
+    } catch (e) {
+      user.value = null
+      error.value = isHttpError(e) ? null : "Can't reach the server"
+    } finally {
+      loaded.value = true
+    }
+  }
+
+  function signIn() {
+    window.location.href = '/auth/google/login'
+  }
+
+  async function signOut() {
+    try {
+      await authApi.logout()
+    } catch (e) {
+      if (!isHttpError(e)) throw e
+    }
+    user.value = null
+    window.location.href = '/'
+  }
+
+  return { user, loaded, error, isSignedIn, fetchMe, signIn, signOut }
+})

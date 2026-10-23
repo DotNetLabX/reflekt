@@ -57,3 +57,76 @@ No files were modified. Builds and tests were not executed because they write fi
 | R1-16 | closed | F39:51 | none |
 
 No new MEDIUM-or-above findings. No additional contradictions with the checked sibling text or breaks to earlier guarantees found.
+
+---
+
+# Plan review — round 1 — 2026-10-23 — Codex primary (job task-mvkfu3j3-o8f0dg), persisted by team-lead session d941cd66
+
+## Verdict: NO-GO
+
+1. **HIGH — [plan.md:94](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:94), Step 4 / Decision 1:** FE-08 explicitly requires clearing target data on every fetch start. The hub callers justify considering a background-refresh exception for cards/groups; they do not justify retaining data across every same-target load. This also breaks Step 6’s report mechanism: `ReportView.vue:2` renders its error slot only when `report` is absent, so a failed same-sprint reload with retained data hides the error and Retry. **Suggested fix:** Restore the required foreground-load contract. Reconcile any narrowly scoped background exception explicitly, and make report errors take precedence over retained content.
+
+2. **HIGH — [plan.md:136](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:136), Step 7 / Decision 2:** Background fetch failures remain invisible, with no retry. For example, a failed `fetchGroups` after `GroupDissolved` leaves obsolete groups displayed without recovery controls. FE-08 requires the consuming views to surface errors with Retry; it does not limit that requirement to entry. **Suggested fix:** Provide visible error/retry handling for background failures too. Preserving the board need not mean hiding the failure.
+
+3. **HIGH — [plan.md:97](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:97), Steps 4–5:** Tracking the data’s target and clearing at request start does not prevent an older response overwriting a newer target. `SprintListView.vue:27` launches another fetch whenever `teamId` changes, without cancelling the preceding request. Group writes and hub events also overlap `fetchGroups` calls, contradicting the plan’s no-concurrent-load premise. **Suggested fix:** Specify request/target guards for committing data, errors, and loading completion, with independent status where different resources share a store.
+
+4. **HIGH — [plan.md:135](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:135), Step 7:** One error scan “after the loads” does not establish safe bootstrap ordering. The existing composable fetches the summary before authentication/join and again inside `enterRoom`; the second call clears the first call’s error. Google join failures can also reach the preserved join-form catch before prerequisite failures are surfaced. Existing room `loading` becomes false only on successful entry. **Suggested fix:** Define explicit stages: check policy/summary before identity or join, check room loads before votes/connect, and finalize loading on every failure. Retry must clear the room error, prevent overlapping attempts, and resume loading without unnecessarily repeating a successful join.
+
+5. **HIGH — [plan.md:193](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:193), Step 13 / Decision 9:** The operator fallback treats unperformed walkthrough checks as a valid completion deviation. Spec AC6 requires a recorded walkthrough with observations for every item. This can also leave Step 2’s conditional dark-theme decisions unverified. **Suggested fix:** Permit an operator handoff, but keep AC6 and delivery acceptance pending until the missing observations are recorded.
+
+6. **MEDIUM — [plan.md:112](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:112), Step 5 / Decision 7:** `participant.fetchMe` is excluded from the fetch contract even though FE-08 covers every fetch in that store. It currently leaves `currentParticipant` untouched on failure and exposes no loading/error state. Preserving its status-bearing exception does not require omitting those updates. **Suggested fix:** Apply the required data/error/loading lifecycle while retaining the status information needed for the room’s 401 handling.
+
+7. **MEDIUM — [plan.md:135](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:135), Steps 6–7:** The room’s reporting fetch is missing from the recovery plan. `useRetroRoom.ts:63` starts `fetchParticipantReport` after connection, and `RetroRoomView.vue:255` starts it on a phase transition. `RetroReportPanel.vue:4` shows its error but has no Retry; the plan changes that panel only for corners. **Suggested fix:** Add report-specific retry handling for both paths, preserving the existing connection when retrying the report.
+
+8. **MEDIUM — [plan.md:145](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:145), missing `Adds:` rows:** No step contains an `Adds:` row. Step 8 introduces unconditional focus restoration, which can steal focus after the user moves to another column; FE-07 does not request that behavior. Step 13 introduces the unsupported acceptance fallback, and Step 2 adds an unknown-colour fallback. Decision prose does not satisfy the requested rows. **Suggested fix:** Audit every step and add its required `Adds:` disclosure. Remove unsupported behavior under the campaign constraint; bound any focus restoration to preserving the initiating keyboard interaction.
+
+9. **MEDIUM — [plan.md:27](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:27), missing `Departs from:` rows:** The plan declares patterns to follow but records no departure rows. Concrete departures include retaining `@apply` in Step 1 despite `tailwind-theme` prohibiting it; replacing that skill’s inline-body prescription in Step 2; retaining Options stores and throwing actions in Steps 4–5 despite `pinia-patterns`; and extending Step 6’s cited Page Shell Pattern, whose actual template is initializing → empty → content. **Suggested fix:** Add explicit `Departs from:` rows identifying each adaptation and its governing spec requirement. Preserve F36’s scope rather than refactoring merely to match the guides.
+
+No files were modified.
+
+---
+
+# Plan review — round 2 — 2026-10-23 — Codex primary (job task-mvkgel70-dldqs7), persisted by team-lead session d941cd66
+
+## Verdict: NO-GO
+
+Table lines refer to [plan.md](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md). Collateral identifies a fold-created contradiction or broken guarantee; `none` means none found.
+
+| Round-1 ID | Fold status | Plan lines | Collateral |
+|---|---|---|---|
+| R1-01 | closed | 96, 122, 127, 247 | R2-01 |
+| R1-02 | closed | 143, 248 | R2-01 |
+| R1-03 | closed | 95, 98, 99 | none |
+| R1-04 | closed | 136, 137, 138, 139, 141 | none |
+| R1-05 | closed | 202, 211, 212, 255 | none |
+| R1-06 | closed | 113, 138, 253 | none |
+| R1-07 | closed | 144 | none |
+| R1-08 | partial | 78, 154, 202, 249, 285 | R2-03 |
+| R1-09 | closed | 254, 256, 257, 258, 259 | none |
+| R1-10 | closed | 181, 184 | none |
+| R1-11 | closed | 154 | none |
+| R1-12 | closed | 105, 117 | R2-04 |
+
+The background-failure banner and room-report Retry implement FE-08’s required error recovery. The current [spec.md:31](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/definition/spec.md:31) explicitly requires the former and covers the latter through the retro room’s error-with-retry requirement. Neither needs an `Adds:` row.
+
+1. **R2-01 — MEDIUM — [plan.md:112](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:112): The background-refresh inventory and pinned diff limit omit two call sites.**  
+   `useSprintHub.ts` contains eight calls: lines 67, 68, 70, 71, 108, 112, 116 and 120. Steps 5 and the invariant at line 229 repeatedly limit changes to six. Following that limit leaves foreground loaders in hub handlers; their new clear-on-start behavior contradicts FE-08’s background exception and the “never blanks the board” guarantee at line 232.  
+   **Suggested fix:** Require the background option at all eight existing call sites and reconcile the acceptance check and invariant.  
+   **Tag:** `fold`
+
+2. **R2-02 — MEDIUM — [plan.md:126](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:126): Route-parameter changes bypass the proposed stale-data protection.**  
+   `SprintView.vue:30`, `ReportView.vue:31` and `RetroRoomView.vue:121` capture IDs once; their loaders run on mount, and `App.vue:3` has an unkeyed `RouterView`. Vue Router [reuses component instances when parameters change](https://router.vuejs.org/guide/essentials/dynamic-matching.html#reacting-to-params-changes). Consequently, navigation between IDs within one route can retain the previous target without issuing another fetch. Request counters cannot protect a request that never starts; Retry also retains the captured IDs. This leaves the plan’s “never another target’s data” outcome unmet.  
+   **Suggested fix:** Specify target-dependent reloads or remounting for these views, including room teardown before initializing another sprint.  
+   **Tag:** `round-1 miss: route-parameter lifecycle`
+
+3. **R2-03 — MEDIUM — [plan.md:249](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:249): Disclosing focus restoration does not resolve the campaign constraint.**  
+   The fold bounds focus restoration and adds its disclosure, but still marks the addition `decided`; Step 8 conditionally builds it and P3 leaves an owner keep/drop choice. The plan itself acknowledges that no source requests this behavior. That conflicts with the binding “no new product behaviour” rule at line 17. R1-08 is therefore only partially closed.  
+   **Suggested fix:** Remove the optional focus-restoration work and reconcile Decision 3, P3 and the closure claim with the campaign scope.  
+   **Tag:** `fold`
+
+4. **R2-04 — MEDIUM — [plan.md:105](D:/src/reflekt-F36-FrontendDefects/docs/specs/F36-FrontendDefects/delivery/plan.md:105): The strengthened acceptance check contradicts the auth exception immediately above it.**  
+   Line 105 requires every listed load action’s non-OK branch to set `error`, including `auth.fetchMe`. Line 104 requires HTTP failures to preserve signed-out behavior with no message. Applying the acceptance rule to a normal unauthorized `/auth/me` response would make Step 6 display the unreachable-server notice during ordinary guest access.  
+   **Suggested fix:** Explicitly exempt auth HTTP responses from that acceptance rule; require auth’s notice-producing error only for network failures.  
+   **Tag:** `fold`
+
+Read-only review completed; no files modified and no builds or tests run.

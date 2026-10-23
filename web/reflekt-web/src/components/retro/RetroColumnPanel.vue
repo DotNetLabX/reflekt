@@ -1,49 +1,66 @@
 <template>
-  <div
-    v-show="visible"
-    class="bg-surface border border-border rounded-[--radius-md] shadow-card flex flex-col min-h-0"
-    :class="extraClass"
+  <section
+    :id="columnPanelId(column)"
+    role="tabpanel"
+    :aria-labelledby="columnTabId(column)"
+    class="bg-surface border border-border rounded-md shadow-card flex-col min-h-0"
+    :class="mobileHidden ? 'hidden sm:flex' : 'flex'"
   >
     <!-- Column header -->
     <div
-      class="px-4 py-3 border-b rounded-t-[--radius-md] flex items-center gap-2"
+      class="px-4 py-3 border-b rounded-t-md flex items-center gap-2"
       :class="`bg-col-${columnColor}-light`"
     >
-      <!-- Inline edit mode (SM only) -->
-      <template v-if="editing">
+      <!-- Inline edit mode (SM only); focus leaving the name and swatches confirms the edit -->
+      <div
+        v-if="editing"
+        ref="editor"
+        class="flex-1 flex items-center gap-2"
+        @focusout="onEditorFocusOut"
+      >
         <input
           ref="nameInput"
           v-model="editName"
           type="text"
           maxlength="30"
+          aria-label="Column name"
           class="flex-1 text-sm font-semibold bg-surface border border-border rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
           :class="`text-col-${columnColor}`"
           @keydown.enter="confirmEdit"
-          @blur="confirmEdit"
         />
         <div class="flex gap-1">
           <button
-            v-for="color in paletteColors"
+            v-for="color in PALETTE_COLORS"
             :key="color"
             type="button"
             :title="color"
-            class="w-4 h-4 rounded-full border-2 transition-transform cursor-pointer"
+            :aria-label="color"
+            :aria-pressed="editColor === color"
+            class="w-4 h-4 rounded-full border-2 transition-transform cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             :class="[
               `bg-col-${color}`,
               editColor === color ? 'border-text-primary scale-110' : 'border-transparent',
             ]"
-            @mousedown.prevent="selectColor(color)"
+            @mousedown.prevent
+            @click="selectColor(color)"
           />
         </div>
-      </template>
+      </div>
 
       <!-- Display mode -->
       <template v-else>
-        <h2
-          class="font-semibold text-base flex-1"
-          :class="[`text-col-${columnColor}`, isScrumMaster ? 'cursor-pointer hover:underline' : '']"
-          @click="isScrumMaster ? startEdit() : undefined"
-        >{{ title }}</h2>
+        <h2 class="font-semibold text-base flex-1" :class="`text-col-${columnColor}`">
+          <button
+            v-if="isScrumMaster"
+            type="button"
+            class="text-left cursor-pointer hover:underline"
+            :aria-label="`Rename column ${title}`"
+            @click="startEdit"
+          >
+            {{ title }}
+          </button>
+          <template v-else>{{ title }}</template>
+        </h2>
       </template>
 
       <BaseBadge :variant="badgeVariant">{{ count }}</BaseBadge>
@@ -67,36 +84,34 @@
     <div v-if="$slots.input" class="p-3 border-t">
       <slot name="input" />
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import BaseBadge from '../ui/BaseBadge.vue'
-
-const PALETTE_COLORS = ['green', 'red', 'amber', 'blue', 'purple', 'teal', 'pink', 'slate'] as const
-const paletteColors = PALETTE_COLORS
+import { ref, nextTick, inject } from 'vue'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import { PALETTE_COLORS, columnPanelId, columnTabId } from '@/constants/columns'
+import { boardActionsKey, missingBoardActions } from '@/composables/useRetroBoardActions'
+import type { ColumnColor, ColumnType } from '@/types/domain'
 
 const props = defineProps<{
+  column: ColumnType
   title: string
-  columnColor: string
+  columnColor: ColumnColor
   badgeVariant: 'success' | 'danger' | 'info' | 'primary'
   count: number
-  visible: boolean
-  extraClass?: string
+  mobileHidden: boolean
   isScrumMaster: boolean
 }>()
 
-const emit = defineEmits<{
-  drop: [e: DragEvent]
-  'update-config': [name: string, color: string]
-}>()
+const actions = inject(boardActionsKey) ?? missingBoardActions('RetroColumnPanel')
 
 const dragOver = ref(false)
 const editing = ref(false)
 const editName = ref('')
-const editColor = ref('')
+const editColor = ref<ColumnColor>(props.columnColor)
 const nameInput = ref<HTMLInputElement | null>(null)
+const editor = ref<HTMLElement | null>(null)
 
 function startEdit() {
   editName.value = props.title
@@ -110,11 +125,16 @@ function confirmEdit() {
   editing.value = false
   const name = editName.value.trim()
   if (!name || (name === props.title && editColor.value === props.columnColor)) return
-  emit('update-config', name || props.title, editColor.value)
+  actions.renameColumn(props.column, name, editColor.value)
 }
 
-function selectColor(color: string) {
+function selectColor(color: ColumnColor) {
   editColor.value = color
+}
+
+function onEditorFocusOut(e: FocusEvent) {
+  if (e.relatedTarget instanceof Node && editor.value?.contains(e.relatedTarget)) return
+  confirmEdit()
 }
 
 function onDragOver(e: DragEvent) {
@@ -125,7 +145,7 @@ function onDragOver(e: DragEvent) {
     // Firefox: allow drop
   }
   e.preventDefault()
-  e.dataTransfer!.dropEffect = 'move'
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
   dragOver.value = true
 }
 
@@ -136,18 +156,6 @@ function onDragLeave() {
 function onDrop(e: DragEvent) {
   e.preventDefault()
   dragOver.value = false
-  emit('drop', e)
+  actions.dropOnColumn(e, props.column)
 }
 </script>
-
-<style scoped>
-.card-list-enter-active,
-.card-list-leave-active {
-  transition: all 0.2s ease;
-}
-.card-list-enter-from,
-.card-list-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-</style>

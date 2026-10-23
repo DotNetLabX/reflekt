@@ -1,30 +1,36 @@
-import { ref, computed, watch, onUnmounted } from 'vue'
-import { useTimerStore } from '../stores/timer'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useTimerStore } from '@/stores/timer'
+import { formatMmSs } from '@/format/format'
 
-export type TimerStatus = 'running' | 'paused' | 'expired' | 'stopped'
+let audioContext: AudioContext | null = null
 
-export interface TimerPayload {
-  status: TimerStatus
-  remainingSeconds: number
-  endTimeUtc: string | null
+function unlockChime() {
+  if (typeof window.AudioContext === 'undefined') return
+  audioContext ??= new window.AudioContext()
+  if (audioContext.state === 'suspended') audioContext.resume().catch(() => {})
 }
 
-const MUTE_KEY = 'reflekt:timer:muted'
+// Browsers only start audio from a user gesture; any gesture on the page, before the timer is shown included, unlocks the chime.
+const UNLOCK_EVENTS = ['pointerdown', 'click', 'keydown'] as const
 
-let chimeAudio: HTMLAudioElement | null = null
+export function useChimeUnlock() {
+  onMounted(() => UNLOCK_EVENTS.forEach((e) => document.addEventListener(e, unlockChime)))
+  onUnmounted(() => UNLOCK_EVENTS.forEach((e) => document.removeEventListener(e, unlockChime)))
+}
 
-function getChimeAudio(): HTMLAudioElement {
-  if (!chimeAudio) {
-    // Minimal base64-encoded single-beep WAV: 44-byte header + 1600 samples of 440 Hz sine at 8kHz 8-bit
-    // Generated offline; provides audible chime without external file dependency
-    const BASE64_CHIME =
-      'UklGRlQGAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YTAG' +
-      'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-      'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-    chimeAudio = new Audio(`data:audio/wav;base64,${BASE64_CHIME}`)
-    chimeAudio.volume = 0.5
-  }
-  return chimeAudio
+function playChime() {
+  const ctx = audioContext
+  if (!ctx || ctx.state !== 'running') return
+  const start = ctx.currentTime
+  const oscillator = ctx.createOscillator()
+  const gain = ctx.createGain()
+  oscillator.frequency.value = 440
+  gain.gain.setValueAtTime(0, start)
+  gain.gain.linearRampToValueAtTime(0.3, start + 0.02)
+  gain.gain.linearRampToValueAtTime(0, start + 0.3)
+  oscillator.connect(gain).connect(ctx.destination)
+  oscillator.start(start)
+  oscillator.stop(start + 0.3)
 }
 
 export function useTimer() {
@@ -39,12 +45,7 @@ export function useTimer() {
 
   const isMuted = computed(() => timerStore.isMuted)
 
-  const formattedTime = computed<string>(() => {
-    const total = Math.max(0, displayRemainingSeconds.value)
-    const mins = Math.floor(total / 60)
-    const secs = total % 60
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-  })
+  const formattedTime = computed(() => formatMmSs(displayRemainingSeconds.value))
 
   function startInterval() {
     stopInterval()
@@ -68,15 +69,7 @@ export function useTimer() {
 
   function triggerExpiry() {
     isFlashing.value = true
-    if (!timerStore.isMuted) {
-      try {
-        getChimeAudio().play().catch(() => {
-          // Ignore — browser may block autoplay
-        })
-      } catch {
-        // Ignore audio errors
-      }
-    }
+    if (!timerStore.isMuted) playChime()
     if (flashTimeout !== null) clearTimeout(flashTimeout)
     flashTimeout = setTimeout(() => {
       isFlashing.value = false
@@ -119,6 +112,7 @@ export function useTimer() {
   )
 
   function toggleMute() {
+    unlockChime()
     timerStore.toggleMute()
   }
 
@@ -133,8 +127,6 @@ export function useTimer() {
     isFlashing,
     isMuted,
     formattedTime,
-    isRunning: computed(() => timerStore.isRunning),
-    isExpired: computed(() => timerStore.isExpired),
     toggleMute,
   }
 }

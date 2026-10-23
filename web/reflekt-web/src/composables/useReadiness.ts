@@ -1,16 +1,13 @@
 import { computed } from 'vue'
-import { useReadinessStore } from '../stores/readiness'
-import { useParticipantStore } from '../stores/participant'
-import { getHubConnection } from './useSprintHub'
+import { useReadinessStore } from '@/stores/readiness'
+import { useParticipantStore } from '@/stores/participant'
 
 export function useReadiness() {
   const readinessStore = useReadinessStore()
   const participantStore = useParticipantStore()
 
-  async function toggleReady(sprintId: number) {
-    const connection = getHubConnection()
-    if (!connection) return
-    await connection.invoke('ToggleReady', sprintId)
+  function toggleReady(sprintId: number): Promise<void> {
+    return readinessStore.toggleReady(sprintId, participantStore.currentParticipant?.id)
   }
 
   const isCurrentParticipantReady = computed(() => {

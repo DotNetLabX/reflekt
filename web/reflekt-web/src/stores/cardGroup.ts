@@ -1,161 +1,178 @@
 import { defineStore } from 'pinia'
-import { useGuestStore } from './guest'
+import { computed, ref } from 'vue'
+import { cardGroupsApi } from '@/api/cardGroups'
+import { isHttpError } from '@/api/client'
+import { createPendingValues } from './pendingValues'
 import { useVoteStore } from './vote'
+import type { CardGroup } from '@/types/card'
 
-export interface CardGroupCard {
-  id: number
-  text: string
-  createdAt: string
-  evidenceLinks: { id: number; url: string; source: string; title: string | null }[]
-}
+export const useCardGroupStore = defineStore('cardGroup', () => {
+  const voteStore = useVoteStore()
 
-export interface CardGroup {
-  id: number
-  sprintId: number
-  columnType: string
-  title: string | null
-  cards: CardGroupCard[]
-  voteCount: number
-  isDiscussed: boolean
-  isFocused: boolean
-}
+  const groups = ref<CardGroup[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
-export const useCardGroupStore = defineStore('cardGroup', {
-  state: () => ({
-    groups: [] as CardGroup[],
-  }),
-  getters: {
-    column1Groups: (state): CardGroup[] =>
-      state.groups.filter((g) => g.columnType === 'Column1'),
-    column2Groups: (state): CardGroup[] =>
-      state.groups.filter((g) => g.columnType === 'Column2'),
-    column3Groups: (state): CardGroup[] =>
-      state.groups.filter((g) => g.columnType === 'Column3'),
-    focusedGroup: (state): CardGroup | undefined =>
-      state.groups.find((g) => g.isFocused),
-  },
-  actions: {
-    async fetchGroups(sprintId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = {}
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups`, {
-        headers,
-        credentials: 'include',
-      })
-      if (!res.ok) return
-      this.groups = (await res.json()) as CardGroup[]
-      const voteStore = useVoteStore()
-      voteStore.initVoteCounts(this.groups.map((g) => ({ groupId: g.id, voteCount: g.voteCount })))
-    },
+  const column1Groups = computed(() => groups.value.filter((g) => g.columnType === 'Column1'))
+  const column2Groups = computed(() => groups.value.filter((g) => g.columnType === 'Column2'))
+  const column3Groups = computed(() => groups.value.filter((g) => g.columnType === 'Column3'))
 
-    async createGroup(sprintId: number, cardIds: number[], title?: string): Promise<CardGroup> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({ cardIds, title }),
-      })
-      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      const group = (await res.json()) as CardGroup
-      await this.fetchGroups(sprintId)
-      return group
-    },
+  let groupsRequest = 0
 
-    async addCardToGroup(sprintId: number, groupId: number, cardId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups/${groupId}/cards`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({ cardId }),
-      })
-      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      await this.fetchGroups(sprintId)
-    },
+  function groupSetter<K extends 'title' | 'isDiscussed' | 'isFocused'>(field: K) {
+    return (groupId: number, value: CardGroup[K]) => {
+      const group = groups.value.find((g) => g.id === groupId)
+      if (group) group[field] = value
+    }
+  }
 
-    async removeCardFromGroup(sprintId: number, groupId: number, cardId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = {}
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups/${groupId}/cards/${cardId}`, {
-        method: 'DELETE',
-        headers,
-        credentials: 'include',
-      })
-      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      await this.fetchGroups(sprintId)
-    },
+  const pendingTitles = createPendingValues(groupSetter('title'))
+  const pendingDiscussed = createPendingValues(groupSetter('isDiscussed'))
+  const pendingFocus = createPendingValues(groupSetter('isFocused'))
 
-    async dissolveGroup(sprintId: number, groupId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = {}
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups/${groupId}`, {
-        method: 'DELETE',
-        headers,
-        credentials: 'include',
-      })
-      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      await this.fetchGroups(sprintId)
-    },
+  function settleAll(): void {
+    pendingTitles.settleAll()
+    pendingDiscussed.settleAll()
+    pendingFocus.settleAll()
+  }
 
-    async focusGroup(sprintId: number, groupId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups/${groupId}/focus`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: '{}',
-      })
-      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-    },
+  // A background refresh keeps the groups on screen and keeps a previous refresh's
+  // error until one succeeds.
+  async function fetchGroups(sprintId: number, { background = false } = {}): Promise<void> {
+    const request = ++groupsRequest
+    if (!background) {
+      groups.value = []
+      error.value = null
+      loading.value = true
+    }
+    try {
+      const result = await cardGroupsApi.list(sprintId)
+      if (request !== groupsRequest) return
+      groups.value = result
+      error.value = null
+      settleAll()
+      voteStore.initVoteCounts(result.map((g) => ({ groupId: g.id, voteCount: g.voteCount })))
+    } catch (e) {
+      if (request === groupsRequest) {
+        error.value = isHttpError(e) ? 'Failed to load groups' : "Can't reach the server"
+      }
+    } finally {
+      if (request === groupsRequest) loading.value = false
+    }
+  }
 
-    async clearFocus(sprintId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/focus`, {
-        method: 'DELETE',
-        headers,
-        credentials: 'include',
-        body: '{}',
-      })
-      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-    },
+  async function createGroup(
+    sprintId: number,
+    cardIds: number[],
+    title?: string,
+  ): Promise<CardGroup> {
+    const group = await cardGroupsApi.create(sprintId, cardIds, title)
+    await fetchGroups(sprintId, { background: true })
+    return group
+  }
 
-    async toggleDiscussed(sprintId: number, groupId: number): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups/${groupId}/toggle-discussed`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: '{}',
-      })
-      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-    },
+  async function addCardToGroup(sprintId: number, groupId: number, cardId: number): Promise<void> {
+    await cardGroupsApi.addCard(sprintId, groupId, cardId)
+    await fetchGroups(sprintId, { background: true })
+  }
 
-    async updateGroupTitle(sprintId: number, groupId: number, title: string | null): Promise<void> {
-      const guestStore = useGuestStore()
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (guestStore.token) headers['X-Guest-Token'] = guestStore.token
-      const res = await fetch(`/api/sprints/${sprintId}/card-groups/${groupId}`, {
-        method: 'PATCH',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({ title }),
-      })
-      if (!res.ok) throw { status: res.status, body: await res.json().catch(() => ({})) }
-      await this.fetchGroups(sprintId)
-    },
-  },
+  async function removeCardFromGroup(
+    sprintId: number,
+    groupId: number,
+    cardId: number,
+  ): Promise<void> {
+    await cardGroupsApi.removeCard(sprintId, groupId, cardId)
+    await fetchGroups(sprintId, { background: true })
+  }
+
+  async function dissolveGroup(sprintId: number, groupId: number): Promise<void> {
+    await cardGroupsApi.dissolve(sprintId, groupId)
+    await fetchGroups(sprintId, { background: true })
+  }
+
+  async function focusGroup(sprintId: number, groupId: number): Promise<void> {
+    const changes = groups.value
+      .filter((g) => g.isFocused !== (g.id === groupId))
+      .map((g) => ({ groupId: g.id, change: pendingFocus.change(g.id, g.isFocused, !g.isFocused) }))
+    try {
+      await cardGroupsApi.focus(sprintId, groupId)
+      changes.forEach((c) => pendingFocus.confirm(c.groupId, c.change))
+    } catch (e) {
+      changes.forEach((c) => pendingFocus.undo(c.groupId, c.change))
+      throw e
+    }
+  }
+
+  async function toggleDiscussed(sprintId: number, groupId: number): Promise<void> {
+    const group = groups.value.find((g) => g.id === groupId)
+    const change = group
+      ? pendingDiscussed.change(groupId, group.isDiscussed, !group.isDiscussed)
+      : null
+    try {
+      await cardGroupsApi.toggleDiscussed(sprintId, groupId)
+      if (change) pendingDiscussed.confirm(groupId, change)
+    } catch (e) {
+      if (change) pendingDiscussed.undo(groupId, change)
+      throw e
+    }
+  }
+
+  async function updateGroupTitle(
+    sprintId: number,
+    groupId: number,
+    title: string | null,
+  ): Promise<void> {
+    const group = groups.value.find((g) => g.id === groupId)
+    const change = group ? pendingTitles.change(groupId, group.title, title) : null
+    try {
+      await cardGroupsApi.updateTitle(sprintId, groupId, title)
+      if (change) pendingTitles.confirm(groupId, change)
+    } catch (e) {
+      if (change) pendingTitles.undo(groupId, change)
+      throw e
+    }
+  }
+
+  function applyTitleChanged(groupId: number, title: string | null): void {
+    pendingTitles.settle(groupId)
+    const group = groups.value.find((g) => g.id === groupId)
+    if (group) group.title = title
+  }
+
+  function applyGroupFocused(groupId: number): void {
+    pendingFocus.settleAll()
+    groups.value.forEach((g) => (g.isFocused = g.id === groupId))
+  }
+
+  function applyFocusCleared(): void {
+    pendingFocus.settleAll()
+    groups.value.forEach((g) => (g.isFocused = false))
+  }
+
+  function applyDiscussedChanged(groupId: number, isDiscussed: boolean): void {
+    pendingDiscussed.settle(groupId)
+    const group = groups.value.find((g) => g.id === groupId)
+    if (group) group.isDiscussed = isDiscussed
+  }
+
+  return {
+    groups,
+    loading,
+    error,
+    column1Groups,
+    column2Groups,
+    column3Groups,
+    fetchGroups,
+    createGroup,
+    addCardToGroup,
+    removeCardFromGroup,
+    dissolveGroup,
+    focusGroup,
+    toggleDiscussed,
+    updateGroupTitle,
+    applyTitleChanged,
+    applyGroupFocused,
+    applyFocusCleared,
+    applyDiscussedChanged,
+  }
 })

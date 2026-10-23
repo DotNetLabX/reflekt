@@ -10,7 +10,9 @@
         <h1 class="text-lg font-semibold text-text-primary text-center">{{ sprintName }}</h1>
 
         <div v-if="participants.length > 0" class="flex flex-col gap-2">
-          <p class="text-xs font-semibold text-text-muted uppercase tracking-wide">Already in this retro:</p>
+          <p class="text-xs font-semibold text-text-muted uppercase tracking-wide">
+            Already in this retro:
+          </p>
           <div class="flex flex-wrap gap-2">
             <div
               v-for="p in participants"
@@ -28,7 +30,7 @@
         <template v-if="showGoogleSignIn">
           <a
             :href="googleLoginUrl"
-            class="flex items-center justify-center gap-2 w-full px-4 py-2 border border-border rounded-[--radius-sm] text-sm font-medium text-text-secondary bg-surface hover:bg-surface-raised transition-colors"
+            class="flex items-center justify-center gap-2 w-full px-4 py-2 border border-border rounded-sm text-sm font-medium text-text-secondary bg-surface hover:bg-surface-raised transition-colors"
           >
             Sign in with Google
           </a>
@@ -45,6 +47,7 @@
             v-model="displayName"
             :maxlength="50"
             placeholder="Your display name"
+            aria-label="Your display name"
             :disabled="busy"
           />
           <BaseButton
@@ -66,9 +69,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { RefreshCw } from 'lucide-vue-next'
-import BaseCard from '../ui/BaseCard.vue'
-import BaseInput from '../ui/BaseInput.vue'
-import BaseButton from '../ui/BaseButton.vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 const props = defineProps<{
   sprintName: string

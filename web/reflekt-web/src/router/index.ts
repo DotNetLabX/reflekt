@@ -1,16 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import WelcomeView from '../views/WelcomeView.vue'
-import TeamDashboardView from '../views/TeamDashboardView.vue'
-import SprintListView from '../views/SprintListView.vue'
-import SprintView from '../views/SprintView.vue'
-import RetroRoomView from '../views/RetroRoomView.vue'
-import ReportView from '../views/ReportView.vue'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore } from '@/stores/auth'
 
 declare module 'vue-router' {
   interface RouteMeta {
-    title?: string;
-    requiresAuth?: boolean;
+    title?: string
+    requiresAuth?: boolean
   }
 }
 
@@ -20,44 +14,44 @@ const router = createRouter({
     {
       path: '/',
       name: 'welcome',
-      component: WelcomeView,
+      component: () => import('@/views/WelcomeView.vue'),
       meta: { title: 'Reflekt' },
     },
     {
       path: '/teams',
       name: 'teams',
-      component: TeamDashboardView,
+      component: () => import('@/views/TeamDashboardView.vue'),
       meta: { title: 'Teams — Reflekt', requiresAuth: true },
     },
     {
       path: '/teams/:teamId/sprints',
       name: 'team-sprints',
-      component: SprintListView,
+      component: () => import('@/views/SprintListView.vue'),
       meta: { title: 'Sprints — Reflekt', requiresAuth: true },
     },
     {
       path: '/teams/:teamId/sprints/:sprintId',
       name: 'sprint',
-      component: SprintView,
-      meta: { title: 'Sprint — Reflekt' },
+      component: () => import('@/views/SprintView.vue'),
+      meta: { title: 'Sprint — Reflekt', requiresAuth: true },
     },
     {
       path: '/sprint/:sprintId',
       name: 'retro-room',
-      component: RetroRoomView,
+      component: () => import('@/views/RetroRoomView.vue'),
       meta: { title: 'Retro Room — Reflekt' },
     },
     {
       path: '/teams/:teamId/sprints/:sprintId/report',
       name: 'report',
-      component: ReportView,
+      component: () => import('@/views/ReportView.vue'),
       meta: { title: 'Report — Reflekt' },
     },
   ],
 })
 
 router.afterEach((to) => {
-  document.title = to.meta.title || 'Reflekt';
+  document.title = to.meta.title || 'Reflekt'
 })
 
 router.beforeEach(async (to) => {

@@ -1,49 +1,93 @@
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { invoke, isHubConnected } from '@/api/hub'
+import { createPendingValues } from './pendingValues'
+import type { ReadinessChangedPayload, ReadinessSnapshot } from '@/types/participant'
 
-interface ReadinessSnapshot {
-  readyParticipantIds: number[]
-  readyCount: number
-  totalCount: number
-}
+export const useReadinessStore = defineStore('readiness', () => {
+  const readyParticipantIds = ref<number[]>([])
+  const readyCount = ref(0)
+  const totalCount = ref(0)
 
-interface ReadinessChangedPayload {
-  participantId: number
-  displayName: string | null
-  isReady: boolean
-  readyCount: number
-  totalCount: number
-}
+  function isReady(participantId: number): boolean {
+    return readyParticipantIds.value.includes(participantId)
+  }
 
-export const useReadinessStore = defineStore('readiness', {
-  state: () => ({
-    readyParticipantIds: [] as number[],
-    readyCount: 0,
-    totalCount: 0,
-  }),
-  getters: {
-    isReady: (state) => (participantId: number) => state.readyParticipantIds.includes(participantId),
-  },
-  actions: {
-    setFromSnapshot(payload: ReadinessSnapshot) {
-      this.readyParticipantIds = payload.readyParticipantIds
-      this.readyCount = payload.readyCount
-      this.totalCount = payload.totalCount
-    },
-    applyChange(payload: ReadinessChangedPayload) {
-      if (payload.isReady) {
-        if (!this.readyParticipantIds.includes(payload.participantId)) {
-          this.readyParticipantIds.push(payload.participantId)
-        }
-      } else {
-        this.readyParticipantIds = this.readyParticipantIds.filter((id) => id !== payload.participantId)
+  function setReady(participantId: number, ready: boolean): void {
+    if (ready === isReady(participantId)) return
+    if (ready) readyParticipantIds.value.push(participantId)
+    else readyParticipantIds.value = readyParticipantIds.value.filter((id) => id !== participantId)
+  }
+
+  const pendingFlags = createPendingValues<number, boolean>(setReady)
+  const pendingCount = createPendingValues<'readyCount', number>((_key, count) => {
+    readyCount.value = count
+  })
+
+  function settleAll(): void {
+    pendingFlags.settleAll()
+    pendingCount.settleAll()
+  }
+
+  async function toggleReady(sprintId: number, participantId: number | undefined): Promise<void> {
+    if (!isHubConnected()) return
+    if (participantId === undefined) {
+      await invoke('ToggleReady', sprintId)
+      return
+    }
+    const wasReady = isReady(participantId)
+    const count = readyCount.value
+    const flag = pendingFlags.change(participantId, wasReady, !wasReady)
+    const total = pendingCount.change('readyCount', count, Math.max(0, count + (wasReady ? -1 : 1)))
+    try {
+      await invoke('ToggleReady', sprintId)
+      pendingFlags.confirm(participantId, flag)
+      pendingCount.confirm('readyCount', total)
+    } catch (e) {
+      pendingFlags.undo(participantId, flag)
+      pendingCount.undo('readyCount', total)
+      throw e
+    }
+  }
+
+  function setFromSnapshot(payload: ReadinessSnapshot) {
+    settleAll()
+    readyParticipantIds.value = payload.readyParticipantIds
+    readyCount.value = payload.readyCount
+    totalCount.value = payload.totalCount
+  }
+
+  function applyChange(payload: ReadinessChangedPayload) {
+    pendingCount.settleAll()
+    pendingFlags.settle(payload.participantId)
+    if (payload.isReady) {
+      if (!readyParticipantIds.value.includes(payload.participantId)) {
+        readyParticipantIds.value.push(payload.participantId)
       }
-      this.readyCount = payload.readyCount
-      this.totalCount = payload.totalCount
-    },
-    reset() {
-      this.readyParticipantIds = []
-      this.readyCount = 0
-      this.totalCount = 0
-    },
-  },
+    } else {
+      readyParticipantIds.value = readyParticipantIds.value.filter(
+        (id) => id !== payload.participantId,
+      )
+    }
+    readyCount.value = payload.readyCount
+    totalCount.value = payload.totalCount
+  }
+
+  function reset() {
+    settleAll()
+    readyParticipantIds.value = []
+    readyCount.value = 0
+    totalCount.value = 0
+  }
+
+  return {
+    readyParticipantIds,
+    readyCount,
+    totalCount,
+    isReady,
+    toggleReady,
+    setFromSnapshot,
+    applyChange,
+    reset,
+  }
 })

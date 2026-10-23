@@ -1,104 +1,121 @@
 <template>
-  <div
-    v-if="open"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-    @click.self="$emit('close')"
+  <BaseModal
+    :open="open"
+    :title="team.hasActiveSprint ? 'Cannot Delete Team' : 'Delete Team'"
+    @close="$emit('close')"
   >
-    <div class="bg-surface rounded-lg shadow-modal p-6 w-full max-w-md mx-4">
-      <!-- Active sprint blocked state -->
-      <template v-if="team.hasActiveSprint">
-        <h2 class="text-lg font-semibold text-text-primary mb-3">Cannot Delete Team</h2>
-        <p class="text-sm text-text-secondary mb-4">
-          This team has an active sprint. Close or delete it before deleting the team.
-        </p>
-        <button
-          class="w-full px-4 py-2 bg-surface-raised text-text-secondary rounded hover:bg-border text-sm"
-          @click="$emit('close')"
+    <!-- Active sprint blocked state -->
+    <p v-if="team.hasActiveSprint" class="text-sm text-text-secondary">
+      This team has an active sprint. Close or delete it before deleting the team.
+    </p>
+
+    <!-- Confirmation state -->
+    <template v-else>
+      <p class="text-sm text-text-secondary mb-4">
+        Delete team <strong>"{{ team.name }}"</strong> and all its sprints? This cannot be undone.
+      </p>
+
+      <div>
+        <label :for="confirmInputId" class="block text-sm font-medium text-text-secondary mb-1">
+          Type the team name to confirm
+        </label>
+        <BaseTooltip
+          v-slot="{ describedby }"
+          text="Type the team name exactly as shown above to confirm deletion."
+          panel-class="left-0 bottom-10 w-64 whitespace-normal"
         >
-          Close
-        </button>
-      </template>
+          <BaseInput
+            :id="confirmInputId"
+            v-model="confirmationInput"
+            :placeholder="team.name"
+            :aria-describedby="describedby"
+          />
+        </BaseTooltip>
+      </div>
 
-      <!-- Confirmation state -->
-      <template v-else>
-        <h2 class="text-lg font-semibold text-text-primary mb-2">Delete Team</h2>
-        <p class="text-sm text-text-secondary mb-4">
-          Delete team <strong>"{{ team.name }}"</strong> and all its sprints? This cannot be undone.
-        </p>
+      <p v-if="errorMessage" class="text-danger text-sm mt-4">{{ errorMessage }}</p>
+    </template>
 
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-text-secondary mb-1">
-            Type the team name to confirm
-          </label>
-          <div class="relative group">
-            <input
-              v-model="confirmationInput"
-              type="text"
-              :placeholder="team.name"
-              class="w-full border border-border rounded px-3 py-2 text-sm text-text-primary bg-surface focus:outline-none focus:ring-2 focus:ring-red-400"
-            />
-            <div class="absolute left-0 bottom-10 w-64 bg-surface-raised text-text-primary border border-border text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
-              Type the team name exactly as shown above to confirm deletion.
-            </div>
-          </div>
-        </div>
-
-        <div class="flex gap-2 justify-end">
-          <button
-            class="px-4 py-2 text-sm text-text-secondary hover:bg-surface-raised rounded"
-            @click="$emit('close')"
-          >
-            Cancel
-          </button>
-          <button
-            class="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="confirmationInput !== team.name || busy"
-            @click="handleConfirm"
-          >
-            {{ busy ? 'Deleting…' : 'Delete Team' }}
-          </button>
-        </div>
-      </template>
-    </div>
-  </div>
+    <template #footer>
+      <BaseButton
+        v-if="team.hasActiveSprint"
+        variant="secondary"
+        class="w-full"
+        @click="$emit('close')"
+      >
+        Close
+      </BaseButton>
+      <div v-else class="flex gap-2 justify-end">
+        <BaseButton variant="ghost" @click="$emit('close')">Cancel</BaseButton>
+        <BaseButton
+          variant="danger"
+          :disabled="confirmationInput !== team.name || busy"
+          @click="handleConfirm"
+        >
+          {{ busy ? 'Deleting…' : 'Delete Team' }}
+        </BaseButton>
+      </div>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import type { TeamSummary } from '../../stores/teams';
+import { ref, useId, watch } from 'vue'
+import { describeApiError } from '@/api/client'
+import { useTeamsStore } from '@/stores/teams'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
+import BaseTooltip from '@/components/ui/BaseTooltip.vue'
+import type { TeamSummary } from '@/types/team'
 
 const props = defineProps<{
-  team: TeamSummary;
-  open: boolean;
-}>();
+  team: TeamSummary
+  open: boolean
+}>()
 
 const emit = defineEmits<{
-  confirm: [teamId: number, confirmationName: string];
-  close: [];
-}>();
+  deleted: []
+  close: []
+}>()
 
-const confirmationInput = ref('');
-const busy = ref(false);
+const teamsStore = useTeamsStore()
+const confirmInputId = useId()
+const confirmationInput = ref('')
+const errorMessage = ref('')
+const busy = ref(false)
 
-watch(() => props.open, (open) => {
-  if (!open) {
-    confirmationInput.value = '';
-    busy.value = false;
-  }
-});
+watch(
+  () => props.open,
+  (open) => {
+    if (!open) {
+      confirmationInput.value = ''
+      errorMessage.value = ''
+      busy.value = false
+    }
+  },
+)
 
-watch(() => props.team.id, () => {
-  confirmationInput.value = '';
-  busy.value = false;
-});
+watch(
+  () => props.team.id,
+  () => {
+    confirmationInput.value = ''
+    errorMessage.value = ''
+    busy.value = false
+  },
+)
 
 async function handleConfirm() {
-  if (confirmationInput.value !== props.team.name) return;
-  busy.value = true;
+  if (confirmationInput.value !== props.team.name) return
+  errorMessage.value = ''
+  busy.value = true
   try {
-    emit('confirm', props.team.id, confirmationInput.value);
+    await teamsStore.deleteTeam(props.team.id, confirmationInput.value)
+    emit('deleted')
+  } catch (err: unknown) {
+    errorMessage.value = describeApiError(err, { fallback: 'Failed to delete team.' })
   } finally {
-    busy.value = false;
+    busy.value = false
   }
 }
 </script>

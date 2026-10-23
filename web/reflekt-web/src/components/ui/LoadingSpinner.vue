@@ -8,17 +8,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { LoaderCircle } from 'lucide-vue-next';
+import { computed } from 'vue'
+import { LoaderCircle } from 'lucide-vue-next'
 
-const props = withDefaults(defineProps<{
-  size?: 'sm' | 'md' | 'lg';
-}>(), {
-  size: 'md',
-});
+const props = withDefaults(
+  defineProps<{
+    size?: 'sm' | 'md' | 'lg'
+  }>(),
+  {
+    size: 'md',
+  },
+)
 
 const spinnerSize = computed(() => {
-  const sizes = { sm: 16, md: 24, lg: 40 };
-  return sizes[props.size];
-});
+  const sizes = { sm: 16, md: 24, lg: 40 }
+  return sizes[props.size]
+})
 </script>
