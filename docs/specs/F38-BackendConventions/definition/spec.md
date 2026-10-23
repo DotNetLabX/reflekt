@@ -6,7 +6,7 @@
 **Rule list:** not applicable — restructuring with no intended behaviour change
 **Review:** round 1 — `delivery/review-critic.md`
 **Status:** Ready
-**Plan:** None
+**Plan:** `docs/specs/F38-BackendConventions/delivery/plan.md`
 
 ---
 
@@ -38,7 +38,7 @@ Each row's "suggested fix" in the findings file is the required outcome, unless 
 | Decision | Why | Rejected alternative | Confidence |
 |---|---|---|---|
 | Adopt the documented exception convention rather than rewrite the docs to the FastEndpoints idioms. `docs/conventions/csharp.md` contradicts itself (line 12 says throw `NotFoundException`; line 73 says "not found" is a result, not an exception): this feature follows line 12, and F40 rewrites line 73 to match. | It is what the repo's conventions and skills teach; the building blocks exist; one central mapper. | Amend the rule and delete the exception family. | medium |
-| **Behaviour change 1 — error bodies.** 404/403 answered by handlers gain the body; every error body is camelCase in one shape with `code`. F38 updates the one SPA consumer that reads a body — `web/reflekt-web/src/components/teams/CreateTeamForm.vue` (prefix parsing → `code`) — and adds body assertions to existing integration test classes (one per status family, plus the two codes). | The convention needs one body; F39's API client reads it. | Keep three body shapes. | medium |
+| **Behaviour change 1 — error bodies.** 404/403 answered by handlers gain the body; every error body is camelCase in one shape with `code`. The one SPA consumer that reads a body — `web/reflekt-web/src/components/teams/CreateTeamForm.vue` (prefix parsing → `code`) — is updated by F39, which owns every SPA error consumer and merges before F38 (amended 2026-10-23, shared answer AR-2; F38 edits no frontend file); F38 adds body assertions to existing integration test classes (one per status family, plus the two codes). | The convention needs one body; F39's API client reads it. | Keep three body shapes. | medium |
 | **Behaviour change 2 — a broadcast failure no longer fails a committed request.** Today four endpoints await their SignalR sends, so a send that throws after the save returns 500 although the data is saved; as handlers, a failed send is logged and the request returns its normal status. | Reporting failure for committed data is the worse behaviour. | Wait for every handler. | medium |
 | No other status code changes. Apart from behaviour change 2, each endpoint keeps today's status for every input (order of checks included); a guest on another sprint keeps today's 401. | Behaviour-neutral refactor; the frontend clears a stored token only on 401. | Unify the check order 401 → 404 → 403. | high |
 | Routes stay as they are, the two URL schemes included (BE-36 is documented in F40). | The SPA and tests depend on them. | Unify routes. | high |
@@ -46,7 +46,7 @@ Each row's "suggested fix" in the findings file is the required outcome, unless 
 
 ## Out of scope
 
-- Defects (F35); packages (F37); frontend beyond the one consumer named; docs (F40).
+- Defects (F35); packages (F37); every frontend file, the one consumer named in Decisions included (F39, per AR-2); docs (F40).
 - New test projects, frameworks or helper libraries.
 
 ## What must not change
