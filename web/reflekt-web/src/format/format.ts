@@ -34,3 +34,7 @@ export function truncateUrl(url: string): string {
 export function formatStatus(status: string): string {
   return status === 'CarriedOver' ? 'Carried Over' : status
 }
+
+export function formatVotes(count: number): string {
+  return count === 1 ? '1 vote' : `${count} votes`
+}

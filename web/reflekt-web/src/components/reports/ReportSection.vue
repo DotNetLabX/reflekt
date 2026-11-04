@@ -14,7 +14,7 @@
         <div v-for="(group, i) in groups" :key="i">
           <div class="flex items-center gap-2 mb-1">
             <p class="text-sm font-medium text-text-primary">{{ group.groupTitle }}</p>
-            <span class="text-xs text-text-muted">({{ group.voteCount }} votes)</span>
+            <span class="text-xs text-text-muted">({{ formatVotes(group.voteCount) }})</span>
             <BaseBadge v-if="group.isDiscussed" variant="success">discussed</BaseBadge>
           </div>
           <ul class="flex flex-col gap-1 pl-3 border-l-2" :class="`border-col-${columnColor}`">
@@ -40,6 +40,7 @@
 import BaseBadge from '@/components/ui/BaseBadge.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import EvidenceChip from './EvidenceChip.vue'
+import { formatVotes } from '@/format/format'
 import type { ReportGroupEntry } from '@/types/report'
 import type { ColumnColor } from '@/types/domain'
 

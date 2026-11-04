@@ -13,15 +13,16 @@
       }}</span>
     </button>
   </div>
-  <span v-else-if="voteCount > 0" class="text-xs font-medium text-text-muted"
-    >{{ voteCount }} votes</span
-  >
+  <span v-else-if="voteCount > 0" class="text-xs font-medium text-text-muted">{{
+    formatVotes(voteCount)
+  }}</span>
 </template>
 
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import { ChevronUp, Check } from 'lucide-vue-next'
 import { boardActionsKey, missingBoardActions } from '@/composables/useRetroBoardActions'
+import { formatVotes } from '@/format/format'
 import type { CardGroup } from '@/types/card'
 
 const props = defineProps<{
@@ -44,7 +45,7 @@ const voteBtnClass = computed(() =>
 
 const voteButtonLabel = computed(() =>
   props.myVoteCount > 0
-    ? `${props.voteCount} votes, remove your vote`
-    : `${props.voteCount} votes, vote for this group`,
+    ? `${formatVotes(props.voteCount)}, remove your vote`
+    : `${formatVotes(props.voteCount)}, vote for this group`,
 )
 </script>

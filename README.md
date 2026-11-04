@@ -1,59 +1,112 @@
 # Reflekt
 
-Reflekt is a sprint retrospective app for small teams. A Scrum Master signs in with Google, creates a team and a sprint, and shares a join link; participants join with a display name (or their Google account). The retro runs in fixed phases — Writing, Grouping, Voting, Discussing, Reporting — with live updates for everyone in the room: cards in configurable columns, drag-and-drop grouping, dot voting on groups, a focused discussion flow with action items, evidence links (Jira issues, pull requests, commits) on cards, a per-phase timer, and a report at the end. Open action items from the previous retro come back at the start of the next one.
+**A real-time sprint retrospective board, built entirely by AI agents.**
 
-It is also a teaching repo: the whole app was built by AI agents. See [How this repo was built](#how-this-repo-was-built).
+Reflekt takes a team from "what went well?" to a list of assigned action items in one live session: everyone writes, groups and votes in the same room, and the board updates for all of them as it happens. The repo is also a teaching example. Every feature was specified, planned, implemented and reviewed by [Claude Code](https://docs.anthropic.com/en/docs/claude-code) agents, and the records of that work are kept here next to the code.
 
-## Stack
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4) ![Vue 3](https://img.shields.io/badge/Vue-3-42B883) ![SignalR](https://img.shields.io/badge/real--time-SignalR-0078D4) ![SQLite](https://img.shields.io/badge/database-SQLite-003B57) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-- **Backend:** .NET 10, ASP.NET Core, [FastEndpoints](https://fast-endpoints.com/) (one class per endpoint, vertical slices), FluentValidation, EF Core with SQLite, SignalR for real-time updates, Google OAuth (cookie auth) for the Scrum Master and guest tokens for participants
-- **Frontend:** Vue 3, TypeScript, Pinia, Tailwind CSS, built with Vite into the API's `wwwroot/` and served by the API as static files
-- **Architecture:** DDD aggregates and domain events, vertical slice features, one service (`src/Services/Reflekt`) split into API / Domain / Persistence projects, plus shared building blocks under `src/BuildingBlocks`
+![The Reflekt board during the Voting phase: three colored columns of grouped cards with vote counts, a running timer and the participants in the room](docs/images/board-voting.png)
 
-## Prerequisites
+## Why this repo
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Node.js](https://nodejs.org/) 20.19+ or 22.12+ (with npm)
-- A Google Cloud project with an OAuth 2.0 Client ID (needed to sign in as Scrum Master; placeholder values are enough to run as a guest)
-- Azure CLI — only if you deploy
+| If you want... | You get... |
+|---|---|
+| **A retro tool** | A complete app for small teams: no accounts for participants, just a join link. Deploys to a single Azure App Service. |
+| **To see how agents build software** | A full application, not a demo, with the specs, plans, reviews and lessons behind each feature. Start at [How it was built](#how-it-was-built). |
+| **A .NET and Vue reference** | Domain-driven design with vertical slices, domain events and real-time updates, in a codebase small enough to read. Start at the [architecture map](docs/architecture/index.md). |
 
-## Run locally
+## How a retro runs
 
-### 1. Google OAuth credentials
+A Scrum Master signs in with Google, creates a team and a sprint, and shares the link. Participants join with a display name or their Google account. The retro then moves through five phases:
 
-The API's authentication setup needs non-empty Google client values, even if you only use Reflekt as a guest. Real values are needed to sign in with Google; to run as a guest only, harmless placeholder values (any non-empty text, such as `placeholder`) are enough.
-
-For real values: in [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials, create an OAuth 2.0 Client ID (Web application) and add as authorized redirect URI the origin you browse from, e.g. `http://localhost:5173/signin-google` (Vite dev server) and `http://localhost:4001/signin-google` (API directly).
-
-Store the values (real or placeholder) with .NET user secrets — never in `appsettings*.json`. From the repository root:
-
-```powershell
-cd src/Services/Reflekt/Reflekt.API
-dotnet user-secrets set "Auth:Google:ClientId" "<YOUR_CLIENT_ID>"
-dotnet user-secrets set "Auth:Google:ClientSecret" "<YOUR_CLIENT_SECRET>"
+```
+Writing ──▶ Grouping ──▶ Voting ──▶ Discussing ──▶ Reporting
 ```
 
-### 2. Backend
+| Phase | What happens |
+|---|---|
+| **Writing** | Everyone adds cards to the columns. Other people's card text stays hidden until the phase ends, so nobody anchors on the first opinion. |
+| **Grouping** | Drag similar cards together and give the group a title. |
+| **Voting** | Everyone spends a set number of votes on the groups that matter most. |
+| **Discussing** | The Scrum Master brings one group into focus at a time and marks it discussed when the team is done. Action items go on the board as you talk, each with an assignee. |
+| **Reporting** | A report of the whole retro, which can be copied as Markdown. |
 
-From the repository root:
+<table>
+  <tr>
+    <td width="50%"><a href="docs/images/sprint-setup.png"><img src="docs/images/sprint-setup.png" alt="The New Sprint form: sprint name, votes per participant, three named columns with color pickers, and timer defaults"></a></td>
+    <td width="50%"><a href="docs/images/discussing.png"><img src="docs/images/discussing.png" alt="The Discussing phase: one group in focus, discussed groups marked, and an Action Items column with assignees"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Set up the sprint:</b> columns, colors, votes and timers</td>
+    <td align="center"><b>Discuss:</b> one group at a time, action items as you go</td>
+  </tr>
+</table>
+
+<details>
+<summary><b>See the final report</b></summary>
+<br>
+<img src="docs/images/report.png" alt="The sprint report: each column's groups with vote counts and evidence links, the action items with assignees, and the review of last sprint's actions" width="700">
+</details>
+
+## Features
+
+| Feature | What it does |
+|---|---|
+| **Live room** | Cards, groups, votes, focus and phase changes reach everyone at once over SignalR. |
+| **Configurable columns** | Name and color each of the three columns per sprint. |
+| **Dot voting** | A vote budget per participant, set per sprint. Everyone sees the counts; nobody sees who voted for what. |
+| **Evidence links** | Attach Jira issues, pull requests, commits or any link to a card. Title and details are fetched in the background. |
+| **Phase timer** | A countdown for each phase, with defaults per sprint and an optional chime. |
+| **Readiness** | Participants press "I'm done", so the Scrum Master can see when to move on. |
+| **Action follow-up** | Action items from the last retro come back at the next one, to be marked done, carried over or dropped. |
+| **Light and dark themes** | Plus a tabbed layout for phones. |
+
+## Architecture at a glance
+
+One ASP.NET Core service serves the API, the SignalR hub and the built Vue app, backed by one SQLite file.
+
+```
+Browser (Vue 3 + Pinia)
+   │  HTTP (FastEndpoints)        SignalR (/hubs/sprint)
+   ▼                                   ▲
+Reflekt.API ── feature slices ─────────┤ domain event handlers broadcast
+   │                                   │
+   ▼                                   │
+Reflekt.Domain ── aggregates raise domain events
+   │
+Reflekt.Persistence ── EF Core + SQLite; events publish after the save
+```
+
+| Layer | Stack |
+|---|---|
+| **Backend** | .NET 10, ASP.NET Core, [FastEndpoints](https://fast-endpoints.com/), FluentValidation, Mapster, SignalR |
+| **Data** | EF Core 10 with SQLite; migrations apply on start-up |
+| **Sign-in** | Google OAuth with cookies for signed-in users, guest tokens for participants |
+| **Frontend** | Vue 3, TypeScript, Pinia, Tailwind CSS 4, built with Vite into the API's `wwwroot/` |
+| **Tests** | xUnit, FluentAssertions, `WebApplicationFactory` |
+
+The [architecture map](docs/architecture/index.md) is one page and links to the [full reference](docs/architecture/architecture.md).
+
+## Quick start
+
+You need the [.NET 10 SDK](https://dotnet.microsoft.com/download) and [Node.js](https://nodejs.org/) 20.19+ or 22.12+.
+
+**1. Set the Google credentials.** The app won't authenticate requests without them, even for guests. Any text works if you only want to try it as a guest:
 
 ```powershell
 cd src/Services/Reflekt/Reflekt.API
+dotnet user-secrets set "Auth:Google:ClientId" "placeholder"
+dotnet user-secrets set "Auth:Google:ClientSecret" "placeholder"
+```
+
+**2. Start the API**, from the same folder. It creates the database by itself and listens on `http://localhost:4001`.
+
+```powershell
 dotnet run
 ```
 
-The API listens on `http://localhost:4001`. On startup it creates `data/reflekt.db` and applies the EF Core migrations — there is no database to set up by hand.
-
-**Sample data (`Seed` setting).** In the Development environment you can seed a team, a sprint and a few participants. Set `Seed:Enabled` to `true` and `Seed:SeedUserEmail` to the Google email you will sign in with (so the seeded team is yours), for example with user secrets, run from `src/Services/Reflekt/Reflekt.API`:
-
-```powershell
-dotnet user-secrets set "Seed:Enabled" "true"
-dotnet user-secrets set "Seed:SeedUserEmail" "you@example.com"
-```
-
-### 3. Frontend
-
-In a second terminal, from the repository root:
+**3. Start the frontend** in a second terminal, from the repository root, then open `http://localhost:5173`.
 
 ```powershell
 cd web/reflekt-web
@@ -61,9 +114,31 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The Vite dev server proxies `/api`, `/auth`, `/signin-google` and the SignalR hubs to the API on port 4001, so run both.
+<details>
+<summary><b>Real Google sign-in</b></summary>
+<br>
 
-## Tests and build
+To sign in as a Scrum Master you need real values. In the [Google Cloud Console](https://console.cloud.google.com/), under APIs & Services → Credentials, create an OAuth 2.0 Client ID of type Web application. Add these as authorized redirect URIs:
+
+- `http://localhost:5173/signin-google` (Vite dev server)
+- `http://localhost:4001/signin-google` (API directly)
+
+Store the client ID and secret with the `dotnet user-secrets` commands above. Never put them in `appsettings*.json`.
+</details>
+
+<details>
+<summary><b>Sample data</b></summary>
+<br>
+
+In the Development environment you can seed a team, a sprint and a few participants. Use the Google email you sign in with, so the seeded team is yours. From `src/Services/Reflekt/Reflekt.API`:
+
+```powershell
+dotnet user-secrets set "Seed:Enabled" "true"
+dotnet user-secrets set "Seed:SeedUserEmail" "you@example.com"
+```
+</details>
+
+### Tests and build
 
 From the repository root:
 
@@ -71,40 +146,72 @@ From the repository root:
 # Backend: unit and integration tests
 dotnet test Reflekt.slnx
 
-# Frontend: type-check and production build (output goes to the API's wwwroot/)
+# Frontend: type-check and production build, output goes to the API's wwwroot/
 cd web/reflekt-web
 npm ci
 npm run build
 ```
 
-## Deploy
+### Deploy
 
-`deploy.ps1` builds the frontend, publishes the API, zips it and deploys it to an Azure App Service (Linux). Both parameters are mandatory — the script never targets a default app. From the repository root:
+`deploy.ps1` builds the frontend, publishes the API and deploys it to an Azure App Service (Linux). Both parameters are required, so it can never target a default app:
 
 ```powershell
 .\deploy.ps1 -AppName <APP_NAME> -ResourceGroup <RESOURCE_GROUP>
 ```
 
-Creating the Azure resources, the app settings (Google credentials, SQLite path) and the OAuth redirect URIs for the deployed site are covered step by step in [docs/deployment-azure.md](docs/deployment-azure.md).
+Creating the Azure resources, the app settings and the OAuth redirect URIs is covered in [docs/deployment-azure.md](docs/deployment-azure.md).
 
-## How this repo was built
+## How it was built
 
-Reflekt was built by AI agents (Claude Code), with a human owner deciding what to build and approving each step. The repo keeps the artifacts of every generation of that process on purpose — they are the record of how the app came to be, not documentation of the current code. Three generations, oldest first:
+Reflekt was built by AI agents working as a team, with a human owner deciding what to build and approving each step. Instead of one assistant doing everything, separate agents take separate roles and hand work to each other through files:
+
+```
+Owner → PO (spec) → Architect (plan) → Developer (implement)
+      → Architect (done check) + Reviewer (code review) → Done
+```
+
+The setup grew along with the app, so the repo keeps every generation of its records on purpose. They show how the app came to be; they don't describe the current code.
 
 | Where | Generation | What you find |
-|-------|------------|---------------|
-| `ai-coding/` | First | The original agent setup and per-feature folders (`ai-coding/plans/{Feature}/`) — usually a plan, a review and lessons, with the delivery record as `done.md` in the earlier folders and as `implementation.md` + `summary.md` in the later ones; a few folders hold only part of this set — plus notes on the development flow and evaluations of the setup |
-| `docs/features/` + `docs/plans/` | Second | Feature specs written before planning (`docs/features/`) and their implementation plans and delivery records (`docs/plans/`) |
-| `docs/specs/` | Current | The current pipeline layout: one folder per feature from `F29-…` onward, plus ad-hoc runs (`adhoc-…`). Each has `delivery/` (plan, implementation record, reviews, lessons, summary); `F31`, `F32` and `F35`–`F40` also have `definition/` (the spec), while `F29`, `F30`, `F33`, `F34` and the ad-hoc run have `delivery/` only |
+|---|---|---|
+| `ai-coding/` | First | The original agent setup and per-feature folders: usually a plan, a review, lessons and a delivery record |
+| `docs/features/` + `docs/plans/` | Second | Feature specs written before planning, then their plans and delivery records |
+| `docs/specs/` | Current | One folder per feature from `F29` onward, plus ad-hoc runs. `delivery/` holds the plan, implementation record, reviews, lessons and summary; `F31`, `F32` and `F35`–`F40` also have the spec in `definition/` |
 
-Around them:
+The final batch, `F35`–`F40`, ran as one campaign on [Nexus](https://github.com/DotNetLabX/claude-nexus), a multi-agent pipeline for Claude Code.
 
-- `docs/product/` — the business specs (`v1.md`, `v2.md`); [`docs/architecture/index.md`](docs/architecture/index.md) — the one-page architecture map, which leads to the as-built reference `architecture.md` (`v1.md` beside it is the original proposal, kept as the decision log); `docs/backlog.md` — the feature sequence and status; `docs/bugs.md` — bugs found in user testing and how they were fixed; `docs/conventions/` — the coding conventions the agents follow.
-- `.claude/` — the agent setup exactly as it was used: agent roles (`agents/`), always-on rules (`rules/`), artifact formats (`conventions/`) and pattern skills (`skills/`). `CLAUDE.md` at the root holds the project-wide instructions.
-  - The skill set started from a starter template, so it includes skills this app never used (for example gRPC contracts, Redis persistence, MassTransit integration events, MediatR pipeline behaviors, analytics services); their examples point at the template's own paths.
-  - The rules mention a `docs/kb/` knowledge base (and a `docs/skill-backlog.md`). Neither was ever created — the mentions are left as they were written.
-- `graphify-out/` — a structural knowledge graph of the code (`GRAPH_REPORT.md`) that the agents read before answering architecture questions.
+### Finding your way around
+
+| Path | What's there |
+|---|---|
+| `src/Services/Reflekt/` | The service: `Reflekt.API` (one folder per feature slice), `Reflekt.Domain`, `Reflekt.Persistence` |
+| `src/BuildingBlocks/` | Shared libraries with no Reflekt knowledge |
+| `tests/` | Unit tests for the aggregates, integration tests for the endpoints |
+| `web/reflekt-web/` | The Vue app |
+| `docs/product/` | The business specs |
+| `docs/architecture/` | The architecture map and as-built reference; `v1.md` is the original proposal, kept as the decision log |
+| `docs/conventions/` | The coding conventions the agents follow |
+| `docs/backlog.md`, `docs/bugs.md` | The feature sequence, and the bugs found in user testing with their fixes |
+| `CLAUDE.md`, `.claude/` | The instructions and agent setup as they were used: roles, rules, formats and skills |
+| `graphify-out/` | A structural knowledge graph of the code that the agents read before answering architecture questions |
+
+Two things in `.claude/` may look wrong but are left as they were. The skills came from a starter template, so some were never used here (gRPC, Redis, MassTransit, MediatR). And the rules mention a `docs/kb/` knowledge base and a `docs/skill-backlog.md` that were never created.
+
+## Design decisions
+
+Deliberate choices, not oversights:
+
+| Decision | Why |
+|---|---|
+| One instance with SQLite | SignalR groups and timers live in memory, and a team's retro doesn't need more. It keeps deployment to one App Service. |
+| Participants don't need accounts | A join link and a display name are the fastest way into a retro. Guests get a token; Google sign-in is optional for them. |
+| Any Google account can sign in | There is no allowlist. Access is checked per team and sprint. |
+| Phase rules are data | Which action each phase allows lives in a seeded table that the backend enforces and the frontend reads, so the two can't disagree. |
+| Card text is hidden on the server | During Writing, other people's text is removed before it's sent, so it can't be read from the browser. |
+| No repository interfaces | Each repository has one implementation, so an interface would add nothing. |
+| No entity service classes | Business rules live in the aggregates. Domain events drive the real-time broadcasts. |
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE)

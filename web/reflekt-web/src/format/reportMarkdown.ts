@@ -1,4 +1,4 @@
-import { formatDate, formatStatus } from './format'
+import { formatDate, formatStatus, formatVotes } from './format'
 import type { ReportEvidenceLinkEntry, ReportResponse } from '@/types/report'
 
 function linkLines(links: ReportEvidenceLinkEntry[]): string[] {
@@ -20,7 +20,7 @@ export function reportMarkdown(r: ReportResponse): string {
     lines.push(`## ${column.columnName}`, '')
     for (const group of column.groups) {
       const discussed = group.isDiscussed ? ' [discussed]' : ''
-      lines.push(`### ${group.groupTitle} (${group.voteCount} votes)${discussed}`)
+      lines.push(`### ${group.groupTitle} (${formatVotes(group.voteCount)})${discussed}`)
       for (const card of group.cards) {
         lines.push(`- ${card.text}`, ...linkLines(card.evidenceLinks))
       }
